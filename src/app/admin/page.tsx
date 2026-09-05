@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+
 import {
   Building2,
   ChevronRight,
+  Clock3,
   CreditCard,
   LayoutDashboard,
   Package,
@@ -11,49 +13,69 @@ import {
   Smartphone,
   Store,
 } from "lucide-react";
+
 import { useStore } from "@/context/StoreContext";
 
 const itens = [
   {
     titulo: "Dados da loja",
-    descricao: "Nome, logo, banner e endereço",
+    descricao:
+      "Nome, logo, banner e endereço",
     icone: Building2,
     href: "/admin/loja",
   },
+
   {
     titulo: "Produtos",
-    descricao: "Cadastrar e editar o cardápio",
+    descricao:
+      "Cadastrar e editar o cardápio",
     icone: Package,
     href: "/admin/produtos",
   },
+
   {
     titulo: "Pedidos",
-    descricao: "Visualizar pedidos recebidos",
+    descricao:
+      "Visualizar pedidos recebidos",
     icone: LayoutDashboard,
     href: "/admin/pedidos",
   },
+
   {
     titulo: "Pagamento",
-    descricao: "Chave Pix e configurações",
+    descricao:
+      "Chave Pix e configurações",
     icone: CreditCard,
     href: "/admin/pagamento",
   },
+
+  {
+    titulo: "Horário do cardápio",
+    descricao:
+      "Definir abertura e fechamento",
+    icone: Clock3,
+    href: "/admin/horarios",
+  },
+
   {
     titulo: "Entrega",
-    descricao: "Taxa, retirada e regiões atendidas",
+    descricao:
+      "Taxa, retirada e regiões atendidas",
     icone: Smartphone,
     href: "/admin/entrega",
   },
+
   {
     titulo: "Configurações",
-    descricao: "WhatsApp e preferências da loja",
+    descricao:
+      "WhatsApp e preferências da loja",
     icone: Settings,
     href: "/admin/configuracoes",
   },
 ];
 
 export default function AdminPage() {
-  const { loja, carregando } = useStore();
+  const { loja } = useStore();
 
   return (
     <main className="min-h-screen bg-zinc-100 text-zinc-950">
@@ -66,9 +88,7 @@ export default function AdminPage() {
               </p>
 
               <h1 className="mt-1 text-2xl font-bold">
-                {carregando
-                  ? "Carregando..."
-                  : loja?.nome || "Sua loja"}
+                {loja?.nome || "Sua loja"}
               </h1>
             </div>
 
@@ -79,20 +99,14 @@ export default function AdminPage() {
 
           <div className="mt-6 rounded-3xl bg-white/10 p-4">
             <p className="text-sm text-zinc-300">
-              Status da loja
+              Status do sistema
             </p>
 
             <div className="mt-2 flex items-center gap-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${
-                  loja?.ativo ? "bg-green-400" : "bg-zinc-500"
-                }`}
-              />
+              <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
 
               <span className="font-semibold">
-                {loja?.ativo
-                  ? "Cardápio online"
-                  : "Cardápio offline"}
+                Cardápio online
               </span>
             </div>
           </div>
@@ -102,7 +116,12 @@ export default function AdminPage() {
       <section className="mx-auto -mt-5 max-w-md px-4 pb-10">
         <div className="grid gap-3">
           {itens.map(
-            ({ titulo, descricao, icone: Icon, href }) => (
+            ({
+              titulo,
+              descricao,
+              icone: Icon,
+              href,
+            }) => (
               <Link
                 key={titulo}
                 href={href}
@@ -113,7 +132,9 @@ export default function AdminPage() {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-bold">{titulo}</h2>
+                  <h2 className="font-bold">
+                    {titulo}
+                  </h2>
 
                   <p className="mt-1 text-sm text-zinc-500">
                     {descricao}
