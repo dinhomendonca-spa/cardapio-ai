@@ -9,8 +9,17 @@ import {
   useState,
 } from "react";
 
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/lib/supabase";
+import {
+  usePathname,
+} from "next/navigation";
+
+import {
+  useAuth,
+} from "@/context/AuthContext";
+
+import {
+  supabase,
+} from "@/lib/supabase";
 
 export type Loja = {
   id: number;
@@ -42,12 +51,11 @@ export type Loja = {
 
   google_maps_url: string;
 
-  slug?: string;
+  slug: string;
 
   dono_id?: string | null;
 
   aberto_manual?: boolean;
-
   usar_horario?: boolean;
 
   horario_abertura?: string | null;
@@ -87,7 +95,10 @@ type StoreContextType = {
 
   erroLoja: string | null;
 
-  recarregarLoja: () => Promise<void>;
+  slugPublico: string | null;
+
+  recarregarLoja:
+    () => Promise<void>;
 
   salvarLoja: (
     dados: Partial<
@@ -102,149 +113,146 @@ const StoreContext =
   >(undefined);
 
 function converterLoja(
-  lojaData: Record<string, any>
+  data: Record<string, any>
 ): Loja {
   return {
-    id: Number(
-      lojaData.id
-    ),
+    id:
+      Number(data.id),
 
     nome:
-      lojaData.nome ??
-      "",
+      data.nome ?? "",
 
     descricao:
-      lojaData.descricao ??
-      "",
+      data.descricao ?? "",
 
     whatsapp:
-      lojaData.whatsapp ??
-      "",
+      data.whatsapp ?? "",
 
     chave_pix:
-      lojaData.chave_pix ??
-      "",
+      data.chave_pix ?? "",
 
     cidade:
-      lojaData.cidade ??
-      "",
+      data.cidade ?? "",
 
     estado:
-      lojaData.estado ??
-      "",
+      data.estado ?? "",
 
     logo:
-      lojaData.logo ??
-      "",
+      data.logo ?? "",
 
     banner:
-      lojaData.banner ??
-      "",
+      data.banner ?? "",
 
     ativo:
-      lojaData.ativo ??
-      true,
+      data.ativo ?? true,
 
     taxa_entrega:
       Number(
-        lojaData.taxa_entrega ??
+        data.taxa_entrega ??
           0
       ),
 
     retirada_permitida:
-      lojaData.retirada_permitida ??
+      data.retirada_permitida ??
       true,
 
     endereco:
-      lojaData.endereco ??
-      "",
+      data.endereco ?? "",
 
     numero:
-      lojaData.numero ??
-      "",
+      data.numero ?? "",
 
     bairro:
-      lojaData.bairro ??
-      "",
+      data.bairro ?? "",
 
     cep:
-      lojaData.cep ??
-      "",
+      data.cep ?? "",
 
     latitude:
-      lojaData.latitude ===
-        null ||
-      lojaData.latitude ===
-        undefined
+      data.latitude == null
         ? null
         : Number(
-            lojaData.latitude
+            data.latitude
           ),
 
     longitude:
-      lojaData.longitude ===
-        null ||
-      lojaData.longitude ===
-        undefined
+      data.longitude == null
         ? null
         : Number(
-            lojaData.longitude
+            data.longitude
           ),
 
     google_maps_url:
-      lojaData.google_maps_url ??
+      data.google_maps_url ??
       "",
 
     slug:
-      lojaData.slug ??
-      "",
+      data.slug ?? "",
 
     dono_id:
-      lojaData.dono_id ??
+      data.dono_id ??
       null,
 
     aberto_manual:
-      lojaData.aberto_manual ??
+      data.aberto_manual ??
       true,
 
     usar_horario:
-      lojaData.usar_horario ??
+      data.usar_horario ??
       false,
 
     horario_abertura:
-      lojaData.horario_abertura ??
+      data.horario_abertura ??
       null,
 
     horario_fechamento:
-      lojaData.horario_fechamento ??
+      data.horario_fechamento ??
       null,
 
     mensagem_fora_horario:
-      lojaData.mensagem_fora_horario ??
+      data.mensagem_fora_horario ??
       "",
 
     pedido_minimo:
       Number(
-        lojaData.pedido_minimo ??
+        data.pedido_minimo ??
           0
       ),
 
     entrega_ativa:
-      lojaData.entrega_ativa ??
+      data.entrega_ativa ??
       true,
 
     tempo_entrega_min:
       Number(
-        lojaData.tempo_entrega_min ??
+        data.tempo_entrega_min ??
           35
       ),
 
     tempo_entrega_max:
       Number(
-        lojaData.tempo_entrega_max ??
+        data.tempo_entrega_max ??
           50
       ),
   };
+}
+
+function extrairSlug(
+  pathname: string
+) {
+  const partes =
+    pathname
+      .split("/")
+      .filter(Boolean);
+
+  if (
+    partes[0] !==
+    "loja"
+  ) {
+    return null;
+  }
+
+  return partes[1] || null;
 }
 
 export function StoreProvider({
@@ -252,10 +260,18 @@ export function StoreProvider({
 }: {
   children: ReactNode;
 }) {
+  const pathname =
+    usePathname();
+
   const {
     user,
     carregandoAuth,
   } = useAuth();
+
+  const slugPublico =
+    extrairSlug(
+      pathname
+    );
 
   const [
     loja,
@@ -288,107 +304,71 @@ export function StoreProvider({
     );
 
   /*
-   * ==========================================================
-   * LOJA PÚBLICA
-   *
-   * Usada pelo cliente que acessa:
-   *
-   * /menu
-   * /checkout
-   * /pagamento
-   *
-   * O cliente NÃO precisa fazer login.
-   * ==========================================================
+   * ======================================
+   * LOJA PÚBLICA PELO SLUG
+   * ======================================
    */
   const carregarLojaPublica =
     useCallback(
-      async () => {
-        try {
-          const {
-            data,
-            error,
-          } =
-            await supabase
-              .from(
-                "lojas"
-              )
-              .select("*")
-              .eq(
-                "ativo",
-                true
-              )
-              .order(
-                "id",
-                {
-                  ascending:
-                    true,
-                }
-              )
-              .limit(1)
-              .maybeSingle();
-
-          if (error) {
-            throw error;
-          }
-
-          if (!data) {
-            setLoja(
-              null
-            );
-
-            setErroLoja(
-              "Nenhuma loja disponível."
-            );
-
-            return;
-          }
-
-          setLoja(
-            converterLoja(
-              data
+      async (
+        slug: string
+      ) => {
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from("lojas")
+            .select("*")
+            .eq(
+              "slug",
+              slug
             )
-          );
+            .eq(
+              "ativo",
+              true
+            )
+            .maybeSingle();
 
-          setErroLoja(
-            null
-          );
-        } catch (
-          error
-        ) {
-          console.error(
-            "Erro ao carregar loja pública:",
-            error
-          );
+        if (error) {
+          throw error;
+        }
 
+        if (!data) {
           setLoja(null);
 
           setErroLoja(
-            "Não foi possível carregar a loja."
+            "Loja não encontrada ou indisponível."
           );
+
+          return;
         }
+
+        setLoja(
+          converterLoja(
+            data
+          )
+        );
+
+        setErroLoja(
+          null
+        );
       },
       []
     );
 
   /*
-   * ==========================================================
-   * LOJA DO COMERCIANTE
-   *
-   * Usuário autenticado:
-   *
-   * auth user
-   *    ↓
-   * perfil
-   *    ↓
-   * loja_id
-   *    ↓
-   * loja
-   * ==========================================================
+   * ======================================
+   * LOJA DO USUÁRIO DO ADMIN
+   * ======================================
    */
-  const carregarLojaUsuario =
+  const carregarLojaAdmin =
     useCallback(
       async () => {
         if (!user) {
+          setPerfil(null);
+          setLoja(null);
+
           return;
         }
 
@@ -400,16 +380,10 @@ export function StoreProvider({
             perfilError,
         } =
           await supabase
-            .from(
-              "perfis"
+            .from("perfis")
+            .select(
+              "id,nome,loja_id,papel,ativo"
             )
-            .select(`
-              id,
-              nome,
-              loja_id,
-              papel,
-              ativo
-            `)
             .eq(
               "id",
               user.id
@@ -425,16 +399,11 @@ export function StoreProvider({
         if (
           !perfilData
         ) {
-          setPerfil(
-            null
-          );
-
-          setLoja(
-            null
-          );
+          setPerfil(null);
+          setLoja(null);
 
           setErroLoja(
-            "Seu usuário ainda não possui um perfil."
+            "Usuário sem perfil."
           );
 
           return;
@@ -450,10 +419,8 @@ export function StoreProvider({
               "",
 
             loja_id:
-              perfilData.loja_id ===
-                null ||
-              perfilData.loja_id ===
-                undefined
+              perfilData.loja_id ==
+              null
                 ? null
                 : Number(
                     perfilData.loja_id
@@ -475,12 +442,10 @@ export function StoreProvider({
         if (
           !perfilAtual.ativo
         ) {
-          setLoja(
-            null
-          );
+          setLoja(null);
 
           setErroLoja(
-            "Este usuário está desativado."
+            "Usuário desativado."
           );
 
           return;
@@ -489,12 +454,10 @@ export function StoreProvider({
         if (
           !perfilAtual.loja_id
         ) {
-          setLoja(
-            null
-          );
+          setLoja(null);
 
           setErroLoja(
-            "Seu usuário ainda não está vinculado a uma loja."
+            "Usuário sem loja vinculada."
           );
 
           return;
@@ -508,9 +471,7 @@ export function StoreProvider({
             lojaError,
         } =
           await supabase
-            .from(
-              "lojas"
-            )
+            .from("lojas")
             .select("*")
             .eq(
               "id",
@@ -524,15 +485,11 @@ export function StoreProvider({
           throw lojaError;
         }
 
-        if (
-          !lojaData
-        ) {
-          setLoja(
-            null
-          );
+        if (!lojaData) {
+          setLoja(null);
 
           setErroLoja(
-            "A loja vinculada ao usuário não foi encontrada."
+            "Loja não encontrada."
           );
 
           return;
@@ -554,9 +511,9 @@ export function StoreProvider({
     );
 
   /*
-   * ==========================================================
-   * CARREGAMENTO PRINCIPAL
-   * ==========================================================
+   * ======================================
+   * DECIDE QUAL LOJA CARREGAR
+   * ======================================
    */
   const recarregarLoja =
     useCallback(
@@ -577,24 +534,47 @@ export function StoreProvider({
           );
 
           /*
-           * Se existe login:
-           * carrega loja do comerciante.
+           * ROTA PÚBLICA
+           *
+           * /loja/lanchuria/...
+           *
+           * Sempre respeita o slug,
+           * mesmo se houver usuário
+           * logado no navegador.
            */
-          if (user) {
-            await carregarLojaUsuario();
+          if (
+            slugPublico
+          ) {
+            setPerfil(
+              null
+            );
+
+            await carregarLojaPublica(
+              slugPublico
+            );
 
             return;
           }
 
           /*
-           * Se NÃO existe login:
-           * cliente acessando cardápio público.
+           * ADMIN
            */
-          setPerfil(
-            null
-          );
+          if (
+            pathname.startsWith(
+              "/admin"
+            )
+          ) {
+            await carregarLojaAdmin();
 
-          await carregarLojaPublica();
+            return;
+          }
+
+          /*
+           * Outras páginas não precisam
+           * carregar uma loja.
+           */
+          setLoja(null);
+          setPerfil(null);
         } catch (
           error
         ) {
@@ -603,9 +583,7 @@ export function StoreProvider({
             error
           );
 
-          setLoja(
-            null
-          );
+          setLoja(null);
 
           setErroLoja(
             "Não foi possível carregar os dados da loja."
@@ -618,9 +596,10 @@ export function StoreProvider({
       },
       [
         carregandoAuth,
-        user,
+        slugPublico,
+        pathname,
         carregarLojaPublica,
-        carregarLojaUsuario,
+        carregarLojaAdmin,
       ]
     );
 
@@ -630,13 +609,6 @@ export function StoreProvider({
     recarregarLoja,
   ]);
 
-  /*
-   * ==========================================================
-   * SALVAR LOJA
-   *
-   * Somente comerciante autenticado.
-   * ==========================================================
-   */
   const salvarLoja =
     async (
       dados: Partial<
@@ -654,7 +626,7 @@ export function StoreProvider({
 
       if (!loja) {
         throw new Error(
-          "Nenhuma loja vinculada ao usuário."
+          "Nenhuma loja vinculada."
         );
       }
 
@@ -662,9 +634,7 @@ export function StoreProvider({
         error,
       } =
         await supabase
-          .from(
-            "lojas"
-          )
+          .from("lojas")
           .update(
             dados
           )
@@ -687,6 +657,7 @@ export function StoreProvider({
         perfil,
         carregando,
         erroLoja,
+        slugPublico,
         recarregarLoja,
         salvarLoja,
       }}
