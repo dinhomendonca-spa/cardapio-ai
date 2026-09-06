@@ -3,125 +3,325 @@
 import {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
+
+import { useStore } from "@/context/StoreContext";
 import { supabase } from "@/lib/supabase";
 
 export type Produto = {
   id: number;
+  loja_id: number;
+
   nome: string;
   descricao: string;
   categoria: string;
+
   preco: number;
+
   imagem: string;
+
   ativo: boolean;
 };
 
-type NovoProduto = Omit<Produto, "id">;
+type NovoProduto = Omit<
+  Produto,
+  "id" | "loja_id"
+>;
 
 type ProductContextType = {
   produtos: Produto[];
+
   carregando: boolean;
-  adicionarProduto: (produto: NovoProduto) => Promise<void>;
-  excluirProduto: (id: number) => Promise<void>;
-  alternarStatus: (id: number) => Promise<void>;
+
+  adicionarProduto: (
+    produto: NovoProduto
+  ) => Promise<void>;
+
+  excluirProduto: (
+    id: number
+  ) => Promise<void>;
+
+  alternarStatus: (
+    id: number
+  ) => Promise<void>;
+
   recarregarProdutos: () => Promise<void>;
 };
 
-const ProductContext = createContext<ProductContextType | undefined>(
-  undefined
-);
+const ProductContext =
+  createContext<
+    ProductContextType | undefined
+  >(undefined);
 
-export function ProductProvider({ children }: { children: ReactNode }) {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export function ProductProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const {
+    loja,
+    carregando: carregandoLoja,
+  } = useStore();
 
-  const recarregarProdutos = async () => {
-    setCarregando(true);
+  const [
+    produtos,
+    setProdutos,
+  ] = useState<Produto[]>([]);
 
-    const { data, error } = await supabase
-      .from("produtos")
-      .select("*")
-      .order("created_at", { ascending: true });
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
 
-    if (error) {
-      console.error("Erro ao carregar produtos:", error);
-      setCarregando(false);
-      return;
-    }
+  const recarregarProdutos =
+    useCallback(
+      async () => {
+        if (
+          carregandoLoja
+        ) {
+          return;
+        }
 
-    setProdutos(
-      (data ?? []).map((produto) => ({
-        id: produto.id,
-        nome: produto.nome,
-        descricao: produto.descricao ?? "",
-        categoria: produto.categoria,
-        preco: Number(produto.preco),
-        imagem: produto.imagem ?? "/images/pizza.png",
-        ativo: produto.ativo ?? true,
-      }))
+        if (!loja) {
+          setProdutos([]);
+          setCarregando(false);
+
+          return;
+        }
+
+        try {
+          setCarregando(true);
+
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .from("produtos")
+              .select("*")
+              .eq(
+                "loja_id",
+                loja.id
+              )
+              .order(
+                "created_at",
+                {
+                  ascending:
+                    true,
+                }
+              );
+
+          if (error) {
+            throw error;
+          }
+
+          setProdutos(
+            (data ?? []).map(
+              (
+                produto
+              ) => ({
+                id:
+                  Number(
+                    produto.id
+                  ),
+
+                loja_id:
+                  Number(
+                    produto.loja_id
+                  ),
+
+                nome:
+                  produto.nome,
+
+                descricao:
+                  produto.descricao ??
+                  "",
+
+                categoria:
+                  produto.categoria,
+
+                preco:
+                  Number(
+                    produto.preco
+                  ),
+
+                imagem:
+                  produto.imagem ??
+                  "/images/pizza.png",
+
+                ativo:
+                  produto.ativo ??
+                  true,
+              })
+            )
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao carregar produtos:",
+            error
+          );
+
+          setProdutos([]);
+        } finally {
+          setCarregando(
+            false
+          );
+        }
+      },
+      [
+        loja,
+        carregandoLoja,
+      ]
     );
-
-    setCarregando(false);
-  };
 
   useEffect(() => {
     recarregarProdutos();
-  }, []);
+  }, [
+    recarregarProdutos,
+  ]);
 
-  const adicionarProduto = async (produto: NovoProduto) => {
-    const { error } = await supabase.from("produtos").insert({
-      nome: produto.nome,
-      descricao: produto.descricao,
-      categoria: produto.categoria,
-      preco: produto.preco,
-      imagem: produto.imagem,
-      ativo: produto.ativo,
-    });
+  const adicionarProduto =
+    async (
+      produto: NovoProduto
+    ) => {
+      if (!loja) {
+        throw new Error(
+          "Nenhuma loja carregada."
+        );
+      }
 
-    if (error) {
-      console.error("Erro ao cadastrar produto:", error);
-      throw error;
-    }
+      const {
+        error,
+      } =
+        await supabase
+          .from("produtos")
+          .insert({
+            loja_id:
+              loja.id,
 
-    await recarregarProdutos();
-  };
+            nome:
+              produto.nome,
 
-  const excluirProduto = async (id: number) => {
-    const { error } = await supabase
-      .from("produtos")
-      .delete()
-      .eq("id", id);
+            descricao:
+              produto.descricao,
 
-    if (error) {
-      console.error("Erro ao excluir produto:", error);
-      throw error;
-    }
+            categoria:
+              produto.categoria,
 
-    await recarregarProdutos();
-  };
+            preco:
+              produto.preco,
 
-  const alternarStatus = async (id: number) => {
-    const produto = produtos.find((item) => item.id === id);
+            imagem:
+              produto.imagem,
 
-    if (!produto) return;
+            ativo:
+              produto.ativo,
+          });
 
-    const { error } = await supabase
-      .from("produtos")
-      .update({
-        ativo: !produto.ativo,
-      })
-      .eq("id", id);
+      if (error) {
+        console.error(
+          "Erro ao cadastrar produto:",
+          error
+        );
 
-    if (error) {
-      console.error("Erro ao atualizar produto:", error);
-      throw error;
-    }
+        throw error;
+      }
 
-    await recarregarProdutos();
-  };
+      await recarregarProdutos();
+    };
+
+  const excluirProduto =
+    async (
+      id: number
+    ) => {
+      if (!loja) {
+        throw new Error(
+          "Nenhuma loja carregada."
+        );
+      }
+
+      const {
+        error,
+      } =
+        await supabase
+          .from("produtos")
+          .delete()
+          .eq(
+            "id",
+            id
+          )
+          .eq(
+            "loja_id",
+            loja.id
+          );
+
+      if (error) {
+        console.error(
+          "Erro ao excluir produto:",
+          error
+        );
+
+        throw error;
+      }
+
+      await recarregarProdutos();
+    };
+
+  const alternarStatus =
+    async (
+      id: number
+    ) => {
+      if (!loja) {
+        throw new Error(
+          "Nenhuma loja carregada."
+        );
+      }
+
+      const produto =
+        produtos.find(
+          (
+            item
+          ) =>
+            item.id === id
+        );
+
+      if (!produto) {
+        return;
+      }
+
+      const {
+        error,
+      } =
+        await supabase
+          .from("produtos")
+          .update({
+            ativo:
+              !produto.ativo,
+          })
+          .eq(
+            "id",
+            id
+          )
+          .eq(
+            "loja_id",
+            loja.id
+          );
+
+      if (error) {
+        console.error(
+          "Erro ao atualizar produto:",
+          error
+        );
+
+        throw error;
+      }
+
+      await recarregarProdutos();
+    };
 
   return (
     <ProductContext.Provider
@@ -140,7 +340,10 @@ export function ProductProvider({ children }: { children: ReactNode }) {
 }
 
 export function useProducts() {
-  const context = useContext(ProductContext);
+  const context =
+    useContext(
+      ProductContext
+    );
 
   if (!context) {
     throw new Error(
