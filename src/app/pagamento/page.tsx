@@ -1,619 +1,257 @@
 "use client";
 
-import {
-  ArrowLeft,
-  AlertTriangle,
-  CheckCircle2,
-  Copy,
-  CreditCard,
-  KeyRound,
-  Loader2,
-  Save,
-} from "lucide-react";
-
 import Link from "next/link";
 
 import {
-  useEffect,
+  ArrowLeft,
+  Check,
+  Copy,
+  MapPin,
+  MessageCircle,
+  ShoppingBag,
+} from "lucide-react";
+
+import { QRCodeSVG } from "qrcode.react";
+
+import {
   useMemo,
   useState,
 } from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  useCart,
+} from "@/context/CartContext";
 
 import {
   useStore,
 } from "@/context/StoreContext";
 
 import {
+  gerarPix,
+} from "@/lib/pix";
+
+import {
   supabase,
 } from "@/lib/supabase";
 
-type TipoChavePix =
-  | "cpf"
-  | "cnpj"
-  | "telefone"
-  | "email"
-  | "aleatoria"
-  | "desconhecida";
-
-function somenteNumeros(
-  valor: string
+function normalizarWhatsApp(
+  telefone: string
 ) {
-  return valor.replace(
-    /\D/g,
-    ""
-  );
-}
-
-function detectarTipoChave(
-  valor: string
-): TipoChavePix {
-  const chave =
-    valor.trim();
-
-  if (!chave) {
-    return "desconhecida";
-  }
-
-  if (
-    chave.includes("@")
-  ) {
-    return "email";
-  }
-
-  const uuidRegex =
-    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-
-  if (
-    uuidRegex.test(
-      chave
-    )
-  ) {
-    return "aleatoria";
-  }
-
-  if (
-    chave.startsWith("+")
-  ) {
-    return "telefone";
-  }
-
-  const numeros =
-    somenteNumeros(
-      chave
-    );
-
-  if (
-    numeros.length === 11
-  ) {
-    return "cpf";
-  }
-
-  if (
-    numeros.length === 14
-  ) {
-    return "cnpj";
-  }
-
-  return "desconhecida";
-}
-
-function validarCpf(
-  valor: string
-) {
-  const cpf =
-    somenteNumeros(
-      valor
-    );
-
-  if (
-    cpf.length !== 11
-  ) {
-    return false;
-  }
-
-  if (
-    /^(\d)\1{10}$/.test(
-      cpf
-    )
-  ) {
-    return false;
-  }
-
-  let soma = 0;
-
-  for (
-    let i = 0;
-    i < 9;
-    i++
-  ) {
-    soma +=
-      Number(
-        cpf[i]
-      ) *
-      (10 - i);
-  }
-
-  let digito =
-    (soma * 10) %
-    11;
-
-  if (
-    digito === 10
-  ) {
-    digito = 0;
-  }
-
-  if (
-    digito !==
-    Number(cpf[9])
-  ) {
-    return false;
-  }
-
-  soma = 0;
-
-  for (
-    let i = 0;
-    i < 10;
-    i++
-  ) {
-    soma +=
-      Number(
-        cpf[i]
-      ) *
-      (11 - i);
-  }
-
-  digito =
-    (soma * 10) %
-    11;
-
-  if (
-    digito === 10
-  ) {
-    digito = 0;
-  }
-
-  return (
-    digito ===
-    Number(cpf[10])
-  );
-}
-
-function validarCnpj(
-  valor: string
-) {
-  const cnpj =
-    somenteNumeros(
-      valor
-    );
-
-  if (
-    cnpj.length !== 14
-  ) {
-    return false;
-  }
-
-  if (
-    /^(\d)\1{13}$/.test(
-      cnpj
-    )
-  ) {
-    return false;
-  }
-
-  const calcularDigito = (
-    base: string,
-    pesos: number[]
-  ) => {
-    const soma =
-      base
-        .split("")
-        .reduce(
-          (
-            total,
-            digito,
-            indice
-          ) =>
-            total +
-            Number(
-              digito
-            ) *
-            pesos[
-              indice
-            ],
-          0
-        );
-
-    const resto =
-      soma % 11;
-
-    return resto < 2
-      ? 0
-      : 11 - resto;
-  };
-
-  const primeiro =
-    calcularDigito(
-      cnpj.slice(
-        0,
-        12
-      ),
-      [
-        5,
-        4,
-        3,
-        2,
-        9,
-        8,
-        7,
-        6,
-        5,
-        4,
-        3,
-        2,
-      ]
-    );
-
-  const segundo =
-    calcularDigito(
-      cnpj.slice(
-        0,
-        12
-      ) +
-        primeiro,
-      [
-        6,
-        5,
-        4,
-        3,
-        2,
-        9,
-        8,
-        7,
-        6,
-        5,
-        4,
-        3,
-        2,
-      ]
-    );
-
-  return (
-    primeiro ===
-      Number(
-        cnpj[12]
-      ) &&
-    segundo ===
-      Number(
-        cnpj[13]
-      )
-  );
-}
-
-function validarEmail(
-  valor: string
-) {
-  const email =
-    valor.trim();
-
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-    email
-  );
-}
-
-function validarTelefone(
-  valor: string
-) {
-  const chave =
-    valor.trim();
-
-  if (
-    !chave.startsWith(
-      "+"
-    )
-  ) {
-    return false;
-  }
-
-  const numeros =
-    somenteNumeros(
-      chave
+  let numeros =
+    telefone.replace(
+      /\D/g,
+      ""
     );
 
   /*
-   * Formato esperado para Brasil:
-   * +55 + DDD + telefone
+   * Se foi cadastrado apenas:
    *
-   * Ex:
-   * +5522999999999
+   * 22999999999
+   *
+   * adicionamos o Brasil:
+   *
+   * 5522999999999
    */
-  return (
-    numeros.startsWith(
-      "55"
-    ) &&
-    (
-      numeros.length ===
-        12 ||
-      numeros.length ===
-        13
-    )
-  );
-}
-
-function validarChaveAleatoria(
-  valor: string
-) {
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
-    valor.trim()
-  );
-}
-
-function validarChavePix(
-  valor: string
-) {
-  const tipo =
-    detectarTipoChave(
-      valor
-    );
-
-  switch (tipo) {
-    case "cpf":
-      return {
-        valido:
-          validarCpf(
-            valor
-          ),
-
-        tipo,
-
-        mensagem:
-          "CPF deve ter 11 números e ser válido.",
-      };
-
-    case "cnpj":
-      return {
-        valido:
-          validarCnpj(
-            valor
-          ),
-
-        tipo,
-
-        mensagem:
-          "CNPJ deve ter 14 números e ser válido.",
-      };
-
-    case "telefone":
-      return {
-        valido:
-          validarTelefone(
-            valor
-          ),
-
-        tipo,
-
-        mensagem:
-          "Telefone deve estar no formato internacional, por exemplo: +5522999999999.",
-      };
-
-    case "email":
-      return {
-        valido:
-          validarEmail(
-            valor
-          ),
-
-        tipo,
-
-        mensagem:
-          "Informe um e-mail válido, por exemplo: contato@empresa.com.",
-      };
-
-    case "aleatoria":
-      return {
-        valido:
-          validarChaveAleatoria(
-            valor
-          ),
-
-        tipo,
-
-        mensagem:
-          "A chave aleatória deve ser informada completa, no formato UUID.",
-      };
-
-    default:
-      return {
-        valido:
-          false,
-
-        tipo:
-          "desconhecida" as TipoChavePix,
-
-        mensagem:
-          "Formato não reconhecido. Use CPF, CNPJ, telefone com +55, e-mail ou chave aleatória.",
-      };
+  if (
+    numeros.length === 10 ||
+    numeros.length === 11
+  ) {
+    numeros =
+      `55${numeros}`;
   }
+
+  return numeros;
 }
 
-function nomeTipo(
-  tipo: TipoChavePix
-) {
-  switch (tipo) {
-    case "cpf":
-      return "CPF";
+export default function PagamentoPage() {
+  const {
+    itens,
+    valorTotal,
+    dadosCheckout,
+  } = useCart();
 
-    case "cnpj":
-      return "CNPJ";
-
-    case "telefone":
-      return "Telefone";
-
-    case "email":
-      return "E-mail";
-
-    case "aleatoria":
-      return "Chave aleatória";
-
-    default:
-      return "Não identificado";
-  }
-}
-
-export default function PagamentoAdminPage() {
   const {
     loja,
-    carregando,
-    recarregarLoja,
   } = useStore();
 
-  const [
-    chavePix,
-    setChavePix,
-  ] = useState("");
-
-  const [
-    salvando,
-    setSalvando,
-  ] = useState(false);
-
-  const [
-    salvo,
-    setSalvo,
-  ] = useState(false);
+  const router =
+    useRouter();
 
   const [
     copiado,
     setCopiado,
   ] = useState(false);
 
-  useEffect(() => {
-    if (!loja) {
-      return;
-    }
+  const [
+    salvandoPedido,
+    setSalvandoPedido,
+  ] = useState(false);
 
-    setChavePix(
-      loja.chave_pix ||
+  const taxaEntrega =
+    dadosCheckout.tipoEntrega ===
+    "entrega"
+      ? dadosCheckout.taxaEntrega
+      : 0;
+
+  const total =
+    valorTotal +
+    taxaEntrega;
+
+  const nomeLoja =
+    loja?.nome ||
+    "Sua loja";
+
+  const chavePix =
+    loja?.chave_pix ||
+    "";
+
+  const whatsappLoja =
+    normalizarWhatsApp(
+      loja?.whatsapp ||
         ""
     );
-  }, [
-    loja,
-  ]);
 
-  const validacao =
-    useMemo(
-      () =>
-        validarChavePix(
-          chavePix
-        ),
-      [
-        chavePix,
-      ]
+  const formatarPreco = (
+    valor: number
+  ) =>
+    valor.toLocaleString(
+      "pt-BR",
+      {
+        style:
+          "currency",
+
+        currency:
+          "BRL",
+      }
     );
 
-  const salvarPix =
-    async () => {
-      if (!loja) {
-        alert(
-          "Não foi possível identificar a loja."
-        );
-
-        return;
+  const enderecoCliente =
+    useMemo(() => {
+      if (
+        dadosCheckout.tipoEntrega !==
+        "entrega"
+      ) {
+        return "";
       }
 
-      if (
-        !chavePix.trim()
-      ) {
-        alert(
-          "Informe uma chave Pix."
-        );
+      return [
+        dadosCheckout.rua,
+        dadosCheckout.numero,
+        dadosCheckout.bairro,
+        loja?.cidade,
+        loja?.estado,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    }, [
+      dadosCheckout,
+      loja?.cidade,
+      loja?.estado,
+    ]);
 
-        return;
+  const linkMapsCliente =
+    useMemo(() => {
+      if (
+        !enderecoCliente
+      ) {
+        return "";
       }
 
-      if (
-        !validacao.valido
-      ) {
-        alert(
-          validacao.mensagem
-        );
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        enderecoCliente
+      )}`;
+    }, [
+      enderecoCliente,
+    ]);
 
-        return;
+  const pixCopiaECola =
+    useMemo(() => {
+      if (
+        !chavePix ||
+        total <= 0
+      ) {
+        return "";
       }
 
       try {
-        setSalvando(
-          true
-        );
+        return gerarPix({
+          chave:
+            chavePix,
 
-        setSalvo(
-          false
-        );
+          nome:
+            nomeLoja
+              .toUpperCase()
+              .normalize(
+                "NFD"
+              )
+              .replace(
+                /[\u0300-\u036f]/g,
+                ""
+              )
+              .slice(
+                0,
+                25
+              ),
 
-        const {
-          error,
-        } =
-          await supabase
-            .from(
-              "lojas"
+          cidade: (
+            loja?.cidade ||
+            "BRASIL"
+          )
+            .toUpperCase()
+            .normalize(
+              "NFD"
             )
-            .update({
-              chave_pix:
-                chavePix.trim(),
-            })
-            .eq(
-              "id",
-              loja.id
-            );
+            .replace(
+              /[\u0300-\u036f]/g,
+              ""
+            )
+            .slice(
+              0,
+              15
+            ),
 
-        if (error) {
-          throw error;
-        }
+          valor:
+            total,
 
-        await recarregarLoja();
-
-        setSalvo(
-          true
-        );
-
-        setTimeout(
-          () => {
-            setSalvo(
-              false
-            );
-          },
-          3000
-        );
+          descricao:
+            "PEDIDO CARDAPIO",
+        });
       } catch (
         error
       ) {
         console.error(
-          "Erro ao salvar Pix:",
+          "Erro ao gerar Pix:",
           error
         );
 
-        alert(
-          "Não foi possível salvar a chave Pix."
-        );
-      } finally {
-        setSalvando(
-          false
-        );
+        return "";
       }
-    };
+    }, [
+      chavePix,
+      nomeLoja,
+      loja?.cidade,
+      total,
+    ]);
 
-  const copiarChave =
+  const copiarPix =
     async () => {
       if (
-        !chavePix.trim()
+        !pixCopiaECola
       ) {
+        alert(
+          "A loja ainda não configurou uma chave Pix válida."
+        );
+
         return;
       }
 
       try {
         await navigator.clipboard.writeText(
-          chavePix.trim()
+          pixCopiaECola
         );
 
         setCopiado(
@@ -630,39 +268,416 @@ export default function PagamentoAdminPage() {
         );
       } catch {
         alert(
-          "Não foi possível copiar a chave."
+          "Não foi possível copiar o código Pix."
         );
       }
     };
 
-  if (carregando) {
+  const criarMensagemWhatsApp = (
+    pedidoId: number
+  ) => {
+    const produtos =
+      itens
+        .map(
+          (
+            item
+          ) =>
+            `• ${item.quantidade}x ${item.nome}
+  ${formatarPreco(
+    item.preco *
+      item.quantidade
+  )}`
+        )
+        .join(
+          "\n\n"
+        );
+
+    let recebimento =
+      "";
+
+    if (
+      dadosCheckout.tipoEntrega ===
+      "entrega"
+    ) {
+      recebimento = `🛵 *ENTREGA*
+
+📍 ${dadosCheckout.rua}, ${dadosCheckout.numero}
+${dadosCheckout.bairro}${
+        dadosCheckout.complemento
+          ? `\nComplemento: ${dadosCheckout.complemento}`
+          : ""
+      }
+
+🗺️ Localização:
+${linkMapsCliente}`;
+    } else {
+      recebimento = `🏪 *RETIRADA NO LOCAL*
+
+${[
+  loja?.endereco,
+  loja?.numero,
+  loja?.bairro,
+  loja?.cidade,
+  loja?.estado,
+]
+  .filter(Boolean)
+  .join(", ")}`;
+    }
+
+    return `Olá! Gostaria de confirmar meu pedido na *${nomeLoja}*.
+
+🧾 *PEDIDO #${pedidoId}*
+
+👤 *CLIENTE*
+${dadosCheckout.clienteNome}
+
+📱 ${dadosCheckout.clienteTelefone}
+
+━━━━━━━━━━━━━━
+
+${produtos}
+
+━━━━━━━━━━━━━━
+
+${recebimento}
+
+━━━━━━━━━━━━━━
+
+💰 *RESUMO*
+
+Subtotal: ${formatarPreco(
+      valorTotal
+    )}
+
+${
+  dadosCheckout.tipoEntrega ===
+  "entrega"
+    ? `Entrega: ${
+        taxaEntrega ===
+        0
+          ? "Grátis"
+          : formatarPreco(
+              taxaEntrega
+            )
+      }`
+    : "Retirada: Grátis"
+}
+
+*Total: ${formatarPreco(
+      total
+    )}*
+
+💳 Pagamento: Pix
+
+✅ Pedido registrado no Cardápio AI.`;
+  };
+
+  const confirmarPedido =
+    async () => {
+      if (!loja) {
+        alert(
+          "Não foi possível identificar a loja."
+        );
+
+        return;
+      }
+
+      if (
+        itens.length ===
+        0
+      ) {
+        alert(
+          "Seu carrinho está vazio."
+        );
+
+        return;
+      }
+
+      if (
+        !dadosCheckout.clienteNome.trim()
+      ) {
+        alert(
+          "Informe o nome do cliente."
+        );
+
+        return;
+      }
+
+      if (
+        !dadosCheckout.clienteTelefone.trim()
+      ) {
+        alert(
+          "Informe o telefone do cliente."
+        );
+
+        return;
+      }
+
+      if (
+        !whatsappLoja
+      ) {
+        alert(
+          "WhatsApp da loja não configurado."
+        );
+
+        return;
+      }
+
+      /*
+       * MUITO IMPORTANTE:
+       *
+       * Abrimos a nova aba imediatamente,
+       * enquanto ainda estamos dentro do
+       * clique do usuário.
+       *
+       * Isso evita que Chrome/Safari
+       * bloqueiem o WhatsApp como popup.
+       */
+      const janelaWhatsApp =
+        window.open(
+          "",
+          "_blank"
+        );
+
+      try {
+        setSalvandoPedido(
+          true
+        );
+
+        const {
+          data:
+            pedido,
+
+          error:
+            erroPedido,
+        } =
+          await supabase
+            .from(
+              "pedidos"
+            )
+            .insert({
+              loja_id:
+                loja.id,
+
+              cliente_nome:
+                dadosCheckout.clienteNome.trim(),
+
+              cliente_telefone:
+                dadosCheckout.clienteTelefone.trim(),
+
+              status:
+                "novo",
+
+              tipo_entrega:
+                dadosCheckout.tipoEntrega,
+
+              forma_pagamento:
+                "pix",
+
+              subtotal:
+                valorTotal,
+
+              taxa_entrega:
+                taxaEntrega,
+
+              total,
+
+              rua:
+                dadosCheckout.tipoEntrega ===
+                "entrega"
+                  ? dadosCheckout.rua.trim()
+                  : "",
+
+              numero:
+                dadosCheckout.tipoEntrega ===
+                "entrega"
+                  ? dadosCheckout.numero.trim()
+                  : "",
+
+              bairro:
+                dadosCheckout.tipoEntrega ===
+                "entrega"
+                  ? dadosCheckout.bairro.trim()
+                  : "",
+
+              complemento:
+                dadosCheckout.tipoEntrega ===
+                "entrega"
+                  ? dadosCheckout.complemento.trim()
+                  : "",
+            })
+            .select(
+              "id"
+            )
+            .single();
+
+        if (
+          erroPedido
+        ) {
+          throw erroPedido;
+        }
+
+        if (!pedido) {
+          throw new Error(
+            "Pedido não retornado pelo banco."
+          );
+        }
+
+        const itensPedido =
+          itens.map(
+            (
+              item
+            ) => ({
+              pedido_id:
+                pedido.id,
+
+              produto_id:
+                item.id,
+
+              nome:
+                item.nome,
+
+              preco:
+                item.preco,
+
+              quantidade:
+                item.quantidade,
+
+              subtotal:
+                item.preco *
+                item.quantidade,
+            })
+          );
+
+        const {
+          error:
+            erroItens,
+        } =
+          await supabase
+            .from(
+              "pedido_itens"
+            )
+            .insert(
+              itensPedido
+            );
+
+        if (
+          erroItens
+        ) {
+          throw erroItens;
+        }
+
+        const mensagem =
+          criarMensagemWhatsApp(
+            Number(
+              pedido.id
+            )
+          );
+
+        const linkWhatsApp =
+          `https://wa.me/${whatsappLoja}?text=${encodeURIComponent(
+            mensagem
+          )}`;
+
+        /*
+         * A aba que abrimos no início
+         * agora recebe o WhatsApp.
+         */
+        if (
+          janelaWhatsApp
+        ) {
+          janelaWhatsApp.location.href =
+            linkWhatsApp;
+        } else {
+          /*
+           * Fallback caso o navegador
+           * ainda tenha bloqueado a aba.
+           */
+          window.location.href =
+            linkWhatsApp;
+
+          return;
+        }
+
+        /*
+         * A aba original continua
+         * no acompanhamento.
+         */
+        router.push(
+          `/pedido/${pedido.id}`
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Erro ao confirmar pedido:",
+          error
+        );
+
+        /*
+         * Se houve erro,
+         * fecha a aba vazia.
+         */
+        if (
+          janelaWhatsApp &&
+          !janelaWhatsApp.closed
+        ) {
+          janelaWhatsApp.close();
+        }
+
+        alert(
+          "Não foi possível registrar o pedido. Tente novamente."
+        );
+      } finally {
+        setSalvandoPedido(
+          false
+        );
+      }
+    };
+
+  if (
+    itens.length ===
+    0
+  ) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <Loader2
-          size={28}
-          className="animate-spin text-zinc-500"
-        />
+      <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
+          <ShoppingBag
+            size={36}
+            className="mx-auto text-zinc-300"
+          />
+
+          <h1 className="mt-4 text-xl font-bold">
+            Seu pedido está vazio
+          </h1>
+
+          <Link
+            href="/menu"
+            className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 font-bold text-white"
+          >
+            Voltar ao cardápio
+          </Link>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-100 pb-10 text-zinc-950">
+    <main className="min-h-screen bg-zinc-100 pb-32 text-zinc-950">
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
           <Link
-            href="/admin"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100 active:scale-95"
+            href="/checkout"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100"
           >
             <ArrowLeft
               size={20}
             />
           </Link>
 
-          <div className="min-w-0">
-            <p className="truncate text-[11px] text-zinc-500">
-              {loja?.nome ||
-                "Sua loja"}
+          <div>
+            <p className="text-xs text-zinc-500">
+              {nomeLoja}
             </p>
 
             <h1 className="text-lg font-extrabold">
@@ -673,276 +688,227 @@ export default function PagamentoAdminPage() {
       </header>
 
       <section className="mx-auto max-w-md space-y-3 px-3 py-3">
-        <section className="rounded-3xl bg-zinc-950 p-5 text-white shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
-              <CreditCard
-                size={20}
-              />
+        <section className="rounded-3xl bg-white p-5 text-center shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+            Total do pedido
+          </p>
+
+          <h2 className="mt-1 text-3xl font-extrabold">
+            {formatarPreco(
+              total
+            )}
+          </h2>
+
+          {pixCopiaECola ? (
+            <>
+              <div className="mx-auto mt-4 flex w-fit rounded-3xl bg-white p-2 ring-1 ring-zinc-100">
+                <QRCodeSVG
+                  value={
+                    pixCopiaECola
+                  }
+                  size={
+                    190
+                  }
+                  level="M"
+                  includeMargin
+                />
+              </div>
+
+              <p className="mt-3 text-xs leading-5 text-zinc-500">
+                Escaneie o QR Code com o aplicativo do seu banco.
+              </p>
+
+              <button
+                type="button"
+                onClick={
+                  copiarPix
+                }
+                className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 text-sm font-bold text-white"
+              >
+                {copiado ? (
+                  <>
+                    <Check
+                      size={
+                        17
+                      }
+                    />
+
+                    Código copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy
+                      size={
+                        17
+                      }
+                    />
+
+                    Copiar Pix copia e cola
+                  </>
+                )}
+              </button>
+            </>
+          ) : (
+            <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+              Pix não configurado
             </div>
+          )}
+        </section>
 
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-                Recebimentos
-              </p>
+        <section className="rounded-3xl bg-white p-4 shadow-sm">
+          <h2 className="font-extrabold">
+            Resumo do pedido
+          </h2>
 
-              <h2 className="mt-1 text-lg font-extrabold">
-                Configure seu Pix
-              </h2>
+          <div className="mt-4 space-y-3">
+            {itens.map(
+              (
+                item
+              ) => (
+                <div
+                  key={
+                    item.id
+                  }
+                  className="flex justify-between gap-3 text-sm"
+                >
+                  <span className="text-zinc-600">
+                    {
+                      item.quantidade
+                    }
+                    x{" "}
+                    {
+                      item.nome
+                    }
+                  </span>
 
-              <p className="mt-1 text-xs leading-5 text-zinc-300">
-                O sistema valida o formato da chave antes de permitir o cadastro.
-              </p>
+                  <span className="font-semibold">
+                    {formatarPreco(
+                      item.preco *
+                        item.quantidade
+                    )}
+                  </span>
+                </div>
+              )
+            )}
+
+            <div className="border-t border-zinc-100 pt-3">
+              <div className="flex justify-between font-bold">
+                <span>
+                  Total
+                </span>
+
+                <span className="text-xl">
+                  {formatarPreco(
+                    total
+                  )}
+                </span>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="rounded-3xl bg-white p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-              <KeyRound
-                size={18}
-              />
-            </div>
-
-            <div>
-              <h2 className="font-extrabold">
-                Chave Pix
-              </h2>
-
-              <p className="mt-0.5 text-xs leading-5 text-zinc-500">
-                CPF, CNPJ, telefone, e-mail ou chave aleatória.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <label
-              htmlFor="chavePix"
-              className="mb-1.5 block text-xs font-bold text-zinc-700"
-            >
-              Chave Pix *
-            </label>
-
-            <input
-              id="chavePix"
-              type="text"
-              value={
-                chavePix
-              }
-              onChange={(
-                event
-              ) =>
-                setChavePix(
-                  event.target
-                    .value
-                )
-              }
-              placeholder="Digite a chave Pix"
-              autoComplete="off"
-              className={`h-14 w-full rounded-2xl border px-4 text-base outline-none ${
-                chavePix.trim()
-                  ? validacao.valido
-                    ? "border-green-300 bg-green-50"
-                    : "border-red-300 bg-red-50"
-                  : "border-transparent bg-zinc-100"
-              }`}
-            />
-
-            {chavePix.trim() && (
-              <div
-                className={`mt-3 rounded-2xl p-3 ${
-                  validacao.valido
-                    ? "bg-green-50"
-                    : "bg-red-50"
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  {validacao.valido ? (
-                    <CheckCircle2
-                      size={
-                        18
-                      }
-                      className="mt-0.5 shrink-0 text-green-600"
-                    />
-                  ) : (
-                    <AlertTriangle
-                      size={
-                        18
-                      }
-                      className="mt-0.5 shrink-0 text-red-600"
-                    />
-                  )}
-
-                  <div>
-                    <p
-                      className={`text-xs font-bold ${
-                        validacao.valido
-                          ? "text-green-800"
-                          : "text-red-800"
-                      }`}
-                    >
-                      {validacao.valido
-                        ? `Formato reconhecido: ${nomeTipo(
-                            validacao.tipo
-                          )}`
-                        : "Chave fora do padrão"}
-                    </p>
-
-                    {!validacao.valido && (
-                      <p className="mt-1 text-xs leading-5 text-red-700">
-                        {
-                          validacao.mensagem
-                        }
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {chavePix.trim() && (
-            <button
-              type="button"
-              onClick={
-                copiarChave
-              }
-              className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-100 text-sm font-bold"
-            >
-              {copiado ? (
-                <>
-                  <CheckCircle2
-                    size={17}
-                  />
-
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy
-                    size={17}
-                  />
-
-                  Copiar chave
-                </>
-              )}
-            </button>
-          )}
-        </section>
-
-        <section className="rounded-3xl bg-blue-50 p-4">
-          <p className="text-sm font-extrabold text-blue-900">
-            Formatos aceitos
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+            Cliente
           </p>
 
-          <div className="mt-3 space-y-2 text-xs leading-5 text-blue-800">
-            <p>
-              <strong>
-                CPF:
-              </strong>{" "}
-              somente 11 números.
-            </p>
+          <p className="mt-1 font-bold">
+            {
+              dadosCheckout.clienteNome
+            }
+          </p>
 
-            <p>
-              <strong>
-                CNPJ:
-              </strong>{" "}
-              somente 14 números.
-            </p>
-
-            <p>
-              <strong>
-                Telefone:
-              </strong>{" "}
-              use código do país + DDD + número.
-              Exemplo: +5522999999999.
-            </p>
-
-            <p>
-              <strong>
-                E-mail:
-              </strong>{" "}
-              exatamente o e-mail cadastrado como chave Pix.
-            </p>
-
-            <p>
-              <strong>
-                Chave aleatória:
-              </strong>{" "}
-              copie a chave completa fornecida pelo banco.
-            </p>
-          </div>
+          <p className="mt-1 text-sm text-zinc-500">
+            {
+              dadosCheckout.clienteTelefone
+            }
+          </p>
         </section>
 
-        <section className="rounded-3xl bg-amber-50 p-4">
-          <div className="flex items-start gap-2">
-            <AlertTriangle
-              size={18}
-              className="mt-0.5 shrink-0 text-amber-700"
-            />
+        {dadosCheckout.tipoEntrega ===
+          "entrega" && (
+          <section className="rounded-3xl bg-white p-4 shadow-sm">
+            <div className="flex gap-3">
+              <MapPin
+                size={18}
+              />
 
-            <div>
-              <p className="text-sm font-bold text-amber-900">
-                Atenção
-              </p>
+              <div>
+                <h2 className="text-sm font-extrabold">
+                  Endereço
+                </h2>
 
-              <p className="mt-1 text-xs leading-5 text-amber-800">
-                Um formato válido não garante que a chave esteja realmente cadastrada no Pix. Confira no aplicativo do banco antes de disponibilizar o cardápio.
-              </p>
-            </div>
-          </div>
-        </section>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                  {
+                    dadosCheckout.rua
+                  }
+                  ,{" "}
+                  {
+                    dadosCheckout.numero
+                  }
 
-        {salvo && (
-          <section className="flex items-center gap-3 rounded-2xl bg-green-50 p-4 text-green-800">
-            <CheckCircle2
-              size={20}
-            />
+                  <br />
 
-            <div>
-              <p className="text-sm font-bold">
-                Chave Pix salva
-              </p>
+                  {
+                    dadosCheckout.bairro
+                  }
 
-              <p className="text-xs">
-                Os próximos pedidos já utilizarão essa chave.
-              </p>
+                  {dadosCheckout.complemento && (
+                    <>
+                      <br />
+
+                      Complemento:{" "}
+                      {
+                        dadosCheckout.complemento
+                      }
+                    </>
+                  )}
+                </p>
+              </div>
             </div>
           </section>
         )}
+      </section>
 
+      <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur">
         <button
           type="button"
           onClick={
-            salvarPix
+            confirmarPedido
           }
           disabled={
-            salvando ||
-            !validacao.valido
+            salvandoPedido ||
+            !whatsappLoja
           }
-          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 font-bold text-white shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-300"
+          className="mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl bg-green-600 px-5 text-white shadow-xl disabled:bg-zinc-300"
         >
-          {salvando ? (
-            <>
-              <Loader2
-                size={18}
-                className="animate-spin"
-              />
+          <div className="flex items-center gap-3">
+            <MessageCircle
+              size={20}
+            />
 
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Save
-                size={18}
-              />
+            <div className="text-left">
+              <p className="text-[11px] opacity-80">
+                {salvandoPedido
+                  ? "Registrando..."
+                  : "Enviar para a loja"}
+              </p>
 
-              Salvar chave Pix
-            </>
-          )}
+              <p className="text-[15px] font-extrabold">
+                {salvandoPedido
+                  ? "Aguarde"
+                  : "Confirmar pedido"}
+              </p>
+            </div>
+          </div>
+
+          <span className="font-extrabold">
+            {formatarPreco(
+              total
+            )}
+          </span>
         </button>
-      </section>
+      </div>
     </main>
   );
 }
