@@ -7,8 +7,11 @@ import {
   createClient,
 } from "@supabase/supabase-js";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime =
+  "nodejs";
+
+export const dynamic =
+  "force-dynamic";
 
 export async function GET(
   request: NextRequest
@@ -34,16 +37,17 @@ export async function GET(
       );
     }
 
-    const lojaIdTexto =
-      request.nextUrl.searchParams.get(
-        "loja_id"
+    const lojaId =
+      Number(
+        request.nextUrl
+          .searchParams
+          .get("loja_id")
       );
 
-    const lojaId =
-      Number(lojaIdTexto);
-
     if (
-      !Number.isInteger(lojaId) ||
+      !Number.isInteger(
+        lojaId
+      ) ||
       lojaId <= 0
     ) {
       return NextResponse.json(
@@ -63,27 +67,33 @@ export async function GET(
         serviceRoleKey,
         {
           auth: {
-            persistSession: false,
-            autoRefreshToken: false,
+            persistSession:
+              false,
+
+            autoRefreshToken:
+              false,
           },
         }
       );
 
-    /*
-     * Confirmar que cartão está
-     * habilitado nessa loja.
-     */
-
     const {
-      data: loja,
-      error: erroLoja,
+      data:
+        loja,
+
+      error:
+        erroLoja,
     } =
       await supabaseAdmin
-        .from("lojas")
+        .from(
+          "lojas"
+        )
         .select(
           "id,ativo,aceita_cartao,mercado_pago_conectado"
         )
-        .eq("id", lojaId)
+        .eq(
+          "id",
+          lojaId
+        )
         .maybeSingle();
 
     if (erroLoja) {
@@ -102,7 +112,9 @@ export async function GET(
       );
     }
 
-    if (!loja.ativo) {
+    if (
+      !loja.ativo
+    ) {
       return NextResponse.json(
         {
           error:
@@ -116,12 +128,13 @@ export async function GET(
 
     if (
       !loja.aceita_cartao ||
-      !loja.mercado_pago_conectado
+      !loja
+        .mercado_pago_conectado
     ) {
       return NextResponse.json(
         {
           error:
-            "Pagamento por cartão não está disponível.",
+            "Cartão não disponível.",
         },
         {
           status: 403,
@@ -129,16 +142,12 @@ export async function GET(
       );
     }
 
-    /*
-     * Buscar somente a PUBLIC KEY.
-     *
-     * Access Token e Refresh Token
-     * NUNCA são enviados ao navegador.
-     */
-
     const {
-      data: conta,
-      error: erroConta,
+      data:
+        conta,
+
+      error:
+        erroConta,
     } =
       await supabaseAdmin
         .from(
@@ -163,7 +172,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "Conta Mercado Pago sem Public Key.",
+            "Public Key não encontrada.",
         },
         {
           status: 404,
@@ -177,16 +186,17 @@ export async function GET(
           conta.public_key,
       },
       {
-        status: 200,
         headers: {
           "Cache-Control":
             "no-store",
         },
       }
     );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     console.error(
-      "Erro ao carregar configuração Mercado Pago:",
+      "Erro ao carregar Mercado Pago:",
       error
     );
 

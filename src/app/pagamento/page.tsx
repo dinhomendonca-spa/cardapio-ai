@@ -44,9 +44,22 @@ import {
   supabase,
 } from "@/lib/supabase";
 
+import MercadoPagoCard from "@/components/MercadoPagoCard";
+
 type FormaPagamento =
   | "pix"
   | "cartao";
+
+type PagamentoAprovado = {
+  orderId:
+    string | null;
+
+  status:
+    string | null;
+
+  statusDetail:
+    string | null;
+};
 
 function normalizarWhatsApp(
   telefone: string
@@ -100,9 +113,14 @@ export default function PagamentoPage() {
       "pix"
     );
 
+  const [
+    pagamentoCartaoConcluido,
+    setPagamentoCartaoConcluido,
+  ] = useState(false);
+
   /*
    * ==========================================
-   * FORMAS DE PAGAMENTO DISPONÍVEIS
+   * FORMAS DE PAGAMENTO
    * ==========================================
    */
 
@@ -120,12 +138,6 @@ export default function PagamentoPage() {
     Boolean(
       loja?.mercado_pago_conectado
     );
-
-  /*
-   * Se Pix estiver desativado
-   * e cartão estiver disponível,
-   * selecionamos cartão automaticamente.
-   */
 
   useEffect(() => {
     if (
@@ -382,7 +394,9 @@ export default function PagamentoPage() {
    */
 
   const criarMensagemWhatsApp = (
-    pedidoId: number
+    pedidoId: number,
+    pagamento:
+      FormaPagamento
   ) => {
     const produtos =
       itens
@@ -450,9 +464,9 @@ ${[
         : "";
 
     const textoPagamento =
-      formaPagamento ===
+      pagamento ===
       "cartao"
-        ? "Cartão de crédito"
+        ? "Cartão de crédito — pago online"
         : "Pix";
 
     return `Olá! Gostaria de confirmar meu pedido na *${nomeLoja}*.
@@ -493,11 +507,276 @@ ${textoEntrega}
 
   /*
    * ==========================================
-   * CONFIRMAR PEDIDO
+   * REGISTRAR PEDIDO
    * ==========================================
    */
 
-  const confirmarPedido =
+  const registrarPedido =
+    async (
+      pagamento:
+        FormaPagamento
+    ) => {
+      if (!loja) {
+        throw new Error(
+          "Loja não identificada."
+        );
+      }
+
+      const {
+        data:
+          pedido,
+
+        error:
+          erroPedido,
+      } =
+        await supabase
+          .from(
+            "pedidos"
+          )
+          .insert({
+            loja_id:
+              loja.id,
+
+            cliente_nome:
+              dadosCheckout.clienteNome.trim(),
+
+            cliente_telefone:
+              dadosCheckout.clienteTelefone.trim(),
+
+            status:
+              "novo",
+
+            tipo_entrega:
+              dadosCheckout.tipoEntrega,
+
+            forma_pagamento:
+              pagamento,
+
+            subtotal:
+              valorTotal,
+
+            taxa_entrega:
+              taxaEntrega,
+
+            total,
+
+            rua:
+              dadosCheckout.tipoEntrega ===
+              "entrega"
+                ? dadosCheckout.rua.trim()
+                : "",
+
+            numero:
+              dadosCheckout.tipoEntrega ===
+              "entrega"
+                ? dadosCheckout.numero.trim()
+                : "",
+
+            bairro:
+              dadosCheckout.tipoEntrega ===
+              "entrega"
+                ? dadosCheckout.bairro.trim()
+                : "",
+
+            complemento:
+              dadosCheckout.tipoEntrega ===
+              "entrega"
+                ? dadosCheckout.complemento.trim()
+                : "",
+          })
+          .select(
+            "id"
+          )
+          .single();
+
+      if (
+        erroPedido
+      ) {
+        throw erroPedido;
+      }
+
+      if (
+        !pedido
+      ) {
+        throw new Error(
+          "Pedido não retornado pelo banco."
+        );
+      }
+
+      const itensPedido =
+        itens.map(
+          (
+            item
+          ) => ({
+            pedido_id:
+              pedido.id,
+
+            produto_id:
+              item.id,
+
+            nome:
+              item.nome,
+
+            preco:
+              item.preco,
+
+            quantidade:
+              item.quantidade,
+
+            subtotal:
+              item.preco *
+              item.quantidade,
+          })
+        );
+
+      const {
+        error:
+          erroItens,
+      } =
+        await supabase
+          .from(
+            "pedido_itens"
+          )
+          .insert(
+            itensPedido
+          );
+
+      if (
+        erroItens
+      ) {
+        throw erroItens;
+      }
+
+      return Number(
+        pedido.id
+      );
+    };
+
+  /*
+   * ==========================================
+   * ABRIR WHATSAPP
+   * ==========================================
+   */
+
+  const enviarWhatsApp =
+    (
+      pedidoId: number,
+      pagamento:
+        FormaPagamento
+    ) => {
+      if (
+        !whatsappLoja
+      ) {
+        return;
+      }
+
+      const mensagem =
+        criarMensagemWhatsApp(
+          pedidoId,
+          pagamento
+        );
+
+      const linkWhatsApp =
+        `https://wa.me/${whatsappLoja}?text=${encodeURIComponent(
+          mensagem
+        )}`;
+
+      window.open(
+        linkWhatsApp,
+        "_blank"
+      );
+    };
+
+  /*
+   * ==========================================
+   * PAGAMENTO CARTÃO APROVADO
+   * ==========================================
+   */
+
+  const pagamentoCartaoAprovado =
+    async (
+      dados:
+        PagamentoAprovado
+    ) => {
+      if (
+        pagamentoCartaoConcluido
+      ) {
+        return;
+      }
+
+      if (!loja) {
+        alert(
+          "Não foi possível identificar a loja."
+        );
+
+        return;
+      }
+
+      if (
+        !dadosCheckout.clienteNome.trim() ||
+        !dadosCheckout.clienteTelefone.trim()
+      ) {
+        alert(
+          "Os dados do cliente estão incompletos."
+        );
+
+        return;
+      }
+
+      try {
+        setPagamentoCartaoConcluido(
+          true
+        );
+
+        setSalvandoPedido(
+          true
+        );
+
+        const pedidoId =
+          await registrarPedido(
+            "cartao"
+          );
+
+        enviarWhatsApp(
+          pedidoId,
+          "cartao"
+        );
+
+        router.push(
+          `/loja/${loja.slug}/pedido/${pedidoId}`
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Pagamento aprovado, mas houve erro ao registrar pedido:",
+          error
+        );
+
+        /*
+         * NÃO liberamos outro pagamento.
+         *
+         * O cartão já foi cobrado.
+         * Repetir poderia gerar cobrança duplicada.
+         */
+
+        alert(
+          "O pagamento foi aprovado, mas tivemos um problema ao registrar o pedido. Não tente pagar novamente. Entre em contato com a loja."
+        );
+      } finally {
+        setSalvandoPedido(
+          false
+        );
+      }
+    };
+
+  /*
+   * ==========================================
+   * CONFIRMAR PIX
+   * ==========================================
+   */
+
+  const confirmarPedidoPix =
     async () => {
       if (!loja) {
         alert(
@@ -538,32 +817,7 @@ ${textoEntrega}
         return;
       }
 
-      /*
-       * ======================================
-       * CARTÃO
-       * ======================================
-       */
-
       if (
-        formaPagamento ===
-        "cartao"
-      ) {
-        alert(
-          "O cartão está habilitado nesta loja. Agora falta conectar a cobrança segura do Mercado Pago, que será o próximo passo."
-        );
-
-        return;
-      }
-
-      /*
-       * ======================================
-       * PIX
-       * ======================================
-       */
-
-      if (
-        formaPagamento ===
-          "pix" &&
         !pixDisponivel
       ) {
         alert(
@@ -594,136 +848,15 @@ ${textoEntrega}
           true
         );
 
-        const {
-          data:
-            pedido,
-
-          error:
-            erroPedido,
-        } =
-          await supabase
-            .from(
-              "pedidos"
-            )
-            .insert({
-              loja_id:
-                loja.id,
-
-              cliente_nome:
-                dadosCheckout.clienteNome.trim(),
-
-              cliente_telefone:
-                dadosCheckout.clienteTelefone.trim(),
-
-              status:
-                "novo",
-
-              tipo_entrega:
-                dadosCheckout.tipoEntrega,
-
-              forma_pagamento:
-                formaPagamento,
-
-              subtotal:
-                valorTotal,
-
-              taxa_entrega:
-                taxaEntrega,
-
-              total,
-
-              rua:
-                dadosCheckout.tipoEntrega ===
-                "entrega"
-                  ? dadosCheckout.rua.trim()
-                  : "",
-
-              numero:
-                dadosCheckout.tipoEntrega ===
-                "entrega"
-                  ? dadosCheckout.numero.trim()
-                  : "",
-
-              bairro:
-                dadosCheckout.tipoEntrega ===
-                "entrega"
-                  ? dadosCheckout.bairro.trim()
-                  : "",
-
-              complemento:
-                dadosCheckout.tipoEntrega ===
-                "entrega"
-                  ? dadosCheckout.complemento.trim()
-                  : "",
-            })
-            .select(
-              "id"
-            )
-            .single();
-
-        if (
-          erroPedido
-        ) {
-          throw erroPedido;
-        }
-
-        if (
-          !pedido
-        ) {
-          throw new Error(
-            "Pedido não retornado pelo banco."
+        const pedidoId =
+          await registrarPedido(
+            "pix"
           );
-        }
-
-        const itensPedido =
-          itens.map(
-            (
-              item
-            ) => ({
-              pedido_id:
-                pedido.id,
-
-              produto_id:
-                item.id,
-
-              nome:
-                item.nome,
-
-              preco:
-                item.preco,
-
-              quantidade:
-                item.quantidade,
-
-              subtotal:
-                item.preco *
-                item.quantidade,
-            })
-          );
-
-        const {
-          error:
-            erroItens,
-        } =
-          await supabase
-            .from(
-              "pedido_itens"
-            )
-            .insert(
-              itensPedido
-            );
-
-        if (
-          erroItens
-        ) {
-          throw erroItens;
-        }
 
         const mensagem =
           criarMensagemWhatsApp(
-            Number(
-              pedido.id
-            )
+            pedidoId,
+            "pix"
           );
 
         const linkWhatsApp =
@@ -744,7 +877,7 @@ ${textoEntrega}
         }
 
         router.push(
-          `/loja/${loja.slug}/pedido/${pedido.id}`
+          `/loja/${loja.slug}/pedido/${pedidoId}`
         );
       } catch (
         error
@@ -808,14 +941,15 @@ ${textoEntrega}
     );
   }
 
-  /*
-   * ==========================================
-   * TELA
-   * ==========================================
-   */
-
   return (
-    <main className="min-h-screen bg-zinc-100 pb-32 text-zinc-950">
+    <main
+      className={`min-h-screen bg-zinc-100 text-zinc-950 ${
+        formaPagamento ===
+        "pix"
+          ? "pb-32"
+          : "pb-8"
+      }`}
+    >
 
       {/* HEADER */}
 
@@ -886,8 +1020,6 @@ ${textoEntrega}
 
           <div className="mt-4 space-y-2">
 
-            {/* PIX */}
-
             {pixDisponivel && (
               <button
                 type="button"
@@ -947,8 +1079,6 @@ ${textoEntrega}
 
               </button>
             )}
-
-            {/* CARTÃO */}
 
             {cartaoDisponivel && (
               <button
@@ -1030,7 +1160,7 @@ ${textoEntrega}
 
         </section>
 
-        {/* PIX SELECIONADO */}
+        {/* PIX */}
 
         {formaPagamento ===
           "pix" &&
@@ -1105,14 +1235,15 @@ ${textoEntrega}
           </section>
         )}
 
-        {/* CARTÃO SELECIONADO */}
+        {/* CARTÃO */}
 
         {formaPagamento ===
           "cartao" &&
-          cartaoDisponivel && (
-          <section className="rounded-3xl bg-white p-5 shadow-sm">
+          cartaoDisponivel &&
+          loja && (
+          <section className="rounded-3xl bg-white p-4 shadow-sm">
 
-            <div className="flex items-start gap-3">
+            <div className="mb-4 flex items-start gap-3">
 
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
 
@@ -1129,14 +1260,14 @@ ${textoEntrega}
                 </h2>
 
                 <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  O pagamento será processado com segurança pelo Mercado Pago.
+                  Preencha os dados abaixo. O pagamento é processado diretamente pelo Mercado Pago.
                 </p>
 
               </div>
 
             </div>
 
-            <div className="mt-4 rounded-2xl bg-blue-50 p-4">
+            <div className="mb-4 rounded-2xl bg-blue-50 p-4">
 
               <div className="flex gap-2">
 
@@ -1152,7 +1283,7 @@ ${textoEntrega}
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-blue-700">
-                    Os dados do cartão não serão armazenados pelo Lojas AI.
+                    O Lojas AI não recebe nem armazena o número completo do seu cartão.
                   </p>
 
                 </div>
@@ -1160,6 +1291,40 @@ ${textoEntrega}
               </div>
 
             </div>
+
+            {taxaACombinar ? (
+              <div className="rounded-2xl bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-800">
+                Para pagamento online por cartão, a taxa de entrega precisa estar definida antes da cobrança. Escolha retirada ou combine a entrega com a loja.
+              </div>
+            ) : (
+              <MercadoPagoCard
+                lojaId={
+                  loja.id
+                }
+                total={
+                  total
+                }
+                itens={
+                  itens.map(
+                    (
+                      item
+                    ) => ({
+                      id:
+                        item.id,
+
+                      quantidade:
+                        item.quantidade,
+                    })
+                  )
+                }
+                tipoEntrega={
+                  dadosCheckout.tipoEntrega
+                }
+                onAprovado={
+                  pagamentoCartaoAprovado
+                }
+              />
+            )}
 
           </section>
         )}
@@ -1310,91 +1475,69 @@ ${textoEntrega}
 
       </section>
 
-      {/* BOTÃO FIXO */}
+      {/* BOTÃO PIX */}
 
-      <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur">
+      {formaPagamento ===
+        "pix" && (
+        <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur">
 
-        <button
-          type="button"
-          onClick={
-            confirmarPedido
-          }
-          disabled={
-            salvandoPedido ||
-            (
-              formaPagamento ===
-                "pix" &&
+          <button
+            type="button"
+            onClick={
+              confirmarPedidoPix
+            }
+            disabled={
+              salvandoPedido ||
+              !pixDisponivel ||
               !whatsappLoja
-            ) ||
-            (
-              !pixDisponivel &&
-              !cartaoDisponivel
-            )
-          }
-          className={`mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl px-5 text-white shadow-xl transition disabled:bg-zinc-300 ${
-            formaPagamento ===
-            "cartao"
-              ? "bg-blue-600"
-              : "bg-green-600"
-          }`}
-        >
+            }
+            className="mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl bg-green-600 px-5 text-white shadow-xl transition disabled:bg-zinc-300"
+          >
 
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
 
-            {formaPagamento ===
-            "cartao" ? (
-              <CreditCard
-                size={20}
-              />
-            ) : (
               <MessageCircle
                 size={20}
               />
-            )}
 
-            <div className="text-left">
+              <div className="text-left">
 
-              <p className="text-[11px] opacity-80">
-                {salvandoPedido
-                  ? "Registrando..."
-                  : formaPagamento ===
-                      "cartao"
-                    ? "Pagamento seguro"
+                <p className="text-[11px] opacity-80">
+                  {salvandoPedido
+                    ? "Registrando..."
                     : "Enviar para a loja"}
-              </p>
+                </p>
 
-              <p className="text-[15px] font-extrabold">
-                {salvandoPedido
-                  ? "Aguarde"
-                  : formaPagamento ===
-                      "cartao"
-                    ? "Pagar com cartão"
+                <p className="text-[15px] font-extrabold">
+                  {salvandoPedido
+                    ? "Aguarde"
                     : "Confirmar pedido"}
-              </p>
+                </p>
+
+              </div>
 
             </div>
 
-          </div>
+            <div className="text-right">
 
-          <div className="text-right">
+              <span className="font-extrabold">
+                {formatarPreco(
+                  total
+                )}
+              </span>
 
-            <span className="font-extrabold">
-              {formatarPreco(
-                total
+              {taxaACombinar && (
+                <p className="text-[10px] opacity-80">
+                  + entrega a combinar
+                </p>
               )}
-            </span>
 
-            {taxaACombinar && (
-              <p className="text-[10px] opacity-80">
-                + entrega a combinar
-              </p>
-            )}
+            </div>
 
-          </div>
+          </button>
 
-        </button>
-
-      </div>
+        </div>
+      )}
 
     </main>
   );
