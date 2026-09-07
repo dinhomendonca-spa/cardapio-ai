@@ -26,15 +26,14 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-7 max-w-sm text-[18px] leading-8 text-zinc-400">
-            Cardápio digital, carrinho, Pix e pedido pronto para o
-            WhatsApp.
+           Loja online, carrinho, Pix e pedido pronto para o WhatsApp.
           </p>
 
           <Link
             href="/menu"
             className="mt-9 inline-flex min-h-14 items-center justify-center gap-4 rounded-2xl bg-white px-6 text-base font-bold text-black shadow-lg transition active:scale-95"
           >
-            Ver cardápio
+            Conhecer loja
 
             <ArrowRight size={19} />
           </Link>
