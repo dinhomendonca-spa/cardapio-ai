@@ -47,15 +47,6 @@ function normalizarWhatsApp(
       ""
     );
 
-  /*
-   * Se foi cadastrado apenas:
-   *
-   * 22999999999
-   *
-   * adicionamos o Brasil:
-   *
-   * 5522999999999
-   */
   if (
     numeros.length === 10 ||
     numeros.length === 11
@@ -91,9 +82,16 @@ export default function PagamentoPage() {
     setSalvandoPedido,
   ] = useState(false);
 
+  const taxaACombinar =
+    dadosCheckout.tipoEntrega ===
+      "entrega" &&
+    (loja?.taxa_entrega_a_combinar ??
+      false);
+
   const taxaEntrega =
     dadosCheckout.tipoEntrega ===
-    "entrega"
+      "entrega" &&
+    !taxaACombinar
       ? dadosCheckout.taxaEntrega
       : 0;
 
@@ -218,7 +216,7 @@ export default function PagamentoPage() {
             total,
 
           descricao:
-            "PEDIDO CARDAPIO",
+            "PEDIDO ONLINE",
         });
       } catch (
         error
@@ -324,6 +322,23 @@ ${[
   .join(", ")}`;
     }
 
+    const textoEntrega =
+      dadosCheckout.tipoEntrega ===
+      "entrega"
+        ? taxaACombinar
+          ? "Entrega: A combinar"
+          : taxaEntrega === 0
+            ? "Entrega: Grátis"
+            : `Entrega: ${formatarPreco(
+                taxaEntrega
+              )}`
+        : "Retirada: Grátis";
+
+    const avisoTaxa =
+      taxaACombinar
+        ? "\n\n⚠️ A taxa de entrega será combinada com a loja."
+        : "";
+
     return `Olá! Gostaria de confirmar meu pedido na *${nomeLoja}*.
 
 🧾 *PEDIDO #${pedidoId}*
@@ -349,27 +364,15 @@ Subtotal: ${formatarPreco(
       valorTotal
     )}
 
-${
-  dadosCheckout.tipoEntrega ===
-  "entrega"
-    ? `Entrega: ${
-        taxaEntrega ===
-        0
-          ? "Grátis"
-          : formatarPreco(
-              taxaEntrega
-            )
-      }`
-    : "Retirada: Grátis"
-}
+${textoEntrega}
 
 *Total: ${formatarPreco(
       total
-    )}*
+    )}*${avisoTaxa}
 
 💳 Pagamento: Pix
 
-✅ Pedido registrado no Cardápio AI.`;
+✅ Pedido enviado para confirmação.`;
   };
 
   const confirmarPedido =
@@ -423,16 +426,6 @@ ${
         return;
       }
 
-      /*
-       * MUITO IMPORTANTE:
-       *
-       * Abrimos a nova aba imediatamente,
-       * enquanto ainda estamos dentro do
-       * clique do usuário.
-       *
-       * Isso evita que Chrome/Safari
-       * bloqueiem o WhatsApp como popup.
-       */
       const janelaWhatsApp =
         window.open(
           "",
@@ -579,33 +572,21 @@ ${
             mensagem
           )}`;
 
-        /*
-         * A aba que abrimos no início
-         * agora recebe o WhatsApp.
-         */
         if (
           janelaWhatsApp
         ) {
           janelaWhatsApp.location.href =
             linkWhatsApp;
         } else {
-          /*
-           * Fallback caso o navegador
-           * ainda tenha bloqueado a aba.
-           */
           window.location.href =
             linkWhatsApp;
 
           return;
         }
 
-        /*
-         * A aba original continua
-         * no acompanhamento.
-         */
         router.push(
-            `/loja/${loja.slug}/pedido/${pedido.id}`
-            );
+          `/loja/${loja.slug}/pedido/${pedido.id}`
+        );
       } catch (
         error
       ) {
@@ -614,10 +595,6 @@ ${
           error
         );
 
-        /*
-         * Se houve erro,
-         * fecha a aba vazia.
-         */
         if (
           janelaWhatsApp &&
           !janelaWhatsApp.closed
@@ -641,7 +618,9 @@ ${
   ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
+
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
+
           <ShoppingBag
             size={36}
             className="mx-auto text-zinc-300"
@@ -652,22 +631,28 @@ ${
           </h1>
 
           <Link
-            href="/menu"
+            href={`/loja/${loja?.slug}`}
             className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 font-bold text-white"
           >
-            Voltar ao cardápio
+            Voltar para a loja
           </Link>
+
         </div>
+
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-zinc-100 pb-32 text-zinc-950">
+
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+
           <Link
-            href={`/loja/${loja?.slug}/checkout`}            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100"
+            href={`/loja/${loja?.slug}/checkout`}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100"
           >
             <ArrowLeft
               size={20}
@@ -675,6 +660,7 @@ ${
           </Link>
 
           <div>
+
             <p className="text-xs text-zinc-500">
               {nomeLoja}
             </p>
@@ -682,12 +668,17 @@ ${
             <h1 className="text-lg font-extrabold">
               Pagamento
             </h1>
+
           </div>
+
         </div>
+
       </header>
 
       <section className="mx-auto max-w-md space-y-3 px-3 py-3">
+
         <section className="rounded-3xl bg-white p-5 text-center shadow-sm">
+
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Total do pedido
           </p>
@@ -698,19 +689,25 @@ ${
             )}
           </h2>
 
+          {taxaACombinar && (
+            <p className="mt-2 text-xs font-medium text-amber-700">
+              + taxa de entrega a combinar
+            </p>
+          )}
+
           {pixCopiaECola ? (
             <>
               <div className="mx-auto mt-4 flex w-fit rounded-3xl bg-white p-2 ring-1 ring-zinc-100">
+
                 <QRCodeSVG
                   value={
                     pixCopiaECola
                   }
-                  size={
-                    190
-                  }
+                  size={190}
                   level="M"
                   includeMargin
                 />
+
               </div>
 
               <p className="mt-3 text-xs leading-5 text-zinc-500">
@@ -727,9 +724,7 @@ ${
                 {copiado ? (
                   <>
                     <Check
-                      size={
-                        17
-                      }
+                      size={17}
                     />
 
                     Código copiado
@@ -737,9 +732,7 @@ ${
                 ) : (
                   <>
                     <Copy
-                      size={
-                        17
-                      }
+                      size={17}
                     />
 
                     Copiar Pix copia e cola
@@ -752,14 +745,17 @@ ${
               Pix não configurado
             </div>
           )}
+
         </section>
 
         <section className="rounded-3xl bg-white p-4 shadow-sm">
+
           <h2 className="font-extrabold">
             Resumo do pedido
           </h2>
 
           <div className="mt-4 space-y-3">
+
             {itens.map(
               (
                 item
@@ -770,14 +766,10 @@ ${
                   }
                   className="flex justify-between gap-3 text-sm"
                 >
+
                   <span className="text-zinc-600">
-                    {
-                      item.quantidade
-                    }
-                    x{" "}
-                    {
-                      item.nome
-                    }
+                    {item.quantidade}x{" "}
+                    {item.nome}
                   </span>
 
                   <span className="font-semibold">
@@ -786,12 +778,39 @@ ${
                         item.quantidade
                     )}
                   </span>
+
                 </div>
               )
             )}
 
             <div className="border-t border-zinc-100 pt-3">
-              <div className="flex justify-between font-bold">
+
+              <div className="flex justify-between text-sm text-zinc-500">
+
+                <span>
+                  {dadosCheckout.tipoEntrega ===
+                  "entrega"
+                    ? "Entrega"
+                    : "Retirada"}
+                </span>
+
+                <span>
+                  {dadosCheckout.tipoEntrega ===
+                  "retirada"
+                    ? "Grátis"
+                    : taxaACombinar
+                      ? "A combinar"
+                      : taxaEntrega === 0
+                        ? "Grátis"
+                        : formatarPreco(
+                            taxaEntrega
+                          )}
+                </span>
+
+              </div>
+
+              <div className="mt-3 flex justify-between font-bold">
+
                 <span>
                   Total
                 </span>
@@ -801,75 +820,76 @@ ${
                     total
                   )}
                 </span>
+
               </div>
+
             </div>
+
           </div>
+
         </section>
 
         <section className="rounded-3xl bg-white p-4 shadow-sm">
+
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Cliente
           </p>
 
           <p className="mt-1 font-bold">
-            {
-              dadosCheckout.clienteNome
-            }
+            {dadosCheckout.clienteNome}
           </p>
 
           <p className="mt-1 text-sm text-zinc-500">
-            {
-              dadosCheckout.clienteTelefone
-            }
+            {dadosCheckout.clienteTelefone}
           </p>
+
         </section>
 
         {dadosCheckout.tipoEntrega ===
           "entrega" && (
           <section className="rounded-3xl bg-white p-4 shadow-sm">
+
             <div className="flex gap-3">
+
               <MapPin
                 size={18}
               />
 
               <div>
+
                 <h2 className="text-sm font-extrabold">
                   Endereço
                 </h2>
 
                 <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  {
-                    dadosCheckout.rua
-                  }
-                  ,{" "}
-                  {
-                    dadosCheckout.numero
-                  }
+                  {dadosCheckout.rua},{" "}
+                  {dadosCheckout.numero}
 
                   <br />
 
-                  {
-                    dadosCheckout.bairro
-                  }
+                  {dadosCheckout.bairro}
 
                   {dadosCheckout.complemento && (
                     <>
                       <br />
 
                       Complemento:{" "}
-                      {
-                        dadosCheckout.complemento
-                      }
+                      {dadosCheckout.complemento}
                     </>
                   )}
                 </p>
+
               </div>
+
             </div>
+
           </section>
         )}
+
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur">
+
         <button
           type="button"
           onClick={
@@ -881,12 +901,15 @@ ${
           }
           className="mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl bg-green-600 px-5 text-white shadow-xl disabled:bg-zinc-300"
         >
+
           <div className="flex items-center gap-3">
+
             <MessageCircle
               size={20}
             />
 
             <div className="text-left">
+
               <p className="text-[11px] opacity-80">
                 {salvandoPedido
                   ? "Registrando..."
@@ -898,16 +921,31 @@ ${
                   ? "Aguarde"
                   : "Confirmar pedido"}
               </p>
+
             </div>
+
           </div>
 
-          <span className="font-extrabold">
-            {formatarPreco(
-              total
+          <div className="text-right">
+
+            <span className="font-extrabold">
+              {formatarPreco(
+                total
+              )}
+            </span>
+
+            {taxaACombinar && (
+              <p className="text-[10px] opacity-80">
+                + entrega a combinar
+              </p>
             )}
-          </span>
+
+          </div>
+
         </button>
+
       </div>
+
     </main>
   );
 }
