@@ -58,10 +58,8 @@ export default function LojaPublicaPage() {
     valor.toLocaleString(
       "pt-BR",
       {
-        style:
-          "currency",
-        currency:
-          "BRL",
+        style: "currency",
+        currency: "BRL",
       }
     );
 
@@ -83,7 +81,7 @@ export default function LojaPublicaPage() {
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-950" />
 
           <p className="mt-3 text-sm text-zinc-500">
-            Carregando cardápio...
+            Carregando loja...
           </p>
         </div>
       </main>
@@ -142,6 +140,8 @@ export default function LojaPublicaPage() {
 
   return (
     <main className="min-h-screen bg-zinc-100 pb-32 text-zinc-950">
+
+      {/* BANNER */}
       <section className="relative h-44 w-full overflow-hidden sm:h-56">
         <Image
           src={banner}
@@ -154,9 +154,12 @@ export default function LojaPublicaPage() {
         <div className="absolute inset-0 bg-black/25" />
       </section>
 
+      {/* DADOS DA LOJA */}
       <section className="relative mx-auto -mt-10 max-w-md px-4">
         <div className="rounded-3xl bg-white p-5 shadow-lg">
+
           <div className="flex items-start gap-4">
+
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-4 border-white shadow-md">
               <Image
                 src={logo}
@@ -167,7 +170,9 @@ export default function LojaPublicaPage() {
             </div>
 
             <div className="min-w-0 flex-1 pt-1">
+
               <div className="flex items-start justify-between gap-3">
+
                 <div>
                   <h1 className="text-xl font-bold">
                     {nomeLoja}
@@ -175,9 +180,7 @@ export default function LojaPublicaPage() {
 
                   {descricaoLoja && (
                     <p className="mt-1 text-sm text-zinc-500">
-                      {
-                        descricaoLoja
-                      }
+                      {descricaoLoja}
                     </p>
                   )}
                 </div>
@@ -190,24 +193,27 @@ export default function LojaPublicaPage() {
 
                   4.9
                 </div>
+
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
+
                 <span className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-2">
                   <Clock3
                     size={14}
                   />
 
-                  {
-                    tempoEntrega
-                  }
+                  {tempoEntrega}
                 </span>
 
                 <span className="flex items-center gap-1 rounded-full bg-green-50 px-3 py-2 font-medium text-green-700">
                   Aberto agora
                 </span>
+
               </div>
+
             </div>
+
           </div>
 
           {localizacao && (
@@ -216,16 +222,18 @@ export default function LojaPublicaPage() {
                 size={16}
               />
 
-              {
-                localizacao
-              }
+              {localizacao}
             </div>
           )}
+
         </div>
       </section>
 
+      {/* BUSCA */}
       <section className="mx-auto max-w-md px-4 pt-5">
+
         <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+
           <Search
             size={19}
             className="text-zinc-400"
@@ -233,52 +241,47 @@ export default function LojaPublicaPage() {
 
           <input
             type="text"
-            placeholder="O que você está com vontade de comer?"
+            placeholder="O que você está procurando?"
             className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
           />
+
         </div>
 
-        {categorias.length >
-          0 && (
+        {/* CATEGORIAS */}
+        {categorias.length > 0 && (
           <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+
             {categorias.map(
               (
                 categoria,
                 index
               ) => (
                 <button
-                  key={
-                    categoria
-                  }
+                  key={categoria}
                   className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                    index ===
-                    0
+                    index === 0
                       ? "bg-zinc-950 text-white"
                       : "bg-white text-zinc-700 shadow-sm"
                   }`}
                 >
-                  {
-                    categoria
-                  }
+                  {categoria}
                 </button>
               )
             )}
+
           </div>
         )}
 
+        {/* PRODUTOS */}
         <div className="mt-5">
-          <div className="mb-4">
-            <p className="text-sm text-zinc-500">
-              Cardápio
-            </p>
 
+          <div className="mb-4">
             <h2 className="text-2xl font-bold">
               Produtos
             </h2>
           </div>
 
-          {produtosAtivos.length ===
-          0 ? (
+          {produtosAtivos.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
               <p className="font-semibold">
                 Nenhum produto disponível.
@@ -286,6 +289,7 @@ export default function LojaPublicaPage() {
             </div>
           ) : (
             <div className="space-y-4">
+
               {produtosAtivos.map(
                 (
                   produto
@@ -297,11 +301,10 @@ export default function LojaPublicaPage() {
 
                   return (
                     <article
-                      key={
-                        produto.id
-                      }
+                      key={produto.id}
                       className="overflow-hidden rounded-3xl bg-white shadow-sm"
                     >
+
                       <div className="relative h-48 w-full">
                         <Image
                           src={
@@ -316,64 +319,51 @@ export default function LojaPublicaPage() {
                       </div>
 
                       <div className="p-5">
+
                         <div className="flex items-center justify-between gap-3">
+
                           <h3 className="text-lg font-bold">
-                            {
-                              produto.nome
-                            }
+                            {produto.nome}
                           </h3>
 
                           <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">
-                            {
-                              produto.categoria
-                            }
+                            {produto.categoria}
                           </span>
+
                         </div>
 
                         <p className="mt-2 text-sm leading-6 text-zinc-500">
-                          {
-                            produto.descricao
-                          }
+                          {produto.descricao}
                         </p>
 
                         <div className="mt-5 flex items-center justify-between">
+
                           <span className="text-lg font-bold">
                             {formatarPreco(
                               produto.preco
                             )}
                           </span>
 
-                          {quantidade ===
-                          0 ? (
+                          {quantidade === 0 ? (
                             <button
                               type="button"
                               onClick={() =>
-                                adicionarProduto(
-                                  {
-                                    id:
-                                      produto.id,
-
-                                    nome:
-                                      produto.nome,
-
-                                    preco:
-                                      produto.preco,
-
-                                    imagem:
-                                      produto.imagem,
-                                  }
-                                )
+                                adicionarProduto({
+                                  id: produto.id,
+                                  nome: produto.nome,
+                                  preco: produto.preco,
+                                  imagem: produto.imagem,
+                                })
                               }
                               className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-950 text-white active:scale-95"
                             >
                               <Plus
-                                size={
-                                  20
-                                }
+                                size={20}
                               />
                             </button>
                           ) : (
                             <div className="flex items-center gap-3 rounded-2xl bg-zinc-100 p-1">
+
                               <button
                                 type="button"
                                 onClick={() =>
@@ -384,78 +374,71 @@ export default function LojaPublicaPage() {
                                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm"
                               >
                                 <Minus
-                                  size={
-                                    17
-                                  }
+                                  size={17}
                                 />
                               </button>
 
                               <span className="min-w-5 text-center font-bold">
-                                {
-                                  quantidade
-                                }
+                                {quantidade}
                               </span>
 
                               <button
                                 type="button"
                                 onClick={() =>
-                                  adicionarProduto(
-                                    {
-                                      id:
-                                        produto.id,
-
-                                      nome:
-                                        produto.nome,
-
-                                      preco:
-                                        produto.preco,
-
-                                      imagem:
-                                        produto.imagem,
-                                    }
-                                  )
+                                  adicionarProduto({
+                                    id: produto.id,
+                                    nome: produto.nome,
+                                    preco: produto.preco,
+                                    imagem: produto.imagem,
+                                  })
                                 }
                                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-950 text-white"
                               >
                                 <Plus
-                                  size={
-                                    17
-                                  }
+                                  size={17}
                                 />
                               </button>
+
                             </div>
                           )}
+
                         </div>
+
                       </div>
+
                     </article>
                   );
                 }
               )}
+
             </div>
           )}
+
         </div>
+
       </section>
 
-      {quantidadeTotal >
-        0 && (
+      {/* CARRINHO */}
+      {quantidadeTotal > 0 && (
         <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
+
           <Link
             href={`/loja/${loja.slug}/checkout`}
             className="mx-auto flex w-full max-w-md items-center justify-between rounded-2xl bg-zinc-950 px-5 py-4 text-white shadow-2xl active:scale-[0.99]"
           >
+
             <div className="flex items-center gap-3">
+
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+
                 <ShoppingCart
-                  size={
-                    19
-                  }
+                  size={19}
                 />
 
                 <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-xs font-bold text-zinc-950">
-                  {
-                    quantidadeTotal
-                  }
+                  {quantidadeTotal}
                 </span>
+
               </div>
 
               <div className="text-left">
@@ -467,6 +450,7 @@ export default function LojaPublicaPage() {
                   Ver carrinho
                 </p>
               </div>
+
             </div>
 
             <span className="font-bold">
@@ -474,9 +458,12 @@ export default function LojaPublicaPage() {
                 valorTotal
               )}
             </span>
+
           </Link>
+
         </div>
       )}
+
     </main>
   );
 }
