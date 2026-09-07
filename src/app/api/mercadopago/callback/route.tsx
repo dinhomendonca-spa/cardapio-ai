@@ -9,6 +9,12 @@ import {
   createClient,
 } from "@supabase/supabase-js";
 
+export const runtime =
+  "nodejs";
+
+export const dynamic =
+  "force-dynamic";
+
 type MercadoPagoTokenResponse = {
   access_token?: string;
   token_type?: string;
@@ -147,6 +153,12 @@ export async function GET(
     ).origin;
 
   try {
+    /*
+     * ======================================
+     * VARIÁVEIS DE AMBIENTE
+     * ======================================
+     */
+
     const clientId =
       process.env
         .MERCADO_PAGO_CLIENT_ID;
@@ -197,6 +209,12 @@ export async function GET(
       );
     }
 
+    /*
+     * ======================================
+     * PARÂMETROS DO CALLBACK
+     * ======================================
+     */
+
     const {
       searchParams,
     } =
@@ -244,10 +262,22 @@ export async function GET(
       );
     }
 
+    /*
+     * ======================================
+     * VALIDAR STATE
+     * ======================================
+     */
+
     const lojaId =
       extrairLojaDoState(
         state
       );
+
+    /*
+     * ======================================
+     * TROCAR CODE PELO ACCESS TOKEN
+     * ======================================
+     */
 
     const resposta =
       await fetch(
@@ -320,6 +350,12 @@ export async function GET(
       );
     }
 
+    /*
+     * ======================================
+     * EXPIRAÇÃO DO TOKEN
+     * ======================================
+     */
+
     let expiresAt:
       string | null =
       null;
@@ -339,6 +375,12 @@ export async function GET(
         data.toISOString();
     }
 
+    /*
+     * ======================================
+     * CLIENTE ADMIN DO SUPABASE
+     * ======================================
+     */
+
     const supabaseAdmin =
       createClient(
         supabaseUrl,
@@ -353,6 +395,12 @@ export async function GET(
           },
         }
       );
+
+    /*
+     * ======================================
+     * CONFIRMAR SE A LOJA EXISTE
+     * ======================================
+     */
 
     const {
       data:
@@ -387,6 +435,12 @@ export async function GET(
         "Loja não encontrada."
       );
     }
+
+    /*
+     * ======================================
+     * SALVAR CREDENCIAIS DO VENDEDOR
+     * ======================================
+     */
 
     const {
       error:
@@ -441,13 +495,14 @@ export async function GET(
     }
 
     /*
-     * IMPORTANTE:
+     * ======================================
+     * MARCAR CONEXÃO NA LOJA
+     * ======================================
      *
-     * Conectar Mercado Pago NÃO
-     * ativa cartão automaticamente.
+     * O cartão NÃO é ativado automaticamente.
      *
      * mercado_pago_conectado = true
-     * aceita_cartao permanece como está.
+     * aceita_cartao continua como estava.
      */
 
     const {
@@ -472,6 +527,12 @@ export async function GET(
     ) {
       throw erroAtualizarLoja;
     }
+
+    /*
+     * ======================================
+     * SUCESSO
+     * ======================================
+     */
 
     return NextResponse.redirect(
       `${origem}/admin/pagamento?mercadopago=conectado`
