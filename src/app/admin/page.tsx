@@ -10,6 +10,7 @@ import {
   ExternalLink,
   LayoutDashboard,
   Package,
+  QrCode,
   Settings,
   Smartphone,
   Store,
@@ -41,6 +42,14 @@ const itens = [
       "Visualizar pedidos recebidos",
     icone: LayoutDashboard,
     href: "/admin/pedidos",
+  },
+
+  {
+    titulo: "QR Code",
+    descricao:
+      "Compartilhe sua loja com seus clientes",
+    icone: QrCode,
+    href: "/admin/qrcode",
   },
 
   {
