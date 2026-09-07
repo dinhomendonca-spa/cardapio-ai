@@ -141,7 +141,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
-            Cardápio AI
+            LOJAS AI
           </p>
 
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
