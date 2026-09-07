@@ -9,39 +9,73 @@ import {
   useState,
 } from "react";
 
-import { usePathname } from "next/navigation";
+import {
+  usePathname,
+} from "next/navigation";
 
-import { useAuth } from "@/context/AuthContext";
+import {
+  useAuth,
+} from "@/context/AuthContext";
 
-import { supabase } from "@/lib/supabase";
+import {
+  supabase,
+} from "@/lib/supabase";
 
 export type Loja = {
   id: number;
 
   nome: string;
+
   descricao: string;
 
   whatsapp: string;
+
   chave_pix: string;
 
+  /*
+   * ==========================================
+   * FORMAS DE PAGAMENTO
+   * ==========================================
+   */
+
+  aceita_pix: boolean;
+
+  aceita_cartao: boolean;
+
+  mercado_pago_conectado: boolean;
+
+  /*
+   * ==========================================
+   * DADOS DA LOJA
+   * ==========================================
+   */
+
   cidade: string;
+
   estado: string;
 
   logo: string;
+
   banner: string;
 
   ativo: boolean;
 
   taxa_entrega: number;
+
   taxa_entrega_a_combinar: boolean;
+
   retirada_permitida: boolean;
 
   endereco: string;
+
   numero: string;
+
   bairro: string;
+
   cep: string;
 
   latitude: number | null;
+
   longitude: number | null;
 
   google_maps_url: string;
@@ -51,9 +85,11 @@ export type Loja = {
   dono_id?: string | null;
 
   aberto_manual?: boolean;
+
   usar_horario?: boolean;
 
   horario_abertura?: string | null;
+
   horario_fechamento?: string | null;
 
   mensagem_fora_horario?: string | null;
@@ -63,6 +99,7 @@ export type Loja = {
   entrega_ativa?: boolean;
 
   tempo_entrega_min?: number;
+
   tempo_entrega_max?: number;
 };
 
@@ -95,50 +132,105 @@ type StoreContextType = {
   recarregarLoja: () => Promise<void>;
 
   salvarLoja: (
-    dados: Partial<Omit<Loja, "id">>
+    dados: Partial<
+      Omit<
+        Loja,
+        "id"
+      >
+    >
   ) => Promise<void>;
 };
 
 const StoreContext =
-  createContext<StoreContextType | undefined>(
+  createContext<
+    StoreContextType | undefined
+  >(
     undefined
   );
 
+/*
+ * ==========================================
+ * CONVERTE DADOS DO SUPABASE
+ * PARA O TIPO LOJA
+ * ==========================================
+ */
+
 function converterLoja(
-  data: Record<string, any>
+  data: Record<
+    string,
+    any
+  >
 ): Loja {
   return {
-    id: Number(data.id),
+    id:
+      Number(
+        data.id
+      ),
 
-    nome: data.nome ?? "",
+    nome:
+      data.nome ??
+      "",
 
     descricao:
-      data.descricao ?? "",
+      data.descricao ??
+      "",
 
     whatsapp:
-      data.whatsapp ?? "",
+      data.whatsapp ??
+      "",
 
     chave_pix:
-      data.chave_pix ?? "",
+      data.chave_pix ??
+      "",
+
+    /*
+     * ======================================
+     * PAGAMENTOS
+     * ======================================
+     */
+
+    aceita_pix:
+      data.aceita_pix ??
+      true,
+
+    aceita_cartao:
+      data.aceita_cartao ??
+      false,
+
+    mercado_pago_conectado:
+      data.mercado_pago_conectado ??
+      false,
+
+    /*
+     * ======================================
+     * DADOS DA LOJA
+     * ======================================
+     */
 
     cidade:
-      data.cidade ?? "",
+      data.cidade ??
+      "",
 
     estado:
-      data.estado ?? "",
+      data.estado ??
+      "",
 
     logo:
-      data.logo ?? "",
+      data.logo ??
+      "",
 
     banner:
-      data.banner ?? "",
+      data.banner ??
+      "",
 
     ativo:
-      data.ativo ?? true,
+      data.ativo ??
+      true,
 
     taxa_entrega:
       Number(
-        data.taxa_entrega ?? 0
+        data.taxa_entrega ??
+          0
       ),
 
     taxa_entrega_a_combinar:
@@ -150,41 +242,56 @@ function converterLoja(
       true,
 
     endereco:
-      data.endereco ?? "",
+      data.endereco ??
+      "",
 
     numero:
-      data.numero ?? "",
+      data.numero ??
+      "",
 
     bairro:
-      data.bairro ?? "",
+      data.bairro ??
+      "",
 
     cep:
-      data.cep ?? "",
+      data.cep ??
+      "",
 
     latitude:
-      data.latitude == null
+      data.latitude ==
+      null
         ? null
-        : Number(data.latitude),
+        : Number(
+            data.latitude
+          ),
 
     longitude:
-      data.longitude == null
+      data.longitude ==
+      null
         ? null
-        : Number(data.longitude),
+        : Number(
+            data.longitude
+          ),
 
     google_maps_url:
-      data.google_maps_url ?? "",
+      data.google_maps_url ??
+      "",
 
     slug:
-      data.slug ?? "",
+      data.slug ??
+      "",
 
     dono_id:
-      data.dono_id ?? null,
+      data.dono_id ??
+      null,
 
     aberto_manual:
-      data.aberto_manual ?? true,
+      data.aberto_manual ??
+      true,
 
     usar_horario:
-      data.usar_horario ?? false,
+      data.usar_horario ??
+      false,
 
     horario_abertura:
       data.horario_abertura ??
@@ -200,11 +307,13 @@ function converterLoja(
 
     pedido_minimo:
       Number(
-        data.pedido_minimo ?? 0
+        data.pedido_minimo ??
+          0
       ),
 
     entrega_ativa:
-      data.entrega_ativa ?? true,
+      data.entrega_ativa ??
+      true,
 
     tempo_entrega_min:
       Number(
@@ -220,20 +329,40 @@ function converterLoja(
   };
 }
 
+/*
+ * ==========================================
+ * DESCOBRE O SLUG DA LOJA PÚBLICA
+ * ==========================================
+ */
+
 function extrairSlug(
   pathname: string
 ) {
   const partes =
     pathname
       .split("/")
-      .filter(Boolean);
+      .filter(
+        Boolean
+      );
 
-  if (partes[0] !== "loja") {
+  if (
+    partes[0] !==
+    "loja"
+  ) {
     return null;
   }
 
-  return partes[1] || null;
+  return (
+    partes[1] ||
+    null
+  );
 }
+
+/*
+ * ==========================================
+ * PROVIDER
+ * ==========================================
+ */
 
 export function StoreProvider({
   children,
@@ -249,13 +378,17 @@ export function StoreProvider({
   } = useAuth();
 
   const slugPublico =
-    extrairSlug(pathname);
+    extrairSlug(
+      pathname
+    );
 
   const [
     loja,
     setLoja,
   ] =
-    useState<Loja | null>(
+    useState<
+      Loja | null
+    >(
       null
     );
 
@@ -263,7 +396,9 @@ export function StoreProvider({
     perfil,
     setPerfil,
   ] =
-    useState<Perfil | null>(
+    useState<
+      Perfil | null
+    >(
       null
     );
 
@@ -271,15 +406,25 @@ export function StoreProvider({
     carregando,
     setCarregando,
   ] =
-    useState(true);
+    useState(
+      true
+    );
 
   const [
     erroLoja,
     setErroLoja,
   ] =
-    useState<string | null>(
+    useState<
+      string | null
+    >(
       null
     );
+
+  /*
+   * ==========================================
+   * CARREGAR LOJA PÚBLICA
+   * ==========================================
+   */
 
   const carregarLojaPublica =
     useCallback(
@@ -291,8 +436,12 @@ export function StoreProvider({
           error,
         } =
           await supabase
-            .from("lojas")
-            .select("*")
+            .from(
+              "lojas"
+            )
+            .select(
+              "*"
+            )
             .eq(
               "slug",
               slug
@@ -308,7 +457,9 @@ export function StoreProvider({
         }
 
         if (!data) {
-          setLoja(null);
+          setLoja(
+            null
+          );
 
           setErroLoja(
             "Loja não encontrada ou indisponível."
@@ -318,30 +469,50 @@ export function StoreProvider({
         }
 
         setLoja(
-          converterLoja(data)
+          converterLoja(
+            data
+          )
         );
 
-        setErroLoja(null);
+        setErroLoja(
+          null
+        );
       },
       []
     );
+
+  /*
+   * ==========================================
+   * CARREGAR LOJA DO ADMIN
+   * ==========================================
+   */
 
   const carregarLojaAdmin =
     useCallback(
       async () => {
         if (!user) {
-          setPerfil(null);
-          setLoja(null);
+          setPerfil(
+            null
+          );
+
+          setLoja(
+            null
+          );
 
           return;
         }
 
         const {
-          data: perfilData,
-          error: perfilError,
+          data:
+            perfilData,
+
+          error:
+            perfilError,
         } =
           await supabase
-            .from("perfis")
+            .from(
+              "perfis"
+            )
             .select(
               "id,nome,loja_id,papel,ativo"
             )
@@ -351,13 +522,22 @@ export function StoreProvider({
             )
             .maybeSingle();
 
-        if (perfilError) {
+        if (
+          perfilError
+        ) {
           throw perfilError;
         }
 
-        if (!perfilData) {
-          setPerfil(null);
-          setLoja(null);
+        if (
+          !perfilData
+        ) {
+          setPerfil(
+            null
+          );
+
+          setLoja(
+            null
+          );
 
           setErroLoja(
             "Usuário sem perfil."
@@ -395,8 +575,12 @@ export function StoreProvider({
           perfilAtual
         );
 
-        if (!perfilAtual.ativo) {
-          setLoja(null);
+        if (
+          !perfilAtual.ativo
+        ) {
+          setLoja(
+            null
+          );
 
           setErroLoja(
             "Usuário desativado."
@@ -405,8 +589,12 @@ export function StoreProvider({
           return;
         }
 
-        if (!perfilAtual.loja_id) {
-          setLoja(null);
+        if (
+          !perfilAtual.loja_id
+        ) {
+          setLoja(
+            null
+          );
 
           setErroLoja(
             "Usuário sem loja vinculada."
@@ -416,24 +604,37 @@ export function StoreProvider({
         }
 
         const {
-          data: lojaData,
-          error: lojaError,
+          data:
+            lojaData,
+
+          error:
+            lojaError,
         } =
           await supabase
-            .from("lojas")
-            .select("*")
+            .from(
+              "lojas"
+            )
+            .select(
+              "*"
+            )
             .eq(
               "id",
               perfilAtual.loja_id
             )
             .maybeSingle();
 
-        if (lojaError) {
+        if (
+          lojaError
+        ) {
           throw lojaError;
         }
 
-        if (!lojaData) {
-          setLoja(null);
+        if (
+          !lojaData
+        ) {
+          setLoja(
+            null
+          );
 
           setErroLoja(
             "Loja não encontrada."
@@ -448,25 +649,49 @@ export function StoreProvider({
           )
         );
 
-        setErroLoja(null);
+        setErroLoja(
+          null
+        );
       },
-      [user]
+      [
+        user,
+      ]
     );
+
+  /*
+   * ==========================================
+   * RECARREGAR LOJA
+   * ==========================================
+   */
 
   const recarregarLoja =
     useCallback(
       async () => {
-        if (carregandoAuth) {
+        if (
+          carregandoAuth
+        ) {
           return;
         }
 
         try {
-          setCarregando(true);
+          setCarregando(
+            true
+          );
 
-          setErroLoja(null);
+          setErroLoja(
+            null
+          );
 
-          if (slugPublico) {
-            setPerfil(null);
+          /*
+           * LOJA PÚBLICA
+           */
+
+          if (
+            slugPublico
+          ) {
+            setPerfil(
+              null
+            );
 
             await carregarLojaPublica(
               slugPublico
@@ -474,6 +699,10 @@ export function StoreProvider({
 
             return;
           }
+
+          /*
+           * PAINEL ADMIN
+           */
 
           if (
             pathname.startsWith(
@@ -485,21 +714,36 @@ export function StoreProvider({
             return;
           }
 
-          setLoja(null);
-          setPerfil(null);
-        } catch (error) {
+          /*
+           * OUTRAS ROTAS
+           */
+
+          setLoja(
+            null
+          );
+
+          setPerfil(
+            null
+          );
+        } catch (
+          error
+        ) {
           console.error(
             "Erro ao carregar loja:",
             error
           );
 
-          setLoja(null);
+          setLoja(
+            null
+          );
 
           setErroLoja(
             "Não foi possível carregar os dados da loja."
           );
         } finally {
-          setCarregando(false);
+          setCarregando(
+            false
+          );
         }
       },
       [
@@ -511,14 +755,31 @@ export function StoreProvider({
       ]
     );
 
+  /*
+   * ==========================================
+   * CARREGAMENTO AUTOMÁTICO
+   * ==========================================
+   */
+
   useEffect(() => {
     recarregarLoja();
-  }, [recarregarLoja]);
+  }, [
+    recarregarLoja,
+  ]);
+
+  /*
+   * ==========================================
+   * SALVAR LOJA
+   * ==========================================
+   */
 
   const salvarLoja =
     async (
       dados: Partial<
-        Omit<Loja, "id">
+        Omit<
+          Loja,
+          "id"
+        >
       >
     ) => {
       if (!user) {
@@ -537,8 +798,12 @@ export function StoreProvider({
         error,
       } =
         await supabase
-          .from("lojas")
-          .update(dados)
+          .from(
+            "lojas"
+          )
+          .update(
+            dados
+          )
           .eq(
             "id",
             loja.id
@@ -550,6 +815,12 @@ export function StoreProvider({
 
       await recarregarLoja();
     };
+
+  /*
+   * ==========================================
+   * PROVIDER
+   * ==========================================
+   */
 
   return (
     <StoreContext.Provider
@@ -567,6 +838,12 @@ export function StoreProvider({
     </StoreContext.Provider>
   );
 }
+
+/*
+ * ==========================================
+ * HOOK
+ * ==========================================
+ */
 
 export function useStore() {
   const context =
