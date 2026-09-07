@@ -48,7 +48,7 @@ const geistMono =
 export const metadata: Metadata =
   {
     title:
-      "Cardápio AI",
+      "Lojas-ai",
 
     description:
       "Pedidos online simples e rápidos",
