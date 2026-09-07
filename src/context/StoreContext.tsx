@@ -33,9 +33,9 @@ export type Loja = {
   chave_pix: string;
 
   /*
-   * ==========================================
-   * FORMAS DE PAGAMENTO
-   * ==========================================
+   * ======================================
+   * PAGAMENTOS
+   * ======================================
    */
 
   aceita_pix: boolean;
@@ -45,9 +45,9 @@ export type Loja = {
   mercado_pago_conectado: boolean;
 
   /*
-   * ==========================================
+   * ======================================
    * DADOS DA LOJA
-   * ==========================================
+   * ======================================
    */
 
   cidade: string;
@@ -150,8 +150,16 @@ const StoreContext =
 
 /*
  * ==========================================
- * CONVERTE DADOS DO SUPABASE
- * PARA O TIPO LOJA
+ * CHAVE DE PERSISTÊNCIA
+ * ==========================================
+ */
+
+const CHAVE_LOJA_PUBLICA =
+  "lojas_ai_loja_publica";
+
+/*
+ * ==========================================
+ * CONVERTER LOJA
  * ==========================================
  */
 
@@ -184,9 +192,7 @@ function converterLoja(
       "",
 
     /*
-     * ======================================
      * PAGAMENTOS
-     * ======================================
      */
 
     aceita_pix:
@@ -202,9 +208,7 @@ function converterLoja(
       false,
 
     /*
-     * ======================================
      * DADOS DA LOJA
-     * ======================================
      */
 
     cidade:
@@ -331,7 +335,7 @@ function converterLoja(
 
 /*
  * ==========================================
- * DESCOBRE O SLUG DA LOJA PÚBLICA
+ * EXTRAIR SLUG
  * ==========================================
  */
 
@@ -375,9 +379,10 @@ export function StoreProvider({
   const {
     user,
     carregandoAuth,
-  } = useAuth();
+  } =
+    useAuth();
 
-  const slugPublico =
+  const slugDaUrl =
     extrairSlug(
       pathname
     );
@@ -420,6 +425,99 @@ export function StoreProvider({
       null
     );
 
+  const [
+    slugPersistido,
+    setSlugPersistido,
+  ] =
+    useState<
+      string | null
+    >(
+      null
+    );
+
+  /*
+   * ==========================================
+   * LER LOJA SALVA NO NAVEGADOR
+   * ==========================================
+   */
+
+  useEffect(() => {
+    try {
+      const slug =
+        window.localStorage.getItem(
+          CHAVE_LOJA_PUBLICA
+        );
+
+      if (slug) {
+        setSlugPersistido(
+          slug
+        );
+      }
+    } catch (
+      error
+    ) {
+      console.error(
+        "Erro ao ler loja persistida:",
+        error
+      );
+    }
+  }, []);
+
+  /*
+   * ==========================================
+   * SALVAR SLUG DA LOJA PÚBLICA
+   * ==========================================
+   */
+
+  useEffect(() => {
+    if (
+      !slugDaUrl
+    ) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        CHAVE_LOJA_PUBLICA,
+        slugDaUrl
+      );
+
+      setSlugPersistido(
+        slugDaUrl
+      );
+    } catch (
+      error
+    ) {
+      console.error(
+        "Erro ao salvar loja pública:",
+        error
+      );
+    }
+  }, [
+    slugDaUrl,
+  ]);
+
+  /*
+   * ==========================================
+   * SLUG QUE DEVE SER USADO
+   * ==========================================
+   */
+
+  const rotaDependeDaLoja =
+    pathname ===
+      "/pagamento" ||
+    pathname.startsWith(
+      "/pagamento/"
+    );
+
+  const slugPublico =
+    slugDaUrl ||
+    (
+      rotaDependeDaLoja
+        ? slugPersistido
+        : null
+    );
+
   /*
    * ==========================================
    * CARREGAR LOJA PÚBLICA
@@ -452,11 +550,15 @@ export function StoreProvider({
             )
             .maybeSingle();
 
-        if (error) {
+        if (
+          error
+        ) {
           throw error;
         }
 
-        if (!data) {
+        if (
+          !data
+        ) {
           setLoja(
             null
           );
@@ -468,29 +570,51 @@ export function StoreProvider({
           return;
         }
 
-        setLoja(
+        const lojaConvertida =
           converterLoja(
             data
-          )
+          );
+
+        setLoja(
+          lojaConvertida
         );
 
         setErroLoja(
           null
         );
+
+        /*
+         * Mantém o slug salvo.
+         */
+
+        try {
+          window.localStorage.setItem(
+            CHAVE_LOJA_PUBLICA,
+            lojaConvertida.slug
+          );
+
+          setSlugPersistido(
+            lojaConvertida.slug
+          );
+        } catch {
+          //
+        }
       },
       []
     );
 
   /*
    * ==========================================
-   * CARREGAR LOJA DO ADMIN
+   * CARREGAR LOJA ADMIN
    * ==========================================
    */
 
   const carregarLojaAdmin =
     useCallback(
       async () => {
-        if (!user) {
+        if (
+          !user
+        ) {
           setPerfil(
             null
           );
@@ -546,30 +670,31 @@ export function StoreProvider({
           return;
         }
 
-        const perfilAtual: Perfil = {
-          id:
-            perfilData.id,
+        const perfilAtual: Perfil =
+          {
+            id:
+              perfilData.id,
 
-          nome:
-            perfilData.nome ??
-            "",
+            nome:
+              perfilData.nome ??
+              "",
 
-          loja_id:
-            perfilData.loja_id ==
-            null
-              ? null
-              : Number(
-                  perfilData.loja_id
-                ),
+            loja_id:
+              perfilData.loja_id ==
+              null
+                ? null
+                : Number(
+                    perfilData.loja_id
+                  ),
 
-          papel:
-            perfilData.papel ??
-            "proprietario",
+            papel:
+              perfilData.papel ??
+              "proprietario",
 
-          ativo:
-            perfilData.ativo ??
-            true,
-        };
+            ativo:
+              perfilData.ativo ??
+              true,
+          };
 
         setPerfil(
           perfilAtual
@@ -660,7 +785,7 @@ export function StoreProvider({
 
   /*
    * ==========================================
-   * RECARREGAR LOJA
+   * RECARREGAR
    * ==========================================
    */
 
@@ -683,7 +808,25 @@ export function StoreProvider({
           );
 
           /*
+           * ==================================
+           * ADMIN
+           * ==================================
+           */
+
+          if (
+            pathname.startsWith(
+              "/admin"
+            )
+          ) {
+            await carregarLojaAdmin();
+
+            return;
+          }
+
+          /*
+           * ==================================
            * LOJA PÚBLICA
+           * ==================================
            */
 
           if (
@@ -701,21 +844,22 @@ export function StoreProvider({
           }
 
           /*
-           * PAINEL ADMIN
+           * ==================================
+           * NÃO LIMPA A LOJA NA ROTA
+           * DE PAGAMENTO
+           * ==================================
            */
 
           if (
-            pathname.startsWith(
-              "/admin"
-            )
+            rotaDependeDaLoja
           ) {
-            await carregarLojaAdmin();
-
             return;
           }
 
           /*
+           * ==================================
            * OUTRAS ROTAS
+           * ==================================
            */
 
           setLoja(
@@ -748,8 +892,9 @@ export function StoreProvider({
       },
       [
         carregandoAuth,
-        slugPublico,
         pathname,
+        slugPublico,
+        rotaDependeDaLoja,
         carregarLojaPublica,
         carregarLojaAdmin,
       ]
@@ -782,13 +927,17 @@ export function StoreProvider({
         >
       >
     ) => {
-      if (!user) {
+      if (
+        !user
+      ) {
         throw new Error(
           "Usuário não autenticado."
         );
       }
 
-      if (!loja) {
+      if (
+        !loja
+      ) {
         throw new Error(
           "Nenhuma loja vinculada."
         );
@@ -809,7 +958,9 @@ export function StoreProvider({
             loja.id
           );
 
-      if (error) {
+      if (
+        error
+      ) {
         throw error;
       }
 
@@ -851,7 +1002,9 @@ export function useStore() {
       StoreContext
     );
 
-  if (!context) {
+  if (
+    !context
+  ) {
     throw new Error(
       "useStore deve ser usado dentro de StoreProvider"
     );
