@@ -10,6 +10,7 @@ import {
   Loader2,
   Save,
   ShieldCheck,
+  Unplug,
   WalletCards,
 } from "lucide-react";
 
@@ -35,9 +36,11 @@ import {
 export default function PagamentoAdminPage() {
   const {
     loja,
+    perfil,
     carregando,
     recarregarLoja,
-  } = useStore();
+  } =
+    useStore();
 
   const searchParams =
     useSearchParams();
@@ -45,45 +48,87 @@ export default function PagamentoAdminPage() {
   const [
     chavePix,
     setChavePix,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     aceitaPix,
     setAceitaPix,
-  ] = useState(true);
+  ] =
+    useState(
+      true
+    );
 
   const [
     aceitaCartao,
     setAceitaCartao,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     salvando,
     setSalvando,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     salvo,
     setSalvo,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     copiado,
     setCopiado,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
   const [
     conectando,
     setConectando,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
+
+  const [
+    desconectando,
+    setDesconectando,
+  ] =
+    useState(
+      false
+    );
+
+  /*
+   * ==========================================
+   * STATUS
+   * ==========================================
+   */
 
   const mercadoPagoConectado =
     loja?.mercado_pago_conectado ??
     false;
 
+  const retornoMercadoPago =
+    searchParams.get(
+      "mercadopago"
+    );
+
+  const usuarioProprietario =
+    perfil?.papel ===
+    "proprietario";
+
   /*
    * ==========================================
-   * CARREGA CONFIGURAÇÕES DA LOJA
+   * CARREGAR CONFIGURAÇÕES
    * ==========================================
    */
 
@@ -93,7 +138,8 @@ export default function PagamentoAdminPage() {
     }
 
     setChavePix(
-      loja.chave_pix || ""
+      loja.chave_pix ||
+        ""
     );
 
     setAceitaPix(
@@ -105,29 +151,8 @@ export default function PagamentoAdminPage() {
       loja.aceita_cartao ??
         false
     );
-  }, [loja]);
-
-  /*
-   * ==========================================
-   * RETORNO DO MERCADO PAGO
-   * ==========================================
-   */
-
-  useEffect(() => {
-    const status =
-      searchParams.get(
-        "mercadopago"
-      );
-
-    if (
-      status ===
-      "conectado"
-    ) {
-      recarregarLoja();
-    }
   }, [
-    searchParams,
-    recarregarLoja,
+    loja,
   ]);
 
   /*
@@ -146,11 +171,6 @@ export default function PagamentoAdminPage() {
         return;
       }
 
-      /*
-       * Se Pix estiver ativo,
-       * precisamos de uma chave.
-       */
-
       if (
         aceitaPix &&
         !chavePix.trim()
@@ -162,11 +182,6 @@ export default function PagamentoAdminPage() {
         return;
       }
 
-      /*
-       * Não permitimos cartão sem
-       * uma conta Mercado Pago conectada.
-       */
-
       if (
         aceitaCartao &&
         !mercadoPagoConectado
@@ -177,11 +192,6 @@ export default function PagamentoAdminPage() {
 
         return;
       }
-
-      /*
-       * Pelo menos uma forma de
-       * pagamento precisa permanecer ativa.
-       */
 
       if (
         !aceitaPix &&
@@ -315,6 +325,16 @@ export default function PagamentoAdminPage() {
         return;
       }
 
+      if (
+        !usuarioProprietario
+      ) {
+        alert(
+          "Somente o proprietário da loja pode conectar o Mercado Pago."
+        );
+
+        return;
+      }
+
       setConectando(
         true
       );
@@ -325,17 +345,171 @@ export default function PagamentoAdminPage() {
 
   /*
    * ==========================================
-   * ALTERAR PIX
+   * DESCONECTAR MERCADO PAGO
+   * ==========================================
+   */
+
+  const desconectarMercadoPago =
+    async () => {
+      if (!loja) {
+        alert(
+          "Não foi possível identificar a loja."
+        );
+
+        return;
+      }
+
+      if (
+        !usuarioProprietario
+      ) {
+        alert(
+          "Somente o proprietário da loja pode desconectar o Mercado Pago."
+        );
+
+        return;
+      }
+
+      const confirmou =
+        window.confirm(
+          "Desconectar o Mercado Pago?\n\nOs pagamentos por cartão serão desativados imediatamente para esta loja.\n\nO Pix continuará funcionando normalmente."
+        );
+
+      if (
+        !confirmou
+      ) {
+        return;
+      }
+
+      try {
+        setDesconectando(
+          true
+        );
+
+        /*
+         * ======================================
+         * PEGAR SESSÃO ATUAL
+         * ======================================
+         */
+
+        const {
+          data:
+            sessaoData,
+
+          error:
+            erroSessao,
+        } =
+          await supabase
+            .auth
+            .getSession();
+
+        if (
+          erroSessao
+        ) {
+          throw erroSessao;
+        }
+
+        const accessToken =
+          sessaoData
+            .session
+            ?.access_token;
+
+        if (
+          !accessToken
+        ) {
+          alert(
+            "Sua sessão expirou. Entre novamente no sistema."
+          );
+
+          return;
+        }
+
+        /*
+         * ======================================
+         * CHAMAR API SEGURA
+         * ======================================
+         */
+
+        const resposta =
+          await fetch(
+            "/api/mercadopago/desconectar",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${accessToken}`,
+              },
+
+              body:
+                JSON.stringify({
+                  loja_id:
+                    loja.id,
+                }),
+            }
+          );
+
+        const dados =
+          await resposta.json();
+
+        if (
+          !resposta.ok
+        ) {
+          throw new Error(
+            dados?.error ||
+              "Não foi possível desconectar o Mercado Pago."
+          );
+        }
+
+        /*
+         * ======================================
+         * ATUALIZAR PAINEL
+         * ======================================
+         */
+
+        setAceitaCartao(
+          false
+        );
+
+        await recarregarLoja();
+
+        alert(
+          "Mercado Pago desconectado com sucesso."
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Erro ao desconectar Mercado Pago:",
+          error
+        );
+
+        const mensagem =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível desconectar o Mercado Pago.";
+
+        alert(
+          mensagem
+        );
+      } finally {
+        setDesconectando(
+          false
+        );
+      }
+    };
+
+  /*
+   * ==========================================
+   * PIX ON/OFF
    * ==========================================
    */
 
   const alterarPix =
     () => {
-      /*
-       * Impede desligar Pix se
-       * cartão também estiver desligado.
-       */
-
       if (
         aceitaPix &&
         !aceitaCartao
@@ -354,7 +528,7 @@ export default function PagamentoAdminPage() {
 
   /*
    * ==========================================
-   * ALTERAR CARTÃO
+   * CARTÃO ON/OFF
    * ==========================================
    */
 
@@ -369,11 +543,6 @@ export default function PagamentoAdminPage() {
 
         return;
       }
-
-      /*
-       * Impede desligar cartão se
-       * Pix também estiver desligado.
-       */
 
       if (
         aceitaCartao &&
@@ -397,13 +566,25 @@ export default function PagamentoAdminPage() {
    * ==========================================
    */
 
-  if (carregando) {
+  if (
+    carregando
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-white">
-        <Loader2
-          size={30}
-          className="animate-spin text-blue-600"
-        />
+
+        <div className="text-center">
+
+          <Loader2
+            size={30}
+            className="mx-auto animate-spin text-blue-600"
+          />
+
+          <p className="mt-3 text-sm font-semibold text-zinc-500">
+            Carregando pagamentos...
+          </p>
+
+        </div>
+
       </main>
     );
   }
@@ -414,6 +595,7 @@ export default function PagamentoAdminPage() {
       {/* HEADER */}
 
       <header className="sticky top-0 z-40 border-b border-white/60 bg-white/70 backdrop-blur-xl">
+
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
 
           <Link
@@ -426,6 +608,7 @@ export default function PagamentoAdminPage() {
           </Link>
 
           <div className="min-w-0">
+
             <p className="truncate text-[11px] text-zinc-500">
               {loja?.nome ||
                 "Sua loja"}
@@ -434,9 +617,11 @@ export default function PagamentoAdminPage() {
             <h1 className="text-lg font-extrabold">
               Pagamentos
             </h1>
+
           </div>
 
         </div>
+
       </header>
 
       <section className="mx-auto max-w-md space-y-4 px-3 py-4">
@@ -448,12 +633,15 @@ export default function PagamentoAdminPage() {
           <div className="flex items-start gap-3">
 
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/15 backdrop-blur-xl">
+
               <WalletCards
                 size={22}
               />
+
             </div>
 
             <div>
+
               <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-100">
                 Recebimentos
               </p>
@@ -465,9 +653,11 @@ export default function PagamentoAdminPage() {
               <p className="mt-1 text-xs leading-5 text-blue-50">
                 Escolha como seus clientes poderão pagar os pedidos.
               </p>
+
             </div>
 
           </div>
+
         </section>
 
         {/* PIX */}
@@ -479,12 +669,15 @@ export default function PagamentoAdminPage() {
             <div className="flex items-center gap-3">
 
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-blue-700">
+
                 <KeyRound
                   size={19}
                 />
+
               </div>
 
               <div>
+
                 <h2 className="font-extrabold">
                   Pix
                 </h2>
@@ -492,6 +685,7 @@ export default function PagamentoAdminPage() {
                 <p className="text-xs text-zinc-500">
                   Recebimento direto
                 </p>
+
               </div>
 
             </div>
@@ -507,6 +701,7 @@ export default function PagamentoAdminPage() {
                   : "bg-zinc-300"
               }`}
             >
+
               <span
                 className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${
                   aceitaPix
@@ -514,12 +709,14 @@ export default function PagamentoAdminPage() {
                     : "left-1"
                 }`}
               />
+
             </button>
 
           </div>
 
           {aceitaPix && (
             <>
+
               <div className="mt-4">
 
                 <label
@@ -539,8 +736,7 @@ export default function PagamentoAdminPage() {
                     e
                   ) =>
                     setChavePix(
-                      e.target
-                        .value
+                      e.target.value
                     )
                   }
                   placeholder="CPF, CNPJ, telefone, e-mail ou chave aleatória"
@@ -558,6 +754,7 @@ export default function PagamentoAdminPage() {
                   }
                   className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white bg-white/60 text-sm font-bold shadow-sm backdrop-blur-xl transition active:scale-[0.99]"
                 >
+
                   {copiado ? (
                     <>
                       <CheckCircle2
@@ -575,8 +772,10 @@ export default function PagamentoAdminPage() {
                       Copiar chave
                     </>
                   )}
+
                 </button>
               )}
+
             </>
           )}
 
@@ -589,9 +788,11 @@ export default function PagamentoAdminPage() {
           <div className="flex items-start gap-3">
 
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+
               <CreditCard
                 size={20}
               />
+
             </div>
 
             <div className="min-w-0 flex-1">
@@ -623,54 +824,109 @@ export default function PagamentoAdminPage() {
           </div>
 
           {!mercadoPagoConectado ? (
-            <button
-              type="button"
-              onClick={
-                conectarMercadoPago
-              }
-              disabled={
-                conectando
-              }
-              className="mt-4 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#009EE3] px-5 font-extrabold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-60"
-            >
-              {conectando ? (
-                <>
-                  <Loader2
-                    size={18}
-                    className="animate-spin"
-                  />
+            <>
 
-                  Abrindo Mercado Pago...
-                </>
-              ) : (
-                <>
-                  <Link2
-                    size={18}
-                  />
+              <button
+                type="button"
+                onClick={
+                  conectarMercadoPago
+                }
+                disabled={
+                  conectando ||
+                  !usuarioProprietario
+                }
+                className="mt-4 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#009EE3] px-5 font-extrabold text-white shadow-lg transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              >
 
-                  Conectar Mercado Pago
-                </>
+                {conectando ? (
+                  <>
+                    <Loader2
+                      size={18}
+                      className="animate-spin"
+                    />
+
+                    Abrindo Mercado Pago...
+                  </>
+                ) : (
+                  <>
+                    <Link2
+                      size={18}
+                    />
+
+                    Conectar Mercado Pago
+                  </>
+                )}
+
+              </button>
+
+              {!usuarioProprietario && (
+                <p className="mt-2 text-center text-xs text-zinc-500">
+                  Somente o proprietário pode conectar uma conta.
+                </p>
               )}
-            </button>
+
+            </>
           ) : (
-            <div className="mt-4 flex items-center gap-3 rounded-2xl bg-green-50 p-4">
+            <>
 
-              <ShieldCheck
-                size={21}
-                className="shrink-0 text-green-600"
-              />
+              <div className="mt-4 flex items-center gap-3 rounded-2xl bg-green-50 p-4">
 
-              <div>
-                <p className="text-sm font-extrabold text-green-800">
-                  Conta conectada
-                </p>
+                <ShieldCheck
+                  size={21}
+                  className="shrink-0 text-green-600"
+                />
 
-                <p className="mt-0.5 text-xs leading-5 text-green-700">
-                  Sua loja já pode ativar pagamentos por cartão.
-                </p>
+                <div>
+
+                  <p className="text-sm font-extrabold text-green-800">
+                    Conta conectada
+                  </p>
+
+                  <p className="mt-0.5 text-xs leading-5 text-green-700">
+                    Sua loja pode receber pagamentos por cartão.
+                  </p>
+
+                </div>
+
               </div>
 
-            </div>
+              {/* DESCONECTAR */}
+
+              {usuarioProprietario && (
+                <button
+                  type="button"
+                  onClick={
+                    desconectarMercadoPago
+                  }
+                  disabled={
+                    desconectando
+                  }
+                  className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-extrabold text-red-700 transition active:scale-[0.99] disabled:opacity-50"
+                >
+
+                  {desconectando ? (
+                    <>
+                      <Loader2
+                        size={17}
+                        className="animate-spin"
+                      />
+
+                      Desconectando...
+                    </>
+                  ) : (
+                    <>
+                      <Unplug
+                        size={17}
+                      />
+
+                      Desconectar Mercado Pago
+                    </>
+                  )}
+
+                </button>
+              )}
+
+            </>
           )}
 
         </section>
@@ -696,12 +952,15 @@ export default function PagamentoAdminPage() {
                     : "bg-zinc-100 text-zinc-400"
                 }`}
               >
+
                 <CreditCard
                   size={20}
                 />
+
               </div>
 
               <div>
+
                 <h2 className="font-extrabold">
                   Cartão de crédito
                 </h2>
@@ -711,6 +970,7 @@ export default function PagamentoAdminPage() {
                     ? "Aceitar pagamentos online"
                     : "Conecte o Mercado Pago primeiro"}
                 </p>
+
               </div>
 
             </div>
@@ -729,6 +989,7 @@ export default function PagamentoAdminPage() {
                   : "bg-zinc-300"
               } disabled:cursor-not-allowed disabled:opacity-50`}
             >
+
               <span
                 className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${
                   aceitaCartao
@@ -736,17 +997,16 @@ export default function PagamentoAdminPage() {
                     : "left-1"
                 }`}
               />
+
             </button>
 
           </div>
 
         </section>
 
-        {/* MENSAGEM RETORNO MP */}
+        {/* RETORNO MERCADO PAGO */}
 
-        {searchParams.get(
-          "mercadopago"
-        ) ===
+        {retornoMercadoPago ===
           "conectado" && (
           <section className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50/90 p-4">
 
@@ -756,6 +1016,7 @@ export default function PagamentoAdminPage() {
             />
 
             <div>
+
               <p className="text-sm font-extrabold text-green-800">
                 Mercado Pago conectado!
               </p>
@@ -763,23 +1024,20 @@ export default function PagamentoAdminPage() {
               <p className="mt-0.5 text-xs text-green-700">
                 Agora você pode ativar pagamentos por cartão.
               </p>
+
             </div>
 
           </section>
         )}
 
-        {searchParams.get(
-          "mercadopago"
-        ) ===
+        {retornoMercadoPago ===
           "erro" && (
           <section className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">
             Não foi possível conectar ao Mercado Pago. Tente novamente.
           </section>
         )}
 
-        {searchParams.get(
-          "mercadopago"
-        ) ===
+        {retornoMercadoPago ===
           "cancelado" && (
           <section className="rounded-2xl bg-amber-50 p-4 text-sm font-bold text-amber-800">
             A conexão com o Mercado Pago foi cancelada.
@@ -796,6 +1054,7 @@ export default function PagamentoAdminPage() {
             />
 
             <div>
+
               <p className="text-sm font-bold">
                 Configurações salvas
               </p>
@@ -803,6 +1062,7 @@ export default function PagamentoAdminPage() {
               <p className="text-xs">
                 As novas formas de pagamento já estão configuradas.
               </p>
+
             </div>
 
           </section>
@@ -820,6 +1080,7 @@ export default function PagamentoAdminPage() {
           }
           className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-700 to-sky-500 px-5 font-extrabold text-white shadow-xl shadow-blue-900/10 transition active:scale-[0.99] disabled:opacity-60"
         >
+
           {salvando ? (
             <>
               <Loader2
@@ -838,9 +1099,11 @@ export default function PagamentoAdminPage() {
               Salvar configurações
             </>
           )}
+
         </button>
 
       </section>
+
     </main>
   );
 }
