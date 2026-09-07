@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import {
+  AlertTriangle,
   Clock3,
   MapPin,
   Minus,
@@ -15,6 +16,7 @@ import {
 
 import {
   useEffect,
+  useState,
 } from "react";
 
 import {
@@ -22,6 +24,7 @@ import {
 } from "@/context/CartContext";
 
 import {
+  Produto,
   useProducts,
 } from "@/context/ProductContext";
 
@@ -48,25 +51,25 @@ export default function LojaPublicaPage() {
     erroLoja,
   } = useStore();
 
+  const [
+    busca,
+    setBusca,
+  ] = useState("");
+
+  const [
+    categoriaSelecionada,
+    setCategoriaSelecionada,
+  ] = useState<string | null>(
+    null
+  );
+
   /*
    * ======================================
-   * TÍTULO DA ABA DO NAVEGADOR
+   * NOME DA LOJA NA ABA DO NAVEGADOR
    * ======================================
-   *
-   * Cada loja passa a mostrar
-   * automaticamente o próprio nome
-   * na aba do navegador.
-   *
-   * Ex:
-   *
-   * MasterCell
-   * Lanchuria
-   * Esfomeados
    */
   useEffect(() => {
-    if (
-      loja?.nome
-    ) {
+    if (loja?.nome) {
       document.title =
         loja.nome;
     } else {
@@ -82,20 +85,76 @@ export default function LojaPublicaPage() {
     loja?.nome,
   ]);
 
+  /*
+   * ======================================
+   * PRODUTOS ATIVOS
+   * ======================================
+   */
   const produtosAtivos =
     produtos.filter(
       (produto) =>
         produto.ativo
     );
 
+  /*
+   * ======================================
+   * CATEGORIAS
+   * ======================================
+   */
   const categorias =
     Array.from(
       new Set(
-        produtosAtivos.map(
-          (produto) =>
-            produto.categoria
-        )
+        produtosAtivos
+          .map(
+            (produto) =>
+              produto.categoria
+                ?.trim()
+          )
+          .filter(Boolean)
       )
+    ) as string[];
+
+  /*
+   * ======================================
+   * FILTRO DE BUSCA E CATEGORIA
+   * ======================================
+   */
+  const produtosFiltrados =
+    produtosAtivos.filter(
+      (produto) => {
+        const termo =
+          busca
+            .trim()
+            .toLowerCase();
+
+        const correspondeBusca =
+          !termo ||
+          produto.nome
+            .toLowerCase()
+            .includes(
+              termo
+            ) ||
+          produto.descricao
+            .toLowerCase()
+            .includes(
+              termo
+            ) ||
+          produto.categoria
+            .toLowerCase()
+            .includes(
+              termo
+            );
+
+        const correspondeCategoria =
+          !categoriaSelecionada ||
+          produto.categoria ===
+            categoriaSelecionada;
+
+        return (
+          correspondeBusca &&
+          correspondeCategoria
+        );
+      }
     );
 
   const formatarPreco = (
@@ -104,11 +163,19 @@ export default function LojaPublicaPage() {
     valor.toLocaleString(
       "pt-BR",
       {
-        style: "currency",
-        currency: "BRL",
+        style:
+          "currency",
+
+        currency:
+          "BRL",
       }
     );
 
+  /*
+   * ======================================
+   * QUANTIDADE DO PRODUTO NO CARRINHO
+   * ======================================
+   */
   const obterQuantidade = (
     id: number
   ) => {
@@ -120,9 +187,102 @@ export default function LojaPublicaPage() {
     );
   };
 
-  if (
-    carregando
-  ) {
+  /*
+   * ======================================
+   * VERIFICA SE PRODUTO ESTÁ ESGOTADO
+   * ======================================
+   */
+  const produtoEsgotado = (
+    produto: Produto
+  ) => {
+    return (
+      produto.estoque_controlado &&
+      produto.estoque <= 0
+    );
+  };
+
+  /*
+   * ======================================
+   * VERIFICA LIMITE DO ESTOQUE
+   * ======================================
+   */
+  const atingiuLimiteEstoque = (
+    produto: Produto
+  ) => {
+    if (
+      !produto.estoque_controlado
+    ) {
+      return false;
+    }
+
+    const quantidade =
+      obterQuantidade(
+        produto.id
+      );
+
+    return (
+      quantidade >=
+      produto.estoque
+    );
+  };
+
+  /*
+   * ======================================
+   * ADICIONAR PRODUTO COM VALIDAÇÃO
+   * ======================================
+   */
+  const adicionarAoCarrinho = (
+    produto: Produto
+  ) => {
+    if (
+      produtoEsgotado(
+        produto
+      )
+    ) {
+      alert(
+        "Este produto está esgotado."
+      );
+
+      return;
+    }
+
+    if (
+      atingiuLimiteEstoque(
+        produto
+      )
+    ) {
+      alert(
+        `Só temos ${produto.estoque} ${
+          produto.estoque === 1
+            ? "unidade disponível"
+            : "unidades disponíveis"
+        } deste produto.`
+      );
+
+      return;
+    }
+
+    adicionarProduto({
+      id:
+        produto.id,
+
+      nome:
+        produto.nome,
+
+      preco:
+        produto.preco,
+
+      imagem:
+        produto.imagem,
+    });
+  };
+
+  /*
+   * ======================================
+   * CARREGANDO
+   * ======================================
+   */
+  if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100">
 
@@ -140,6 +300,11 @@ export default function LojaPublicaPage() {
     );
   }
 
+  /*
+   * ======================================
+   * LOJA NÃO ENCONTRADA
+   * ======================================
+   */
   if (
     erroLoja ||
     !loja
@@ -192,12 +357,14 @@ export default function LojaPublicaPage() {
     loja.tempo_entrega_min &&
     loja.tempo_entrega_max
       ? `${loja.tempo_entrega_min}-${loja.tempo_entrega_max} min`
-      : "35-50 min";
+      : "";
 
   return (
     <main className="min-h-screen bg-zinc-100 pb-32 text-zinc-950">
 
-      {/* BANNER */}
+      {/* ======================================
+          BANNER
+      ====================================== */}
       <section className="relative h-44 w-full overflow-hidden sm:h-56">
 
         <Image
@@ -214,7 +381,9 @@ export default function LojaPublicaPage() {
 
       </section>
 
-      {/* DADOS DA LOJA */}
+      {/* ======================================
+          DADOS DA LOJA
+      ====================================== */}
       <section className="relative mx-auto -mt-10 max-w-md px-4">
 
         <div className="rounded-3xl bg-white p-5 shadow-lg">
@@ -267,15 +436,17 @@ export default function LojaPublicaPage() {
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
 
-                <span className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-2">
+                {tempoEntrega && (
+                  <span className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-2">
 
-                  <Clock3
-                    size={14}
-                  />
+                    <Clock3
+                      size={14}
+                    />
 
-                  {tempoEntrega}
+                    {tempoEntrega}
 
-                </span>
+                  </span>
+                )}
 
                 <span className="flex items-center gap-1 rounded-full bg-green-50 px-3 py-2 font-medium text-green-700">
                   Aberto agora
@@ -303,7 +474,9 @@ export default function LojaPublicaPage() {
 
       </section>
 
-      {/* BUSCA */}
+      {/* ======================================
+          BUSCA
+      ====================================== */}
       <section className="mx-auto max-w-md px-4 pt-5">
 
         <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
@@ -315,27 +488,60 @@ export default function LojaPublicaPage() {
 
           <input
             type="text"
+            value={
+              busca
+            }
+            onChange={(e) =>
+              setBusca(
+                e.target.value
+              )
+            }
             placeholder="O que você está procurando?"
             className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
           />
 
         </div>
 
-        {/* CATEGORIAS */}
+        {/* ======================================
+            CATEGORIAS
+        ====================================== */}
         {categorias.length > 0 && (
           <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
 
+            <button
+              type="button"
+              onClick={() =>
+                setCategoriaSelecionada(
+                  null
+                )
+              }
+              className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                categoriaSelecionada ===
+                null
+                  ? "bg-zinc-950 text-white"
+                  : "bg-white text-zinc-700 shadow-sm"
+              }`}
+            >
+              Todos
+            </button>
+
             {categorias.map(
               (
-                categoria,
-                index
+                categoria
               ) => (
                 <button
+                  type="button"
                   key={
                     categoria
                   }
+                  onClick={() =>
+                    setCategoriaSelecionada(
+                      categoria
+                    )
+                  }
                   className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                    index === 0
+                    categoriaSelecionada ===
+                    categoria
                       ? "bg-zinc-950 text-white"
                       : "bg-white text-zinc-700 shadow-sm"
                   }`}
@@ -348,7 +554,9 @@ export default function LojaPublicaPage() {
           </div>
         )}
 
-        {/* PRODUTOS */}
+        {/* ======================================
+            PRODUTOS
+        ====================================== */}
         <div className="mt-5">
 
           <div className="mb-4">
@@ -357,20 +565,38 @@ export default function LojaPublicaPage() {
               Produtos
             </h2>
 
+            <p className="mt-1 text-sm text-zinc-500">
+              {produtosFiltrados.length}{" "}
+              {produtosFiltrados.length ===
+              1
+                ? "produto encontrado"
+                : "produtos encontrados"}
+            </p>
+
           </div>
 
-          {produtosAtivos.length === 0 ? (
+          {produtosFiltrados.length ===
+          0 ? (
             <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
 
-              <p className="font-semibold">
-                Nenhum produto disponível.
+              <Search
+                size={30}
+                className="mx-auto text-zinc-300"
+              />
+
+              <p className="mt-3 font-semibold">
+                Nenhum produto encontrado
+              </p>
+
+              <p className="mt-1 text-sm text-zinc-500">
+                Tente outra busca ou categoria.
               </p>
 
             </div>
           ) : (
             <div className="space-y-4">
 
-              {produtosAtivos.map(
+              {produtosFiltrados.map(
                 (
                   produto
                 ) => {
@@ -379,14 +605,36 @@ export default function LojaPublicaPage() {
                       produto.id
                     );
 
+                  const esgotado =
+                    produtoEsgotado(
+                      produto
+                    );
+
+                  const limiteEstoque =
+                    atingiuLimiteEstoque(
+                      produto
+                    );
+
+                  const estoqueBaixo =
+                    produto.estoque_controlado &&
+                    produto.estoque >
+                      0 &&
+                    produto.estoque <=
+                      5;
+
                   return (
                     <article
                       key={
                         produto.id
                       }
-                      className="overflow-hidden rounded-3xl bg-white shadow-sm"
+                      className={`overflow-hidden rounded-3xl bg-white shadow-sm ${
+                        esgotado
+                          ? "opacity-75"
+                          : ""
+                      }`}
                     >
 
+                      {/* IMAGEM */}
                       <div className="relative h-48 w-full">
 
                         <Image
@@ -397,29 +645,91 @@ export default function LojaPublicaPage() {
                             produto.nome
                           }
                           fill
-                          className="object-cover"
+                          className={`object-cover ${
+                            esgotado
+                              ? "grayscale"
+                              : ""
+                          }`}
                         />
+
+                        {esgotado && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+
+                            <span className="rounded-full bg-white px-5 py-2 text-sm font-extrabold text-zinc-950">
+                              ESGOTADO
+                            </span>
+
+                          </div>
+                        )}
 
                       </div>
 
+                      {/* INFORMAÇÕES */}
                       <div className="p-5">
 
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-start justify-between gap-3">
 
-                          <h3 className="text-lg font-bold">
-                            {produto.nome}
-                          </h3>
+                          <div className="min-w-0 flex-1">
 
-                          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">
-                            {produto.categoria}
-                          </span>
+                            <h3 className="text-lg font-bold">
+                              {produto.nome}
+                            </h3>
+
+                            <span className="mt-2 inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">
+                              {produto.categoria}
+                            </span>
+
+                          </div>
 
                         </div>
 
-                        <p className="mt-2 text-sm leading-6 text-zinc-500">
-                          {produto.descricao}
-                        </p>
+                        {produto.descricao && (
+                          <p className="mt-3 text-sm leading-6 text-zinc-500">
+                            {produto.descricao}
+                          </p>
+                        )}
 
+                        {/* ESTOQUE */}
+                        {produto.estoque_controlado && (
+                          <div className="mt-3">
+
+                            {esgotado ? (
+                              <div className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2">
+
+                                <AlertTriangle
+                                  size={14}
+                                  className="text-red-600"
+                                />
+
+                                <span className="text-xs font-bold text-red-600">
+                                  Produto esgotado
+                                </span>
+
+                              </div>
+                            ) : estoqueBaixo ? (
+                              <div className="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2">
+
+                                <AlertTriangle
+                                  size={14}
+                                  className="text-amber-600"
+                                />
+
+                                <span className="text-xs font-bold text-amber-700">
+                                  Últimas{" "}
+                                  {produto.estoque}{" "}
+                                  {produto.estoque ===
+                                  1
+                                    ? "unidade"
+                                    : "unidades"}
+                                </span>
+
+                              </div>
+                            ) : null}
+
+                          </div>
+                        )}
+
+                        {/* PREÇO E QUANTIDADE */}
                         <div className="mt-5 flex items-center justify-between">
 
                           <span className="text-lg font-bold">
@@ -428,31 +738,28 @@ export default function LojaPublicaPage() {
                             )}
                           </span>
 
-                          {quantidade === 0 ? (
+                          {esgotado ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="rounded-2xl bg-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-500"
+                            >
+                              Esgotado
+                            </button>
+                          ) : quantidade ===
+                            0 ? (
                             <button
                               type="button"
                               onClick={() =>
-                                adicionarProduto({
-                                  id:
-                                    produto.id,
-
-                                  nome:
-                                    produto.nome,
-
-                                  preco:
-                                    produto.preco,
-
-                                  imagem:
-                                    produto.imagem,
-                                })
+                                adicionarAoCarrinho(
+                                  produto
+                                )
                               }
                               className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-950 text-white active:scale-95"
                             >
-
                               <Plus
                                 size={20}
                               />
-
                             </button>
                           ) : (
                             <div className="flex items-center gap-3 rounded-2xl bg-zinc-100 p-1">
@@ -466,11 +773,9 @@ export default function LojaPublicaPage() {
                                 }
                                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm"
                               >
-
                                 <Minus
                                   size={17}
                                 />
-
                               </button>
 
                               <span className="min-w-5 text-center font-bold">
@@ -479,34 +784,38 @@ export default function LojaPublicaPage() {
 
                               <button
                                 type="button"
-                                onClick={() =>
-                                  adicionarProduto({
-                                    id:
-                                      produto.id,
-
-                                    nome:
-                                      produto.nome,
-
-                                    preco:
-                                      produto.preco,
-
-                                    imagem:
-                                      produto.imagem,
-                                  })
+                                disabled={
+                                  limiteEstoque
                                 }
-                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-950 text-white"
+                                onClick={() =>
+                                  adicionarAoCarrinho(
+                                    produto
+                                  )
+                                }
+                                className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                                  limiteEstoque
+                                    ? "cursor-not-allowed bg-zinc-300 text-zinc-500"
+                                    : "bg-zinc-950 text-white"
+                                }`}
                               >
-
                                 <Plus
                                   size={17}
                                 />
-
                               </button>
 
                             </div>
                           )}
 
                         </div>
+
+                        {limiteEstoque &&
+                          quantidade >
+                            0 &&
+                          produto.estoque_controlado && (
+                            <p className="mt-2 text-right text-xs font-medium text-amber-700">
+                              Limite do estoque atingido
+                            </p>
+                          )}
 
                       </div>
 
@@ -522,7 +831,9 @@ export default function LojaPublicaPage() {
 
       </section>
 
-      {/* CARRINHO */}
+      {/* ======================================
+          CARRINHO
+      ====================================== */}
       {quantidadeTotal > 0 && (
         <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
 

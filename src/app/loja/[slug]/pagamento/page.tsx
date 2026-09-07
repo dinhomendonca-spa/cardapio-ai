@@ -426,17 +426,31 @@ ${textoEntrega}
         return;
       }
 
+      /*
+       * Abre uma aba vazia imediatamente.
+       * Isso evita que o navegador bloqueie
+       * o WhatsApp depois das operações async.
+       */
       const janelaWhatsApp =
         window.open(
           "",
           "_blank"
         );
 
+      let pedidoCriadoId:
+        number | null =
+        null;
+
       try {
         setSalvandoPedido(
           true
         );
 
+        /*
+         * =====================================
+         * 1. CRIAR PEDIDO
+         * =====================================
+         */
         const {
           data:
             pedido,
@@ -516,13 +530,23 @@ ${textoEntrega}
           );
         }
 
+        pedidoCriadoId =
+          Number(
+            pedido.id
+          );
+
+        /*
+         * =====================================
+         * 2. SALVAR ITENS DO PEDIDO
+         * =====================================
+         */
         const itensPedido =
           itens.map(
             (
               item
             ) => ({
               pedido_id:
-                pedido.id,
+                pedidoCriadoId,
 
               produto_id:
                 item.id,
@@ -560,11 +584,135 @@ ${textoEntrega}
           throw erroItens;
         }
 
+        /*
+         * =====================================
+         * 3. PREPARAR ITENS PARA O ESTOQUE
+         * =====================================
+         *
+         * A função SQL espera:
+         *
+         * [
+         *   {
+         *     produto_id: 1,
+         *     quantidade: 2
+         *   }
+         * ]
+         */
+        const itensEstoque =
+          itens.map(
+            (
+              item
+            ) => ({
+              produto_id:
+                item.id,
+
+              quantidade:
+                item.quantidade,
+            })
+          );
+
+        /*
+         * =====================================
+         * 4. BAIXAR ESTOQUE
+         * =====================================
+         *
+         * Essa função roda no PostgreSQL.
+         * Ela trava cada produto antes da baixa,
+         * evitando duas compras simultâneas
+         * venderem o mesmo estoque.
+         */
+        const {
+          error:
+            erroEstoque,
+        } =
+          await supabase.rpc(
+            "baixar_estoque_pedido",
+            {
+              p_loja_id:
+                loja.id,
+
+              p_pedido_id:
+                pedidoCriadoId,
+
+              p_itens:
+                itensEstoque,
+            }
+          );
+
+        if (
+          erroEstoque
+        ) {
+          console.error(
+            "Erro ao baixar estoque:",
+            erroEstoque
+          );
+
+          /*
+           * Como o pedido e os itens foram
+           * criados antes da conferência final
+           * de estoque, tentamos remover o
+           * pedido se a baixa falhar.
+           *
+           * Se pedido_itens estiver configurado
+           * com ON DELETE CASCADE, os itens
+           * também serão removidos.
+           */
+          const {
+            error:
+              erroLimpeza,
+          } =
+            await supabase
+              .from(
+                "pedidos"
+              )
+              .delete()
+              .eq(
+                "id",
+                pedidoCriadoId
+              )
+              .eq(
+                "loja_id",
+                loja.id
+              );
+
+          if (
+            erroLimpeza
+          ) {
+            console.error(
+              "Não foi possível remover o pedido após falha de estoque:",
+              erroLimpeza
+            );
+          }
+
+          pedidoCriadoId =
+            null;
+
+          const mensagemErro =
+            erroEstoque.message
+              ?.toLowerCase() ||
+            "";
+
+          if (
+            mensagemErro.includes(
+              "estoque insuficiente"
+            )
+          ) {
+            throw new Error(
+              "ESTOQUE_INSUFICIENTE"
+            );
+          }
+
+          throw erroEstoque;
+        }
+
+        /*
+         * =====================================
+         * 5. PEDIDO + ESTOQUE CONFIRMADOS
+         * =====================================
+         */
         const mensagem =
           criarMensagemWhatsApp(
-            Number(
-              pedido.id
-            )
+            pedidoCriadoId
           );
 
         const linkWhatsApp =
@@ -572,6 +720,11 @@ ${textoEntrega}
             mensagem
           )}`;
 
+        /*
+         * =====================================
+         * 6. ABRIR WHATSAPP
+         * =====================================
+         */
         if (
           janelaWhatsApp
         ) {
@@ -584,8 +737,13 @@ ${textoEntrega}
           return;
         }
 
+        /*
+         * =====================================
+         * 7. IR PARA O PEDIDO
+         * =====================================
+         */
         router.push(
-          `/loja/${loja.slug}/pedido/${pedido.id}`
+          `/loja/${loja.slug}/pedido/${pedidoCriadoId}`
         );
       } catch (
         error
@@ -600,6 +758,23 @@ ${textoEntrega}
           !janelaWhatsApp.closed
         ) {
           janelaWhatsApp.close();
+        }
+
+        if (
+          error instanceof
+            Error &&
+          error.message ===
+            "ESTOQUE_INSUFICIENTE"
+        ) {
+          alert(
+            "Um dos produtos do seu pedido não possui mais a quantidade solicitada. Volte para a loja e atualize o carrinho."
+          );
+
+          router.push(
+            `/loja/${loja.slug}`
+          );
+
+          return;
         }
 
         alert(
@@ -677,6 +852,7 @@ ${textoEntrega}
 
       <section className="mx-auto max-w-md space-y-3 px-3 py-3">
 
+        {/* PIX */}
         <section className="rounded-3xl bg-white p-5 text-center shadow-sm">
 
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
@@ -721,6 +897,7 @@ ${textoEntrega}
                 }
                 className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 text-sm font-bold text-white"
               >
+
                 {copiado ? (
                   <>
                     <Check
@@ -738,6 +915,7 @@ ${textoEntrega}
                     Copiar Pix copia e cola
                   </>
                 )}
+
               </button>
             </>
           ) : (
@@ -748,6 +926,7 @@ ${textoEntrega}
 
         </section>
 
+        {/* RESUMO */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
 
           <h2 className="font-extrabold">
@@ -829,6 +1008,7 @@ ${textoEntrega}
 
         </section>
 
+        {/* CLIENTE */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
 
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
@@ -845,6 +1025,7 @@ ${textoEntrega}
 
         </section>
 
+        {/* ENDEREÇO */}
         {dadosCheckout.tipoEntrega ===
           "entrega" && (
           <section className="rounded-3xl bg-white p-4 shadow-sm">
@@ -862,6 +1043,7 @@ ${textoEntrega}
                 </h2>
 
                 <p className="mt-1 text-xs leading-5 text-zinc-500">
+
                   {dadosCheckout.rua},{" "}
                   {dadosCheckout.numero}
 
@@ -877,6 +1059,7 @@ ${textoEntrega}
                       {dadosCheckout.complemento}
                     </>
                   )}
+
                 </p>
 
               </div>
@@ -888,6 +1071,7 @@ ${textoEntrega}
 
       </section>
 
+      {/* BOTÃO */}
       <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur">
 
         <button
@@ -912,7 +1096,7 @@ ${textoEntrega}
 
               <p className="text-[11px] opacity-80">
                 {salvandoPedido
-                  ? "Registrando..."
+                  ? "Verificando estoque..."
                   : "Enviar para a loja"}
               </p>
 

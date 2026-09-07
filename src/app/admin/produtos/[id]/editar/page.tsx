@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import {
   ArrowLeft,
+  Boxes,
   ImagePlus,
   Loader2,
   Save,
@@ -23,173 +24,115 @@ import {
   useState,
 } from "react";
 
-import {
-  supabase,
-} from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 type Produto = {
   id: number;
-
   nome: string;
-
   descricao: string;
-
   categoria: string;
-
   preco: number;
-
+  estoque: number;
+  estoque_controlado: boolean;
   imagem: string;
-
   ativo: boolean;
 };
 
 export default function EditarProdutoPage() {
-  const params =
-    useParams();
+  const params = useParams();
+  const router = useRouter();
 
-  const router =
-    useRouter();
-
-  const id =
-    Number(params.id);
+  const id = Number(params.id);
 
   const inputImagemRef =
-    useRef<HTMLInputElement>(
-      null
-    );
+    useRef<HTMLInputElement>(null);
 
-  const [
-    produto,
-    setProduto,
-  ] =
-    useState<Produto | null>(
-      null
-    );
+  const [produto, setProduto] =
+    useState<Produto | null>(null);
 
-  const [
-    nome,
-    setNome,
-  ] =
+  const [nome, setNome] =
+    useState("");
+
+  const [descricao, setDescricao] =
+    useState("");
+
+  const [categoria, setCategoria] =
+    useState("");
+
+  const [preco, setPreco] =
+    useState("");
+
+  const [estoque, setEstoque] =
     useState("");
 
   const [
-    descricao,
-    setDescricao,
-  ] =
+    estoqueControlado,
+    setEstoqueControlado,
+  ] = useState(true);
+
+  const [imagemAtual, setImagemAtual] =
     useState("");
 
-  const [
-    categoria,
-    setCategoria,
-  ] =
-    useState("");
+  const [arquivo, setArquivo] =
+    useState<File | null>(null);
 
-  const [
-    preco,
-    setPreco,
-  ] =
-    useState("");
+  const [preview, setPreview] =
+    useState<string | null>(null);
 
-  const [
-    imagemAtual,
-    setImagemAtual,
-  ] =
-    useState("");
-
-  const [
-    arquivo,
-    setArquivo,
-  ] =
-    useState<File | null>(
-      null
-    );
-
-  const [
-    preview,
-    setPreview,
-  ] =
-    useState<string | null>(
-      null
-    );
-
-  const [
-    carregando,
-    setCarregando,
-  ] =
+  const [carregando, setCarregando] =
     useState(true);
 
-  const [
-    salvando,
-    setSalvando,
-  ] =
+  const [salvando, setSalvando] =
     useState(false);
 
   useEffect(() => {
-    const carregarProduto =
-      async () => {
-        const {
-          data,
-          error,
-        } =
+    const carregarProduto = async () => {
+      try {
+        setCarregando(true);
+
+        const { data, error } =
           await supabase
-            .from(
-              "produtos"
-            )
+            .from("produtos")
             .select("*")
-            .eq(
-              "id",
-              id
-            )
+            .eq("id", id)
             .single();
 
-        if (
-          error ||
-          !data
-        ) {
-          alert(
+        if (error || !data) {
+          throw error || new Error(
             "Produto não encontrado."
           );
-
-          router.push(
-            "/admin/produtos"
-          );
-
-          return;
         }
 
-        const produtoCarregado: Produto =
-          {
-            id:
-              data.id,
+        const produtoCarregado: Produto = {
+          id: Number(data.id),
 
-            nome:
-              data.nome,
+          nome:
+            data.nome ?? "",
 
-            descricao:
-              data.descricao ??
-              "",
+          descricao:
+            data.descricao ?? "",
 
-            categoria:
-              data.categoria ??
-              "",
+          categoria:
+            data.categoria ?? "",
 
-            preco:
-              Number(
-                data.preco
-              ),
+          preco:
+            Number(data.preco ?? 0),
 
-            imagem:
-              data.imagem ??
-              "/images/logo.png",
+          estoque:
+            Number(data.estoque ?? 0),
 
-            ativo:
-              data.ativo ??
-              true,
-          };
+          estoque_controlado:
+            data.estoque_controlado ?? true,
 
-        setProduto(
-          produtoCarregado
-        );
+          imagem:
+            data.imagem ??
+            "/images/logo.png",
+
+          ativo:
+            data.ativo ?? true,
+        };
+
+        setProduto(produtoCarregado);
 
         setNome(
           produtoCarregado.nome
@@ -206,41 +149,73 @@ export default function EditarProdutoPage() {
         setPreco(
           String(
             produtoCarregado.preco
-          ).replace(
-            ".",
-            ","
+          ).replace(".", ",")
+        );
+
+        setEstoque(
+          String(
+            produtoCarregado.estoque
           )
+        );
+
+        setEstoqueControlado(
+          produtoCarregado.estoque_controlado
         );
 
         setImagemAtual(
           produtoCarregado.imagem
         );
-
-        setCarregando(
-          false
+      } catch (error) {
+        console.error(
+          "Erro ao carregar produto:",
+          error
         );
-      };
 
-    carregarProduto();
-  }, [
-    id,
-    router,
-  ]);
+        alert(
+          "Produto não encontrado."
+        );
+
+        router.push(
+          "/admin/produtos"
+        );
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    if (
+      Number.isInteger(id) &&
+      id > 0
+    ) {
+      carregarProduto();
+    } else {
+      alert(
+        "Produto inválido."
+      );
+
+      router.push(
+        "/admin/produtos"
+      );
+    }
+  }, [id, router]);
 
   const selecionarImagem = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
     const imagem =
-      event.target
-        .files?.[0];
+      event.target.files?.[0];
 
     if (!imagem) {
       return;
     }
 
-    setArquivo(
-      imagem
-    );
+    if (preview) {
+      URL.revokeObjectURL(
+        preview
+      );
+    }
+
+    setArquivo(imagem);
 
     setPreview(
       URL.createObjectURL(
@@ -249,59 +224,53 @@ export default function EditarProdutoPage() {
     );
   };
 
-  const abrirSeletorImagem =
-    () => {
-      inputImagemRef.current?.click();
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(
+          preview
+        );
+      }
     };
+  }, [preview]);
+
+  const abrirSeletorImagem = () => {
+    inputImagemRef.current?.click();
+  };
 
   const fazerUploadNovaImagem =
     async () => {
-      if (
-        !arquivo
-      ) {
+      if (!arquivo) {
         return imagemAtual;
       }
 
       const extensao =
         arquivo.name
           .split(".")
-          .pop();
+          .pop() || "jpg";
 
       const nomeArquivo =
         `${Date.now()}-${crypto.randomUUID()}.${extensao}`;
 
-      const {
-        error,
-      } =
+      const { error } =
         await supabase.storage
-          .from(
-            "product-images"
-          )
+          .from("product-images")
           .upload(
             nomeArquivo,
             arquivo,
             {
-              cacheControl:
-                "3600",
-
-              upsert:
-                false,
+              cacheControl: "3600",
+              upsert: false,
             }
           );
 
-      if (
-        error
-      ) {
+      if (error) {
         throw error;
       }
 
-      const {
-        data,
-      } =
+      const { data } =
         supabase.storage
-          .from(
-            "product-images"
-          )
+          .from("product-images")
           .getPublicUrl(
             nomeArquivo
           );
@@ -319,9 +288,10 @@ export default function EditarProdutoPage() {
           )
         );
 
-      if (
-        !nome.trim()
-      ) {
+      const estoqueNumerico =
+        Number(estoque);
+
+      if (!nome.trim()) {
         alert(
           "Preencha o nome do produto."
         );
@@ -329,9 +299,7 @@ export default function EditarProdutoPage() {
         return;
       }
 
-      if (
-        !categoria.trim()
-      ) {
+      if (!categoria.trim()) {
         alert(
           "Preencha a categoria do produto."
         );
@@ -340,7 +308,7 @@ export default function EditarProdutoPage() {
       }
 
       if (
-        !precoNumerico ||
+        Number.isNaN(precoNumerico) ||
         precoNumerico <= 0
       ) {
         alert(
@@ -350,21 +318,35 @@ export default function EditarProdutoPage() {
         return;
       }
 
-      try {
-        setSalvando(
-          true
+      if (
+        estoqueControlado &&
+        (
+          estoque.trim() === "" ||
+          Number.isNaN(
+            estoqueNumerico
+          ) ||
+          !Number.isInteger(
+            estoqueNumerico
+          ) ||
+          estoqueNumerico < 0
+        )
+      ) {
+        alert(
+          "Informe uma quantidade de estoque válida."
         );
+
+        return;
+      }
+
+      try {
+        setSalvando(true);
 
         const imagemUrl =
           await fazerUploadNovaImagem();
 
-        const {
-          error,
-        } =
+        const { error } =
           await supabase
-            .from(
-              "produtos"
-            )
+            .from("produtos")
             .update({
               nome:
                 nome.trim(),
@@ -378,17 +360,20 @@ export default function EditarProdutoPage() {
               preco:
                 precoNumerico,
 
+              estoque:
+                estoqueControlado
+                  ? estoqueNumerico
+                  : 0,
+
+              estoque_controlado:
+                estoqueControlado,
+
               imagem:
                 imagemUrl,
             })
-            .eq(
-              "id",
-              id
-            );
+            .eq("id", id);
 
-        if (
-          error
-        ) {
+        if (error) {
           throw error;
         }
 
@@ -397,9 +382,7 @@ export default function EditarProdutoPage() {
         );
 
         router.refresh();
-      } catch (
-        error
-      ) {
+      } catch (error) {
         console.error(
           "Erro ao editar produto:",
           error
@@ -409,9 +392,7 @@ export default function EditarProdutoPage() {
           "Não foi possível editar o produto."
         );
       } finally {
-        setSalvando(
-          false
-        );
+        setSalvando(false);
       }
     };
 
@@ -421,12 +402,10 @@ export default function EditarProdutoPage() {
   ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100">
-
         <Loader2
           className="animate-spin"
           size={28}
         />
-
       </main>
     );
   }
@@ -448,7 +427,6 @@ export default function EditarProdutoPage() {
           </Link>
 
           <div>
-
             <p className="text-xs text-zinc-500">
               Produtos
             </p>
@@ -456,7 +434,6 @@ export default function EditarProdutoPage() {
             <h1 className="text-lg font-bold">
               Editar produto
             </h1>
-
           </div>
 
         </div>
@@ -465,6 +442,7 @@ export default function EditarProdutoPage() {
 
       <section className="mx-auto max-w-md space-y-5 px-4 py-5">
 
+        {/* FOTO */}
         <section className="rounded-3xl bg-white p-5 shadow-sm">
 
           <h2 className="font-bold">
@@ -472,9 +450,7 @@ export default function EditarProdutoPage() {
           </h2>
 
           <input
-            ref={
-              inputImagemRef
-            }
+            ref={inputImagemRef}
             type="file"
             accept="image/*"
             onChange={
@@ -503,9 +479,7 @@ export default function EditarProdutoPage() {
               fill
               className="object-cover"
               unoptimized={
-                Boolean(
-                  preview
-                )
+                Boolean(preview)
               }
             />
 
@@ -525,82 +499,213 @@ export default function EditarProdutoPage() {
 
           </button>
 
+          <p className="mt-3 text-center text-xs text-zinc-500">
+            Toque na imagem para trocar
+          </p>
+
         </section>
 
+        {/* INFORMAÇÕES */}
         <section className="rounded-3xl bg-white p-5 shadow-sm">
 
           <h2 className="font-bold">
             Informações
           </h2>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
 
-            <input
-              value={
-                nome
-              }
-              onChange={(
-                e
-              ) =>
-                setNome(
-                  e.target.value
-                )
-              }
-              placeholder="Nome do produto"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
+            <div>
+              <label
+                htmlFor="nome"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Nome do produto
+              </label>
 
-            <textarea
-              value={
-                descricao
-              }
-              onChange={(
-                e
-              ) =>
-                setDescricao(
-                  e.target.value
-                )
-              }
-              placeholder="Descrição"
-              rows={4}
-              className="w-full resize-none rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
+              <input
+                id="nome"
+                value={nome}
+                onChange={(e) =>
+                  setNome(
+                    e.target.value
+                  )
+                }
+                placeholder="Nome do produto"
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
 
-            <input
-              value={
-                categoria
-              }
-              onChange={(
-                e
-              ) =>
-                setCategoria(
-                  e.target.value
-                )
-              }
-              placeholder="Categoria. Ex: Cabos, Capinhas, Fones..."
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
+            <div>
+              <label
+                htmlFor="descricao"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Descrição
+              </label>
 
-            <input
-              value={
-                preco
-              }
-              onChange={(
-                e
-              ) =>
-                setPreco(
-                  e.target.value
-                )
-              }
-              placeholder="Preço"
-              inputMode="decimal"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
+              <textarea
+                id="descricao"
+                value={descricao}
+                onChange={(e) =>
+                  setDescricao(
+                    e.target.value
+                  )
+                }
+                placeholder="Descrição"
+                rows={4}
+                className="w-full resize-none rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="categoria"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Categoria
+              </label>
+
+              <input
+                id="categoria"
+                value={categoria}
+                onChange={(e) =>
+                  setCategoria(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex: Cabos, Capinhas, Fones..."
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="preco"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Preço
+              </label>
+
+              <input
+                id="preco"
+                value={preco}
+                onChange={(e) =>
+                  setPreco(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex: 49,90"
+                inputMode="decimal"
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
 
           </div>
 
         </section>
 
+        {/* ESTOQUE */}
+        <section className="rounded-3xl bg-white p-5 shadow-sm">
+
+          <div className="flex items-start gap-3">
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100">
+
+              <Boxes
+                size={20}
+              />
+
+            </div>
+
+            <div>
+              <h2 className="font-bold">
+                Controle de estoque
+              </h2>
+
+              <p className="mt-1 text-sm leading-5 text-zinc-500">
+                Controle a quantidade disponível deste produto.
+              </p>
+            </div>
+
+          </div>
+
+          <label className="mt-5 flex cursor-pointer items-center justify-between rounded-2xl bg-zinc-100 p-4">
+
+            <div>
+              <p className="text-sm font-bold">
+                Controlar estoque
+              </p>
+
+              <p className="mt-1 text-xs text-zinc-500">
+                Ative para limitar as vendas pela quantidade disponível.
+              </p>
+            </div>
+
+            <input
+              type="checkbox"
+              checked={
+                estoqueControlado
+              }
+              onChange={(e) =>
+                setEstoqueControlado(
+                  e.target.checked
+                )
+              }
+              className="h-5 w-5 accent-zinc-950"
+            />
+
+          </label>
+
+          {estoqueControlado && (
+            <div className="mt-4">
+
+              <label
+                htmlFor="estoque"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Quantidade disponível
+              </label>
+
+              <input
+                id="estoque"
+                type="number"
+                value={estoque}
+                onChange={(e) =>
+                  setEstoque(
+                    e.target.value
+                  )
+                }
+                min="0"
+                step="1"
+                inputMode="numeric"
+                placeholder="Ex: 20"
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 text-lg font-semibold outline-none"
+              />
+
+              <p className="mt-2 text-xs text-zinc-500">
+                Quando chegar a 0, o produto poderá ser marcado como esgotado na loja.
+              </p>
+
+            </div>
+          )}
+
+          {!estoqueControlado && (
+            <div className="mt-4 rounded-2xl bg-amber-50 p-4">
+
+              <p className="text-sm font-semibold text-amber-800">
+                Estoque não controlado
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-amber-700">
+                O produto poderá ser vendido sem limite de quantidade.
+              </p>
+
+            </div>
+          )}
+
+        </section>
+
+        {/* SALVAR */}
         <button
           type="button"
           onClick={

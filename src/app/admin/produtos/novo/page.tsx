@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import {
   ArrowLeft,
+  Boxes,
   ImagePlus,
   Loader2,
   Save,
@@ -63,6 +64,11 @@ export default function NovoProdutoPage() {
   ] = useState("");
 
   const [
+    estoque,
+    setEstoque,
+  ] = useState("");
+
+  const [
     arquivo,
     setArquivo,
   ] =
@@ -81,7 +87,8 @@ export default function NovoProdutoPage() {
   const [
     salvando,
     setSalvando,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const selecionarImagem = (
     event: ChangeEvent<HTMLInputElement>
@@ -112,7 +119,7 @@ export default function NovoProdutoPage() {
   const fazerUploadImagem =
     async () => {
       if (!arquivo) {
-        return "/images/pizza.png";
+        return "/images/logo.png";
       }
 
       const extensao =
@@ -170,6 +177,9 @@ export default function NovoProdutoPage() {
           )
         );
 
+      const estoqueNumerico =
+        Number(estoque);
+
       if (!nome.trim()) {
         alert(
           "Preencha o nome do produto."
@@ -197,6 +207,23 @@ export default function NovoProdutoPage() {
         return;
       }
 
+      if (
+        estoque.trim() === "" ||
+        Number.isNaN(
+          estoqueNumerico
+        ) ||
+        estoqueNumerico < 0 ||
+        !Number.isInteger(
+          estoqueNumerico
+        )
+      ) {
+        alert(
+          "Informe uma quantidade de estoque válida."
+        );
+
+        return;
+      }
+
       try {
         setSalvando(
           true
@@ -217,6 +244,12 @@ export default function NovoProdutoPage() {
 
           preco:
             precoNumerico,
+
+          estoque:
+            estoqueNumerico,
+
+          estoque_controlado:
+            true,
 
           imagem:
             imagemUrl,
@@ -263,6 +296,7 @@ export default function NovoProdutoPage() {
           </Link>
 
           <div>
+
             <p className="text-xs text-zinc-500">
               Produtos
             </p>
@@ -270,6 +304,7 @@ export default function NovoProdutoPage() {
             <h1 className="text-lg font-bold">
               Novo produto
             </h1>
+
           </div>
 
         </div>
@@ -346,71 +381,168 @@ export default function NovoProdutoPage() {
 
           <div className="mt-4 space-y-3">
 
+            <div>
+              <label
+                htmlFor="nome"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Nome do produto
+              </label>
+
+              <input
+                id="nome"
+                value={
+                  nome
+                }
+                onChange={(
+                  e
+                ) =>
+                  setNome(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex: Cabo USB-C"
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="descricao"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Descrição
+              </label>
+
+              <textarea
+                id="descricao"
+                value={
+                  descricao
+                }
+                onChange={(
+                  e
+                ) =>
+                  setDescricao(
+                    e.target.value
+                  )
+                }
+                placeholder="Descrição do produto"
+                rows={4}
+                className="w-full resize-none rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="categoria"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Categoria
+              </label>
+
+              <input
+                id="categoria"
+                value={
+                  categoria
+                }
+                onChange={(
+                  e
+                ) =>
+                  setCategoria(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex: Capinhas, Cabos, Fones..."
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="preco"
+                className="mb-2 block text-sm font-semibold"
+              >
+                Preço
+              </label>
+
+              <input
+                id="preco"
+                value={
+                  preco
+                }
+                onChange={(
+                  e
+                ) =>
+                  setPreco(
+                    e.target.value
+                  )
+                }
+                placeholder="Ex: 49,90"
+                inputMode="decimal"
+                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              />
+            </div>
+
+          </div>
+
+        </section>
+
+        <section className="rounded-3xl bg-white p-5 shadow-sm">
+
+          <div className="flex items-start gap-3">
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100">
+              <Boxes
+                size={20}
+              />
+            </div>
+
+            <div>
+
+              <h2 className="font-bold">
+                Estoque
+              </h2>
+
+              <p className="mt-1 text-sm leading-5 text-zinc-500">
+                Informe quantas unidades deste produto estão disponíveis.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="mt-4">
+
+            <label
+              htmlFor="estoque"
+              className="mb-2 block text-sm font-semibold"
+            >
+              Quantidade disponível
+            </label>
+
             <input
+              id="estoque"
+              type="number"
               value={
-                nome
+                estoque
               }
               onChange={(
                 e
               ) =>
-                setNome(
-                  e.target
-                    .value
+                setEstoque(
+                  e.target.value
                 )
               }
-              placeholder="Nome do produto"
+              placeholder="Ex: 20"
+              min="0"
+              step="1"
+              inputMode="numeric"
               className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
             />
 
-            <textarea
-              value={
-                descricao
-              }
-              onChange={(
-                e
-              ) =>
-                setDescricao(
-                  e.target
-                    .value
-                )
-              }
-              placeholder="Descrição"
-              rows={4}
-              className="w-full resize-none rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
-
-            <input
-              value={
-                categoria
-              }
-              onChange={(
-                e
-              ) =>
-                setCategoria(
-                  e.target
-                    .value
-                )
-              }
-              placeholder="Categoria. Ex: Capinhas, Cabos, Fones..."
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
-
-            <input
-              value={
-                preco
-              }
-              onChange={(
-                e
-              ) =>
-                setPreco(
-                  e.target
-                    .value
-                )
-              }
-              placeholder="Preço"
-              inputMode="decimal"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-            />
+            <p className="mt-2 text-xs leading-5 text-zinc-500">
+              Use 0 quando o produto estiver sem estoque.
+            </p>
 
           </div>
 

@@ -14,13 +14,20 @@ import { supabase } from "@/lib/supabase";
 
 export type Produto = {
   id: number;
+
   loja_id: number;
 
   nome: string;
+
   descricao: string;
+
   categoria: string;
 
   preco: number;
+
+  estoque: number;
+
+  estoque_controlado: boolean;
 
   imagem: string;
 
@@ -88,20 +95,27 @@ export function ProductProvider({
 
         if (!loja) {
           setProdutos([]);
-          setCarregando(false);
+
+          setCarregando(
+            false
+          );
 
           return;
         }
 
         try {
-          setCarregando(true);
+          setCarregando(
+            true
+          );
 
           const {
             data,
             error,
           } =
             await supabase
-              .from("produtos")
+              .from(
+                "produtos"
+              )
               .select("*")
               .eq(
                 "loja_id",
@@ -142,16 +156,27 @@ export function ProductProvider({
                   "",
 
                 categoria:
-                  produto.categoria,
+                  produto.categoria ??
+                  "",
 
                 preco:
                   Number(
                     produto.preco
                   ),
 
+                estoque:
+                  Number(
+                    produto.estoque ??
+                      0
+                  ),
+
+                estoque_controlado:
+                  produto.estoque_controlado ??
+                  true,
+
                 imagem:
                   produto.imagem ??
-                  "/images/pizza.png",
+                  "/images/logo.png",
 
                 ativo:
                   produto.ativo ??
@@ -159,13 +184,17 @@ export function ProductProvider({
               })
             )
           );
-        } catch (error) {
+        } catch (
+          error
+        ) {
           console.error(
             "Erro ao carregar produtos:",
             error
           );
 
-          setProdutos([]);
+          setProdutos(
+            []
+          );
         } finally {
           setCarregando(
             false
@@ -198,7 +227,9 @@ export function ProductProvider({
         error,
       } =
         await supabase
-          .from("produtos")
+          .from(
+            "produtos"
+          )
           .insert({
             loja_id:
               loja.id,
@@ -214,6 +245,12 @@ export function ProductProvider({
 
             preco:
               produto.preco,
+
+            estoque:
+              produto.estoque,
+
+            estoque_controlado:
+              produto.estoque_controlado,
 
             imagem:
               produto.imagem,
@@ -248,7 +285,9 @@ export function ProductProvider({
         error,
       } =
         await supabase
-          .from("produtos")
+          .from(
+            "produtos"
+          )
           .delete()
           .eq(
             "id",
@@ -297,7 +336,9 @@ export function ProductProvider({
         error,
       } =
         await supabase
-          .from("produtos")
+          .from(
+            "produtos"
+          )
           .update({
             ativo:
               !produto.ativo,
