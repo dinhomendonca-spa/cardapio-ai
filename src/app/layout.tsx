@@ -1,5 +1,6 @@
 import type {
   Metadata,
+  Viewport,
 } from "next";
 
 import {
@@ -62,6 +63,12 @@ export const metadata: Metadata = {
   description:
     "Sua loja online de forma simples. Produtos, carrinho, Pix e pedidos direto pelo WhatsApp.",
 
+  manifest:
+    "/manifest.webmanifest",
+
+  applicationName:
+    "Lojas AI",
+
   icons: {
     icon:
       "/images/lojas-ai.png",
@@ -71,6 +78,17 @@ export const metadata: Metadata = {
 
     apple:
       "/images/lojas-ai.png",
+  },
+
+  appleWebApp: {
+    capable:
+      true,
+
+    title:
+      "Lojas AI",
+
+    statusBarStyle:
+      "black-translucent",
   },
 
   openGraph: {
@@ -125,6 +143,20 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor:
+    "#0ea5e9",
+
+  width:
+    "device-width",
+
+  initialScale:
+    1,
+
+  viewportFit:
+    "cover",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -145,7 +177,9 @@ export default function RootLayout({
             <ProductProvider>
 
               <CartProvider>
+
                 {children}
+
               </CartProvider>
 
             </ProductProvider>
