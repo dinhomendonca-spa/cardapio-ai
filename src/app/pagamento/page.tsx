@@ -6,14 +6,20 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  CreditCard,
   MapPin,
   MessageCircle,
+  QrCode,
   ShoppingBag,
+  ShieldCheck,
 } from "lucide-react";
 
-import { QRCodeSVG } from "qrcode.react";
+import {
+  QRCodeSVG,
+} from "qrcode.react";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -38,6 +44,10 @@ import {
   supabase,
 } from "@/lib/supabase";
 
+type FormaPagamento =
+  | "pix"
+  | "cartao";
+
 function normalizarWhatsApp(
   telefone: string
 ) {
@@ -47,15 +57,6 @@ function normalizarWhatsApp(
       ""
     );
 
-  /*
-   * Se foi cadastrado apenas:
-   *
-   * 22999999999
-   *
-   * adicionamos o Brasil:
-   *
-   * 5522999999999
-   */
   if (
     numeros.length === 10 ||
     numeros.length === 11
@@ -91,15 +92,96 @@ export default function PagamentoPage() {
     setSalvandoPedido,
   ] = useState(false);
 
+  const [
+    formaPagamento,
+    setFormaPagamento,
+  ] =
+    useState<FormaPagamento>(
+      "pix"
+    );
+
+  /*
+   * ==========================================
+   * FORMAS DE PAGAMENTO DISPONÍVEIS
+   * ==========================================
+   */
+
+  const pixDisponivel =
+    loja?.aceita_pix !==
+      false &&
+    Boolean(
+      loja?.chave_pix
+    );
+
+  const cartaoDisponivel =
+    Boolean(
+      loja?.aceita_cartao
+    ) &&
+    Boolean(
+      loja?.mercado_pago_conectado
+    );
+
+  /*
+   * Se Pix estiver desativado
+   * e cartão estiver disponível,
+   * selecionamos cartão automaticamente.
+   */
+
+  useEffect(() => {
+    if (
+      !pixDisponivel &&
+      cartaoDisponivel
+    ) {
+      setFormaPagamento(
+        "cartao"
+      );
+
+      return;
+    }
+
+    if (
+      pixDisponivel &&
+      !cartaoDisponivel
+    ) {
+      setFormaPagamento(
+        "pix"
+      );
+    }
+  }, [
+    pixDisponivel,
+    cartaoDisponivel,
+  ]);
+
+  /*
+   * ==========================================
+   * ENTREGA
+   * ==========================================
+   */
+
+  const taxaACombinar =
+    dadosCheckout.tipoEntrega ===
+      "entrega" &&
+    (
+      loja?.taxa_entrega_a_combinar ??
+      false
+    );
+
   const taxaEntrega =
     dadosCheckout.tipoEntrega ===
-    "entrega"
+      "entrega" &&
+    !taxaACombinar
       ? dadosCheckout.taxaEntrega
       : 0;
 
   const total =
     valorTotal +
     taxaEntrega;
+
+  /*
+   * ==========================================
+   * LOJA
+   * ==========================================
+   */
 
   const nomeLoja =
     loja?.nome ||
@@ -115,6 +197,12 @@ export default function PagamentoPage() {
         ""
     );
 
+  /*
+   * ==========================================
+   * FORMATAR PREÇO
+   * ==========================================
+   */
+
   const formatarPreco = (
     valor: number
   ) =>
@@ -128,6 +216,12 @@ export default function PagamentoPage() {
           "BRL",
       }
     );
+
+  /*
+   * ==========================================
+   * ENDEREÇO
+   * ==========================================
+   */
 
   const enderecoCliente =
     useMemo(() => {
@@ -168,9 +262,16 @@ export default function PagamentoPage() {
       enderecoCliente,
     ]);
 
+  /*
+   * ==========================================
+   * PIX
+   * ==========================================
+   */
+
   const pixCopiaECola =
     useMemo(() => {
       if (
+        !pixDisponivel ||
         !chavePix ||
         total <= 0
       ) {
@@ -218,7 +319,7 @@ export default function PagamentoPage() {
             total,
 
           descricao:
-            "PEDIDO CARDAPIO",
+            "PEDIDO ONLINE",
         });
       } catch (
         error
@@ -231,6 +332,7 @@ export default function PagamentoPage() {
         return "";
       }
     }, [
+      pixDisponivel,
       chavePix,
       nomeLoja,
       loja?.cidade,
@@ -272,6 +374,12 @@ export default function PagamentoPage() {
         );
       }
     };
+
+  /*
+   * ==========================================
+   * MENSAGEM WHATSAPP
+   * ==========================================
+   */
 
   const criarMensagemWhatsApp = (
     pedidoId: number
@@ -324,6 +432,29 @@ ${[
   .join(", ")}`;
     }
 
+    const textoEntrega =
+      dadosCheckout.tipoEntrega ===
+      "entrega"
+        ? taxaACombinar
+          ? "Entrega: A combinar"
+          : taxaEntrega === 0
+            ? "Entrega: Grátis"
+            : `Entrega: ${formatarPreco(
+                taxaEntrega
+              )}`
+        : "Retirada: Grátis";
+
+    const avisoTaxa =
+      taxaACombinar
+        ? "\n\n⚠️ A taxa de entrega será combinada com a loja."
+        : "";
+
+    const textoPagamento =
+      formaPagamento ===
+      "cartao"
+        ? "Cartão de crédito"
+        : "Pix";
+
     return `Olá! Gostaria de confirmar meu pedido na *${nomeLoja}*.
 
 🧾 *PEDIDO #${pedidoId}*
@@ -349,28 +480,22 @@ Subtotal: ${formatarPreco(
       valorTotal
     )}
 
-${
-  dadosCheckout.tipoEntrega ===
-  "entrega"
-    ? `Entrega: ${
-        taxaEntrega ===
-        0
-          ? "Grátis"
-          : formatarPreco(
-              taxaEntrega
-            )
-      }`
-    : "Retirada: Grátis"
-}
+${textoEntrega}
 
 *Total: ${formatarPreco(
       total
-    )}*
+    )}*${avisoTaxa}
 
-💳 Pagamento: Pix
+💳 Pagamento: ${textoPagamento}
 
-✅ Pedido registrado no Cardápio AI.`;
+✅ Pedido enviado para confirmação.`;
   };
+
+  /*
+   * ==========================================
+   * CONFIRMAR PEDIDO
+   * ==========================================
+   */
 
   const confirmarPedido =
     async () => {
@@ -413,6 +538,47 @@ ${
         return;
       }
 
+      /*
+       * ======================================
+       * CARTÃO
+       * ======================================
+       *
+       * A interface já está pronta.
+       *
+       * Não permitimos registrar como pago
+       * enquanto a cobrança Mercado Pago
+       * não estiver implementada.
+       */
+
+      if (
+        formaPagamento ===
+        "cartao"
+      ) {
+        alert(
+          "O cartão está habilitado nesta loja. Agora falta conectar a cobrança segura do Mercado Pago, que será o próximo passo."
+        );
+
+        return;
+      }
+
+      /*
+       * ======================================
+       * PIX
+       * ======================================
+       */
+
+      if (
+        formaPagamento ===
+          "pix" &&
+        !pixDisponivel
+      ) {
+        alert(
+          "Pix não está disponível nesta loja."
+        );
+
+        return;
+      }
+
       if (
         !whatsappLoja
       ) {
@@ -423,16 +589,6 @@ ${
         return;
       }
 
-      /*
-       * MUITO IMPORTANTE:
-       *
-       * Abrimos a nova aba imediatamente,
-       * enquanto ainda estamos dentro do
-       * clique do usuário.
-       *
-       * Isso evita que Chrome/Safari
-       * bloqueiem o WhatsApp como popup.
-       */
       const janelaWhatsApp =
         window.open(
           "",
@@ -472,7 +628,7 @@ ${
                 dadosCheckout.tipoEntrega,
 
               forma_pagamento:
-                "pix",
+                formaPagamento,
 
               subtotal:
                 valorTotal,
@@ -517,7 +673,9 @@ ${
           throw erroPedido;
         }
 
-        if (!pedido) {
+        if (
+          !pedido
+        ) {
           throw new Error(
             "Pedido não retornado pelo banco."
           );
@@ -579,32 +737,20 @@ ${
             mensagem
           )}`;
 
-        /*
-         * A aba que abrimos no início
-         * agora recebe o WhatsApp.
-         */
         if (
           janelaWhatsApp
         ) {
           janelaWhatsApp.location.href =
             linkWhatsApp;
         } else {
-          /*
-           * Fallback caso o navegador
-           * ainda tenha bloqueado a aba.
-           */
           window.location.href =
             linkWhatsApp;
 
           return;
         }
 
-        /*
-         * A aba original continua
-         * no acompanhamento.
-         */
         router.push(
-          `/pedido/${pedido.id}`
+          `/loja/${loja.slug}/pedido/${pedido.id}`
         );
       } catch (
         error
@@ -614,10 +760,6 @@ ${
           error
         );
 
-        /*
-         * Se houve erro,
-         * fecha a aba vazia.
-         */
         if (
           janelaWhatsApp &&
           !janelaWhatsApp.closed
@@ -635,13 +777,21 @@ ${
       }
     };
 
+  /*
+   * ==========================================
+   * CARRINHO VAZIO
+   * ==========================================
+   */
+
   if (
     itens.length ===
     0
   ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
+
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
+
           <ShoppingBag
             size={36}
             className="mx-auto text-zinc-300"
@@ -652,22 +802,35 @@ ${
           </h1>
 
           <Link
-            href="/menu"
+            href={`/loja/${loja?.slug}`}
             className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 font-bold text-white"
           >
-            Voltar ao cardápio
+            Voltar para a loja
           </Link>
+
         </div>
+
       </main>
     );
   }
 
+  /*
+   * ==========================================
+   * TELA
+   * ==========================================
+   */
+
   return (
     <main className="min-h-screen bg-zinc-100 pb-32 text-zinc-950">
+
+      {/* HEADER */}
+
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+
           <Link
-            href="/checkout"
+            href={`/loja/${loja?.slug}/checkout`}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100"
           >
             <ArrowLeft
@@ -676,6 +839,7 @@ ${
           </Link>
 
           <div>
+
             <p className="text-xs text-zinc-500">
               {nomeLoja}
             </p>
@@ -683,12 +847,19 @@ ${
             <h1 className="text-lg font-extrabold">
               Pagamento
             </h1>
+
           </div>
+
         </div>
+
       </header>
 
       <section className="mx-auto max-w-md space-y-3 px-3 py-3">
+
+        {/* TOTAL */}
+
         <section className="rounded-3xl bg-white p-5 text-center shadow-sm">
+
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Total do pedido
           </p>
@@ -699,68 +870,316 @@ ${
             )}
           </h2>
 
-          {pixCopiaECola ? (
-            <>
-              <div className="mx-auto mt-4 flex w-fit rounded-3xl bg-white p-2 ring-1 ring-zinc-100">
-                <QRCodeSVG
-                  value={
-                    pixCopiaECola
-                  }
-                  size={
-                    190
-                  }
-                  level="M"
-                  includeMargin
-                />
-              </div>
-
-              <p className="mt-3 text-xs leading-5 text-zinc-500">
-                Escaneie o QR Code com o aplicativo do seu banco.
-              </p>
-
-              <button
-                type="button"
-                onClick={
-                  copiarPix
-                }
-                className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 text-sm font-bold text-white"
-              >
-                {copiado ? (
-                  <>
-                    <Check
-                      size={
-                        17
-                      }
-                    />
-
-                    Código copiado
-                  </>
-                ) : (
-                  <>
-                    <Copy
-                      size={
-                        17
-                      }
-                    />
-
-                    Copiar Pix copia e cola
-                  </>
-                )}
-              </button>
-            </>
-          ) : (
-            <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">
-              Pix não configurado
-            </div>
+          {taxaACombinar && (
+            <p className="mt-2 text-xs font-medium text-amber-700">
+              + taxa de entrega a combinar
+            </p>
           )}
+
         </section>
 
+        {/* FORMA DE PAGAMENTO */}
+
         <section className="rounded-3xl bg-white p-4 shadow-sm">
+
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+            Forma de pagamento
+          </p>
+
+          <h2 className="mt-1 font-extrabold">
+            Como você deseja pagar?
+          </h2>
+
+          <div className="mt-4 space-y-2">
+
+            {/* PIX */}
+
+            {pixDisponivel && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFormaPagamento(
+                    "pix"
+                  )
+                }
+                className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${
+                  formaPagamento ===
+                  "pix"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-zinc-200 bg-white"
+                }`}
+              >
+
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                    formaPagamento ===
+                    "pix"
+                      ? "bg-blue-600 text-white"
+                      : "bg-zinc-100 text-zinc-700"
+                  }`}
+                >
+                  <QrCode
+                    size={20}
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <p className="font-extrabold">
+                    Pix
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    Pagamento rápido via QR Code
+                  </p>
+
+                </div>
+
+                <div
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                    formaPagamento ===
+                    "pix"
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-zinc-300"
+                  }`}
+                >
+                  {formaPagamento ===
+                    "pix" && (
+                    <Check
+                      size={14}
+                    />
+                  )}
+                </div>
+
+              </button>
+            )}
+
+            {/* CARTÃO */}
+
+            {cartaoDisponivel && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFormaPagamento(
+                    "cartao"
+                  )
+                }
+                className={`flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${
+                  formaPagamento ===
+                  "cartao"
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-zinc-200 bg-white"
+                }`}
+              >
+
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                    formaPagamento ===
+                    "cartao"
+                      ? "bg-blue-600 text-white"
+                      : "bg-zinc-100 text-zinc-700"
+                  }`}
+                >
+                  <CreditCard
+                    size={20}
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <div className="flex items-center gap-2">
+
+                    <p className="font-extrabold">
+                      Cartão de crédito
+                    </p>
+
+                    <ShieldCheck
+                      size={15}
+                      className="text-green-600"
+                    />
+
+                  </div>
+
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    Pagamento seguro pelo Mercado Pago
+                  </p>
+
+                </div>
+
+                <div
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                    formaPagamento ===
+                    "cartao"
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-zinc-300"
+                  }`}
+                >
+                  {formaPagamento ===
+                    "cartao" && (
+                    <Check
+                      size={14}
+                    />
+                  )}
+                </div>
+
+              </button>
+            )}
+
+            {!pixDisponivel &&
+              !cartaoDisponivel && (
+              <div className="rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-700">
+                Esta loja ainda não possui uma forma de pagamento disponível.
+              </div>
+            )}
+
+          </div>
+
+        </section>
+
+        {/* PIX SELECIONADO */}
+
+        {formaPagamento ===
+          "pix" &&
+          pixDisponivel && (
+          <section className="rounded-3xl bg-white p-5 text-center shadow-sm">
+
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+
+              <QrCode
+                size={22}
+              />
+
+            </div>
+
+            <h2 className="mt-3 font-extrabold">
+              Pagamento por Pix
+            </h2>
+
+            {pixCopiaECola ? (
+              <>
+
+                <div className="mx-auto mt-4 flex w-fit rounded-3xl bg-white p-2 ring-1 ring-zinc-100">
+
+                  <QRCodeSVG
+                    value={
+                      pixCopiaECola
+                    }
+                    size={190}
+                    level="M"
+                    includeMargin
+                  />
+
+                </div>
+
+                <p className="mt-3 text-xs leading-5 text-zinc-500">
+                  Escaneie o QR Code com o aplicativo do seu banco.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={
+                    copiarPix
+                  }
+                  className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 text-sm font-bold text-white"
+                >
+                  {copiado ? (
+                    <>
+                      <Check
+                        size={17}
+                      />
+
+                      Código copiado
+                    </>
+                  ) : (
+                    <>
+                      <Copy
+                        size={17}
+                      />
+
+                      Copiar Pix copia e cola
+                    </>
+                  )}
+                </button>
+
+              </>
+            ) : (
+              <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+                Pix não configurado
+              </div>
+            )}
+
+          </section>
+        )}
+
+        {/* CARTÃO SELECIONADO */}
+
+        {formaPagamento ===
+          "cartao" &&
+          cartaoDisponivel && (
+          <section className="rounded-3xl bg-white p-5 shadow-sm">
+
+            <div className="flex items-start gap-3">
+
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+
+                <CreditCard
+                  size={22}
+                />
+
+              </div>
+
+              <div>
+
+                <h2 className="font-extrabold">
+                  Cartão de crédito
+                </h2>
+
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                  O pagamento será processado com segurança pelo Mercado Pago.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-blue-50 p-4">
+
+              <div className="flex gap-2">
+
+                <ShieldCheck
+                  size={18}
+                  className="mt-0.5 shrink-0 text-blue-600"
+                />
+
+                <div>
+
+                  <p className="text-sm font-bold text-blue-900">
+                    Pagamento protegido
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-blue-700">
+                    Os dados do cartão não serão armazenados pelo Lojas AI.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+        )}
+
+        {/* RESUMO */}
+
+        <section className="rounded-3xl bg-white p-4 shadow-sm">
+
           <h2 className="font-extrabold">
             Resumo do pedido
           </h2>
 
           <div className="mt-4 space-y-3">
+
             {itens.map(
               (
                 item
@@ -771,14 +1190,10 @@ ${
                   }
                   className="flex justify-between gap-3 text-sm"
                 >
+
                   <span className="text-zinc-600">
-                    {
-                      item.quantidade
-                    }
-                    x{" "}
-                    {
-                      item.nome
-                    }
+                    {item.quantidade}x{" "}
+                    {item.nome}
                   </span>
 
                   <span className="font-semibold">
@@ -787,12 +1202,39 @@ ${
                         item.quantidade
                     )}
                   </span>
+
                 </div>
               )
             )}
 
             <div className="border-t border-zinc-100 pt-3">
-              <div className="flex justify-between font-bold">
+
+              <div className="flex justify-between text-sm text-zinc-500">
+
+                <span>
+                  {dadosCheckout.tipoEntrega ===
+                  "entrega"
+                    ? "Entrega"
+                    : "Retirada"}
+                </span>
+
+                <span>
+                  {dadosCheckout.tipoEntrega ===
+                  "retirada"
+                    ? "Grátis"
+                    : taxaACombinar
+                      ? "A combinar"
+                      : taxaEntrega === 0
+                        ? "Grátis"
+                        : formatarPreco(
+                            taxaEntrega
+                          )}
+                </span>
+
+              </div>
+
+              <div className="mt-3 flex justify-between font-bold">
+
                 <span>
                   Total
                 </span>
@@ -802,75 +1244,82 @@ ${
                     total
                   )}
                 </span>
+
               </div>
+
             </div>
+
           </div>
+
         </section>
 
+        {/* CLIENTE */}
+
         <section className="rounded-3xl bg-white p-4 shadow-sm">
+
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Cliente
           </p>
 
           <p className="mt-1 font-bold">
-            {
-              dadosCheckout.clienteNome
-            }
+            {dadosCheckout.clienteNome}
           </p>
 
           <p className="mt-1 text-sm text-zinc-500">
-            {
-              dadosCheckout.clienteTelefone
-            }
+            {dadosCheckout.clienteTelefone}
           </p>
+
         </section>
+
+        {/* ENDEREÇO */}
 
         {dadosCheckout.tipoEntrega ===
           "entrega" && (
           <section className="rounded-3xl bg-white p-4 shadow-sm">
+
             <div className="flex gap-3">
+
               <MapPin
                 size={18}
               />
 
               <div>
+
                 <h2 className="text-sm font-extrabold">
                   Endereço
                 </h2>
 
                 <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  {
-                    dadosCheckout.rua
-                  }
-                  ,{" "}
-                  {
-                    dadosCheckout.numero
-                  }
+                  {dadosCheckout.rua},{" "}
+                  {dadosCheckout.numero}
 
                   <br />
 
-                  {
-                    dadosCheckout.bairro
-                  }
+                  {dadosCheckout.bairro}
 
                   {dadosCheckout.complemento && (
                     <>
                       <br />
 
                       Complemento:{" "}
-                      {
-                        dadosCheckout.complemento
-                      }
+                      {dadosCheckout.complemento}
                     </>
                   )}
                 </p>
+
               </div>
+
             </div>
+
           </section>
         )}
+
       </section>
 
+      {/* BOTÃO FIXO */}
+
       <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] backdrop-blur">
+
         <button
           type="button"
           onClick={
@@ -878,37 +1327,81 @@ ${
           }
           disabled={
             salvandoPedido ||
-            !whatsappLoja
+            (
+              formaPagamento ===
+                "pix" &&
+              !whatsappLoja
+            ) ||
+            (
+              !pixDisponivel &&
+              !cartaoDisponivel
+            )
           }
-          className="mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl bg-green-600 px-5 text-white shadow-xl disabled:bg-zinc-300"
+          className={`mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl px-5 text-white shadow-xl transition disabled:bg-zinc-300 ${
+            formaPagamento ===
+            "cartao"
+              ? "bg-blue-600"
+              : "bg-green-600"
+          }`}
         >
+
           <div className="flex items-center gap-3">
-            <MessageCircle
-              size={20}
-            />
+
+            {formaPagamento ===
+            "cartao" ? (
+              <CreditCard
+                size={20}
+              />
+            ) : (
+              <MessageCircle
+                size={20}
+              />
+            )}
 
             <div className="text-left">
+
               <p className="text-[11px] opacity-80">
                 {salvandoPedido
                   ? "Registrando..."
-                  : "Enviar para a loja"}
+                  : formaPagamento ===
+                      "cartao"
+                    ? "Pagamento seguro"
+                    : "Enviar para a loja"}
               </p>
 
               <p className="text-[15px] font-extrabold">
                 {salvandoPedido
                   ? "Aguarde"
-                  : "Confirmar pedido"}
+                  : formaPagamento ===
+                      "cartao"
+                    ? "Pagar com cartão"
+                    : "Confirmar pedido"}
               </p>
+
             </div>
+
           </div>
 
-          <span className="font-extrabold">
-            {formatarPreco(
-              total
+          <div className="text-right">
+
+            <span className="font-extrabold">
+              {formatarPreco(
+                total
+              )}
+            </span>
+
+            {taxaACombinar && (
+              <p className="text-[10px] opacity-80">
+                + entrega a combinar
+              </p>
             )}
-          </span>
+
+          </div>
+
         </button>
+
       </div>
+
     </main>
   );
 }
