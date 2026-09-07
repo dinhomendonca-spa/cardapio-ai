@@ -25,9 +25,18 @@ type CorpoPagamento = {
 
   itens?: ItemRecebido[];
 
+  cliente_nome?: string;
+
+  cliente_telefone?: string;
+
   tipo_entrega?:
     | "entrega"
     | "retirada";
+
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
 
   token?: string;
 
@@ -116,6 +125,21 @@ export async function POST(
     }
 
     if (
+      !body.cliente_nome?.trim() ||
+      !body.cliente_telefone?.trim()
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Dados do cliente incompletos.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
       !body.token ||
       !body.payment_method_id ||
       !body.payment_type_id ||
@@ -124,7 +148,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Dados de pagamento incompletos.",
+            "Dados do cartão incompletos.",
         },
         {
           status: 400,
@@ -196,7 +220,9 @@ export async function POST(
         )
         .maybeSingle();
 
-    if (erroLoja) {
+    if (
+      erroLoja
+    ) {
       throw erroLoja;
     }
 
@@ -213,15 +239,17 @@ export async function POST(
     }
 
     if (
-      !loja.ativo ||
-      !loja.aceita_cartao ||
-      !loja
-        .mercado_pago_conectado
+      loja.ativo !== true ||
+      loja.aceita_cartao !==
+        true ||
+      loja
+        .mercado_pago_conectado !==
+        true
     ) {
       return NextResponse.json(
         {
           error:
-            "Cartão não disponível para esta loja.",
+            "Cartão não disponível nesta loja.",
         },
         {
           status: 403,
@@ -231,7 +259,7 @@ export async function POST(
 
     /*
      * ======================================
-     * ACCESS TOKEN DA LOJA
+     * MERCADO PAGO DA LOJA
      * ======================================
      */
 
@@ -255,7 +283,9 @@ export async function POST(
         )
         .maybeSingle();
 
-    if (erroConta) {
+    if (
+      erroConta
+    ) {
       throw erroConta;
     }
 
@@ -265,7 +295,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Conta Mercado Pago não conectada.",
+            "Mercado Pago não conectado.",
         },
         {
           status: 403,
@@ -275,11 +305,7 @@ export async function POST(
 
     /*
      * ======================================
-     * BUSCAR PRODUTOS NO BANCO
-     * ======================================
-     *
-     * Nunca confiamos no preço enviado
-     * pelo navegador.
+     * PRODUTOS
      * ======================================
      */
 
@@ -340,6 +366,16 @@ export async function POST(
 
     let subtotal =
       0;
+
+    const itensPedido:
+      {
+        produto_id: number;
+        nome: string;
+        preco: number;
+        quantidade: number;
+        subtotal: number;
+      }[] =
+      [];
 
     for (
       const item of
@@ -427,12 +463,48 @@ export async function POST(
         );
       }
 
-      subtotal +=
+      const preco =
         Number(
           produto.preco
-        ) *
-        quantidade;
+        );
+
+      const subtotalItem =
+        Number(
+          (
+            preco *
+            quantidade
+          ).toFixed(
+            2
+          )
+        );
+
+      subtotal +=
+        subtotalItem;
+
+      itensPedido.push({
+        produto_id:
+          Number(
+            produto.id
+          ),
+
+        nome:
+          produto.nome,
+
+        preco,
+
+        quantidade,
+
+        subtotal:
+          subtotalItem,
+      });
     }
+
+    subtotal =
+      Number(
+        subtotal.toFixed(
+          2
+        )
+      );
 
     /*
      * ======================================
@@ -445,10 +517,23 @@ export async function POST(
 
     if (
       body.tipo_entrega ===
-      "entrega" &&
-      !loja
-        .taxa_entrega_a_combinar
+        "entrega"
     ) {
+      if (
+        loja
+          .taxa_entrega_a_combinar
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "A taxa de entrega precisa estar definida antes do pagamento com cartão.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
       taxaEntrega =
         Number(
           loja.taxa_entrega ??
@@ -472,7 +557,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Valor do pedido inválido.",
+            "Total inválido.",
         },
         {
           status: 400,
@@ -482,15 +567,147 @@ export async function POST(
 
     /*
      * ======================================
-     * ORDER MERCADO PAGO
+     * CRIAR PEDIDO ANTES DA COBRANÇA
      * ======================================
      */
 
-    const referencia =
-      `loja-${lojaId}-${crypto.randomUUID()}`;
+    const {
+      data:
+        pedido,
+
+      error:
+        erroPedido,
+    } =
+      await supabaseAdmin
+        .from(
+          "pedidos"
+        )
+        .insert({
+          loja_id:
+            lojaId,
+
+          cliente_nome:
+            body
+              .cliente_nome
+              .trim(),
+
+          cliente_telefone:
+            body
+              .cliente_telefone
+              .trim(),
+
+          status:
+            "aguardando_pagamento",
+
+          tipo_entrega:
+            body.tipo_entrega ??
+            "retirada",
+
+          forma_pagamento:
+            "cartao",
+
+          subtotal,
+
+          taxa_entrega:
+            taxaEntrega,
+
+          total,
+
+          rua:
+            body.tipo_entrega ===
+            "entrega"
+              ? body.rua?.trim() ??
+                ""
+              : "",
+
+          numero:
+            body.tipo_entrega ===
+            "entrega"
+              ? body.numero?.trim() ??
+                ""
+              : "",
+
+          bairro:
+            body.tipo_entrega ===
+            "entrega"
+              ? body.bairro?.trim() ??
+                ""
+              : "",
+
+          complemento:
+            body.tipo_entrega ===
+            "entrega"
+              ? body.complemento?.trim() ??
+                ""
+              : "",
+
+          mercado_pago_status:
+            "created",
+        })
+        .select(
+          "id"
+        )
+        .single();
+
+    if (
+      erroPedido
+    ) {
+      throw erroPedido;
+    }
+
+    if (!pedido) {
+      throw new Error(
+        "Pedido não foi criado."
+      );
+    }
+
+    /*
+     * ======================================
+     * ITENS DO PEDIDO
+     * ======================================
+     */
+
+    const itensComPedido =
+      itensPedido.map(
+        (
+          item
+        ) => ({
+          pedido_id:
+            pedido.id,
+
+          ...item,
+        })
+      );
+
+    const {
+      error:
+        erroItens,
+    } =
+      await supabaseAdmin
+        .from(
+          "pedido_itens"
+        )
+        .insert(
+          itensComPedido
+        );
+
+    if (
+      erroItens
+    ) {
+      throw erroItens;
+    }
+
+    /*
+     * ======================================
+     * CRIAR ORDER NO MERCADO PAGO
+     * ======================================
+     */
 
     const idempotencyKey =
       crypto.randomUUID();
+
+    const referencia =
+      `pedido-${pedido.id}`;
 
     const payload = {
       type:
@@ -570,11 +787,11 @@ export async function POST(
             "POST",
 
           headers: {
-            "Content-Type":
-              "application/json",
-
             Authorization:
               `Bearer ${conta.access_token}`,
+
+            "Content-Type":
+              "application/json",
 
             "X-Idempotency-Key":
               idempotencyKey,
@@ -597,18 +814,38 @@ export async function POST(
       !resposta.ok
     ) {
       console.error(
-        "Erro Mercado Pago Orders:",
+        "Mercado Pago recusou Order:",
         dados
       );
+
+      await supabaseAdmin
+        .from(
+          "pedidos"
+        )
+        .update({
+          status:
+            "pagamento_recusado",
+
+          mercado_pago_status:
+            "failed",
+
+          mercado_pago_status_detail:
+            dados?.message ??
+            "Erro Mercado Pago",
+        })
+        .eq(
+          "id",
+          pedido.id
+        );
 
       return NextResponse.json(
         {
           error:
             dados?.message ||
-            "Pagamento recusado pelo Mercado Pago.",
+            "Não foi possível processar o cartão.",
 
-          details:
-            dados,
+          pedidoId:
+            pedido.id,
         },
         {
           status:
@@ -623,31 +860,79 @@ export async function POST(
         ?.payments
         ?.[0];
 
+    const status =
+      pagamento?.status ??
+      dados?.status ??
+      null;
+
+    const statusDetail =
+      pagamento
+        ?.status_detail ??
+      dados
+        ?.status_detail ??
+      null;
+
+    const orderId =
+      dados?.id ??
+      null;
+
+    /*
+     * ======================================
+     * ATUALIZAR PEDIDO
+     * ======================================
+     */
+
+    const aprovado =
+      status ===
+        "processed";
+
+    await supabaseAdmin
+      .from(
+        "pedidos"
+      )
+      .update({
+        mercado_pago_order_id:
+          orderId,
+
+        mercado_pago_status:
+          status,
+
+        mercado_pago_status_detail:
+          statusDetail,
+
+        status:
+          aprovado
+            ? "novo"
+            : "aguardando_pagamento",
+
+        pago_em:
+          aprovado
+            ? new Date()
+                .toISOString()
+            : null,
+      })
+      .eq(
+        "id",
+        pedido.id
+      );
+
     return NextResponse.json(
       {
         success:
-          pagamento?.status ===
-          "processed",
+          aprovado,
 
-        orderId:
-          dados?.id ??
-          null,
+        pedidoId:
+          Number(
+            pedido.id
+          ),
 
-        status:
-          pagamento?.status ??
-          dados?.status ??
-          null,
+        orderId,
 
-        statusDetail:
-          pagamento
-            ?.status_detail ??
-          dados
-            ?.status_detail ??
-          null,
+        status,
+
+        statusDetail,
 
         total,
-
-        referencia,
       },
       {
         status: 200,

@@ -26,12 +26,23 @@ type Props = {
 
   itens: Item[];
 
+  clienteNome: string;
+
+  clienteTelefone: string;
+
   tipoEntrega:
     | "entrega"
     | "retirada";
 
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  complemento?: string;
+
   onAprovado: (
     dados: {
+      pedidoId: number;
+
       orderId:
         string | null;
 
@@ -48,7 +59,13 @@ export default function MercadoPagoCard({
   lojaId,
   total,
   itens,
+  clienteNome,
+  clienteTelefone,
   tipoEntrega,
+  rua,
+  numero,
+  bairro,
+  complemento,
   onAprovado,
 }: Props) {
   const [
@@ -221,8 +238,22 @@ export default function MercadoPagoCard({
 
                 itens,
 
+                cliente_nome:
+                  clienteNome,
+
+                cliente_telefone:
+                  clienteTelefone,
+
                 tipo_entrega:
                   tipoEntrega,
+
+                rua,
+
+                numero,
+
+                bairro,
+
+                complemento,
 
                 token:
                   formData.token,
@@ -262,6 +293,11 @@ export default function MercadoPagoCard({
         "processed"
       ) {
         onAprovado({
+          pedidoId:
+            Number(
+              dados.pedidoId
+            ),
+
           orderId:
             dados.orderId ??
             null,
@@ -280,7 +316,7 @@ export default function MercadoPagoCard({
 
       throw new Error(
         dados?.statusDetail ||
-          "O pagamento não foi aprovado."
+          "Pagamento ainda não foi aprovado."
       );
     };
 

@@ -51,6 +51,8 @@ type FormaPagamento =
   | "cartao";
 
 type PagamentoAprovado = {
+  pedidoId: number;
+
   orderId:
     string | null;
 
@@ -507,15 +509,121 @@ ${textoEntrega}
 
   /*
    * ==========================================
-   * REGISTRAR PEDIDO
+   * ABRIR WHATSAPP
    * ==========================================
    */
 
-  const registrarPedido =
-    async (
+  const enviarWhatsApp =
+    (
+      pedidoId: number,
       pagamento:
         FormaPagamento
     ) => {
+      if (
+        !whatsappLoja
+      ) {
+        return;
+      }
+
+      const mensagem =
+        criarMensagemWhatsApp(
+          pedidoId,
+          pagamento
+        );
+
+      const linkWhatsApp =
+        `https://wa.me/${whatsappLoja}?text=${encodeURIComponent(
+          mensagem
+        )}`;
+
+      window.open(
+        linkWhatsApp,
+        "_blank"
+      );
+    };
+
+  /*
+   * ==========================================
+   * CARTÃO APROVADO
+   * ==========================================
+   *
+   * O pedido já foi criado pelo backend.
+   * Aqui NÃO criamos um segundo pedido.
+   * ==========================================
+   */
+
+  const pagamentoCartaoAprovado =
+    async (
+      dados:
+        PagamentoAprovado
+    ) => {
+      if (
+        pagamentoCartaoConcluido
+      ) {
+        return;
+      }
+
+      if (!loja) {
+        alert(
+          "Não foi possível identificar a loja."
+        );
+
+        return;
+      }
+
+      if (
+        !dados.pedidoId
+      ) {
+        alert(
+          "Pagamento aprovado, mas o pedido não foi identificado."
+        );
+
+        return;
+      }
+
+      try {
+        setPagamentoCartaoConcluido(
+          true
+        );
+
+        setSalvandoPedido(
+          true
+        );
+
+        enviarWhatsApp(
+          dados.pedidoId,
+          "cartao"
+        );
+
+        router.push(
+          `/loja/${loja.slug}/pedido/${dados.pedidoId}`
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Erro após pagamento aprovado:",
+          error
+        );
+
+        alert(
+          "O pagamento foi aprovado, mas tivemos um problema ao abrir a confirmação. Não tente pagar novamente."
+        );
+      } finally {
+        setSalvandoPedido(
+          false
+        );
+      }
+    };
+
+  /*
+   * ==========================================
+   * REGISTRAR PEDIDO PIX
+   * ==========================================
+   */
+
+  const registrarPedidoPix =
+    async () => {
       if (!loja) {
         throw new Error(
           "Loja não identificada."
@@ -550,7 +658,7 @@ ${textoEntrega}
               dadosCheckout.tipoEntrega,
 
             forma_pagamento:
-              pagamento,
+              "pix",
 
             subtotal:
               valorTotal,
@@ -654,124 +762,6 @@ ${textoEntrega}
 
   /*
    * ==========================================
-   * ABRIR WHATSAPP
-   * ==========================================
-   */
-
-  const enviarWhatsApp =
-    (
-      pedidoId: number,
-      pagamento:
-        FormaPagamento
-    ) => {
-      if (
-        !whatsappLoja
-      ) {
-        return;
-      }
-
-      const mensagem =
-        criarMensagemWhatsApp(
-          pedidoId,
-          pagamento
-        );
-
-      const linkWhatsApp =
-        `https://wa.me/${whatsappLoja}?text=${encodeURIComponent(
-          mensagem
-        )}`;
-
-      window.open(
-        linkWhatsApp,
-        "_blank"
-      );
-    };
-
-  /*
-   * ==========================================
-   * PAGAMENTO CARTÃO APROVADO
-   * ==========================================
-   */
-
-  const pagamentoCartaoAprovado =
-    async (
-      dados:
-        PagamentoAprovado
-    ) => {
-      if (
-        pagamentoCartaoConcluido
-      ) {
-        return;
-      }
-
-      if (!loja) {
-        alert(
-          "Não foi possível identificar a loja."
-        );
-
-        return;
-      }
-
-      if (
-        !dadosCheckout.clienteNome.trim() ||
-        !dadosCheckout.clienteTelefone.trim()
-      ) {
-        alert(
-          "Os dados do cliente estão incompletos."
-        );
-
-        return;
-      }
-
-      try {
-        setPagamentoCartaoConcluido(
-          true
-        );
-
-        setSalvandoPedido(
-          true
-        );
-
-        const pedidoId =
-          await registrarPedido(
-            "cartao"
-          );
-
-        enviarWhatsApp(
-          pedidoId,
-          "cartao"
-        );
-
-        router.push(
-          `/loja/${loja.slug}/pedido/${pedidoId}`
-        );
-      } catch (
-        error
-      ) {
-        console.error(
-          "Pagamento aprovado, mas houve erro ao registrar pedido:",
-          error
-        );
-
-        /*
-         * NÃO liberamos outro pagamento.
-         *
-         * O cartão já foi cobrado.
-         * Repetir poderia gerar cobrança duplicada.
-         */
-
-        alert(
-          "O pagamento foi aprovado, mas tivemos um problema ao registrar o pedido. Não tente pagar novamente. Entre em contato com a loja."
-        );
-      } finally {
-        setSalvandoPedido(
-          false
-        );
-      }
-    };
-
-  /*
-   * ==========================================
    * CONFIRMAR PIX
    * ==========================================
    */
@@ -849,9 +839,7 @@ ${textoEntrega}
         );
 
         const pedidoId =
-          await registrarPedido(
-            "pix"
-          );
+          await registrarPedidoPix();
 
         const mensagem =
           criarMensagemWhatsApp(
@@ -1317,8 +1305,26 @@ ${textoEntrega}
                     })
                   )
                 }
+                clienteNome={
+                  dadosCheckout.clienteNome
+                }
+                clienteTelefone={
+                  dadosCheckout.clienteTelefone
+                }
                 tipoEntrega={
                   dadosCheckout.tipoEntrega
+                }
+                rua={
+                  dadosCheckout.rua
+                }
+                numero={
+                  dadosCheckout.numero
+                }
+                bairro={
+                  dadosCheckout.bairro
+                }
+                complemento={
+                  dadosCheckout.complemento
                 }
                 onAprovado={
                   pagamentoCartaoAprovado
