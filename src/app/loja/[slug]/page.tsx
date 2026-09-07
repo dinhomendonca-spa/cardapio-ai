@@ -420,7 +420,6 @@ export default function LojaPublicaPage() {
       {/* BUSCA E CATEGORIAS */}
       <section className="mx-auto max-w-md px-4 pt-5">
 
-        {/* BUSCA */}
         <div className="flex items-center gap-3 rounded-[18px] bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
 
           <Search
@@ -442,7 +441,6 @@ export default function LojaPublicaPage() {
 
         </div>
 
-        {/* CATEGORIAS */}
         {categorias.length > 0 && (
           <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
 
@@ -567,8 +565,8 @@ export default function LojaPublicaPage() {
                       }`}
                     >
 
-                      {/* IMAGEM */}
-                      <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                      {/* IMAGEM DO PRODUTO - SEM CORTAR */}
+                      <div className="relative h-64 w-full overflow-hidden bg-white">
 
                         <Image
                           src={
@@ -578,7 +576,8 @@ export default function LojaPublicaPage() {
                             produto.nome
                           }
                           fill
-                          className={`object-cover ${
+                          sizes="(max-width: 448px) 100vw, 448px"
+                          className={`object-contain p-2 ${
                             esgotado
                               ? "grayscale"
                               : ""
@@ -622,7 +621,6 @@ export default function LojaPublicaPage() {
                           </p>
                         )}
 
-                        {/* ESTOQUE */}
                         {produto.estoque_controlado && (
                           <div className="mt-3">
 
@@ -662,7 +660,6 @@ export default function LojaPublicaPage() {
                           </div>
                         )}
 
-                        {/* PREÇO E QUANTIDADE */}
                         <div className="mt-5 flex items-center justify-between gap-3">
 
                           <span className="text-xl font-black">
