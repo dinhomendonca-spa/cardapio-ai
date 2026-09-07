@@ -13,9 +13,21 @@ import {
   Star,
 } from "lucide-react";
 
-import { useCart } from "@/context/CartContext";
-import { useProducts } from "@/context/ProductContext";
-import { useStore } from "@/context/StoreContext";
+import {
+  useEffect,
+} from "react";
+
+import {
+  useCart,
+} from "@/context/CartContext";
+
+import {
+  useProducts,
+} from "@/context/ProductContext";
+
+import {
+  useStore,
+} from "@/context/StoreContext";
 
 export default function LojaPublicaPage() {
   const {
@@ -35,6 +47,40 @@ export default function LojaPublicaPage() {
     carregando,
     erroLoja,
   } = useStore();
+
+  /*
+   * ======================================
+   * TÍTULO DA ABA DO NAVEGADOR
+   * ======================================
+   *
+   * Cada loja passa a mostrar
+   * automaticamente o próprio nome
+   * na aba do navegador.
+   *
+   * Ex:
+   *
+   * MasterCell
+   * Lanchuria
+   * Esfomeados
+   */
+  useEffect(() => {
+    if (
+      loja?.nome
+    ) {
+      document.title =
+        loja.nome;
+    } else {
+      document.title =
+        "Lojas AI";
+    }
+
+    return () => {
+      document.title =
+        "Lojas AI";
+    };
+  }, [
+    loja?.nome,
+  ]);
 
   const produtosAtivos =
     produtos.filter(
@@ -74,16 +120,22 @@ export default function LojaPublicaPage() {
     );
   };
 
-  if (carregando) {
+  if (
+    carregando
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100">
+
         <div className="text-center">
+
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-950" />
 
           <p className="mt-3 text-sm text-zinc-500">
             Carregando loja...
           </p>
+
         </div>
+
       </main>
     );
   }
@@ -94,7 +146,9 @@ export default function LojaPublicaPage() {
   ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
+
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
+
           <h1 className="text-xl font-extrabold">
             Loja não encontrada
           </h1>
@@ -103,7 +157,9 @@ export default function LojaPublicaPage() {
             {erroLoja ||
               "Essa loja não está disponível."}
           </p>
+
         </div>
+
       </main>
     );
   }
@@ -143,8 +199,11 @@ export default function LojaPublicaPage() {
 
       {/* BANNER */}
       <section className="relative h-44 w-full overflow-hidden sm:h-56">
+
         <Image
-          src={banner}
+          src={
+            banner
+          }
           alt={`Banner da ${nomeLoja}`}
           fill
           priority
@@ -152,21 +211,27 @@ export default function LojaPublicaPage() {
         />
 
         <div className="absolute inset-0 bg-black/25" />
+
       </section>
 
       {/* DADOS DA LOJA */}
       <section className="relative mx-auto -mt-10 max-w-md px-4">
+
         <div className="rounded-3xl bg-white p-5 shadow-lg">
 
           <div className="flex items-start gap-4">
 
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-4 border-white shadow-md">
+
               <Image
-                src={logo}
+                src={
+                  logo
+                }
                 alt={`Logo da ${nomeLoja}`}
                 fill
                 className="object-cover"
               />
+
             </div>
 
             <div className="min-w-0 flex-1 pt-1">
@@ -174,6 +239,7 @@ export default function LojaPublicaPage() {
               <div className="flex items-start justify-between gap-3">
 
                 <div>
+
                   <h1 className="text-xl font-bold">
                     {nomeLoja}
                   </h1>
@@ -183,15 +249,18 @@ export default function LojaPublicaPage() {
                       {descricaoLoja}
                     </p>
                   )}
+
                 </div>
 
                 <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-600">
+
                   <Star
                     size={15}
                     fill="currentColor"
                   />
 
                   4.9
+
                 </div>
 
               </div>
@@ -199,11 +268,13 @@ export default function LojaPublicaPage() {
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
 
                 <span className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-2">
+
                   <Clock3
                     size={14}
                   />
 
                   {tempoEntrega}
+
                 </span>
 
                 <span className="flex items-center gap-1 rounded-full bg-green-50 px-3 py-2 font-medium text-green-700">
@@ -218,15 +289,18 @@ export default function LojaPublicaPage() {
 
           {localizacao && (
             <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
+
               <MapPin
                 size={16}
               />
 
               {localizacao}
+
             </div>
           )}
 
         </div>
+
       </section>
 
       {/* BUSCA */}
@@ -257,7 +331,9 @@ export default function LojaPublicaPage() {
                 index
               ) => (
                 <button
-                  key={categoria}
+                  key={
+                    categoria
+                  }
                   className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                     index === 0
                       ? "bg-zinc-950 text-white"
@@ -276,16 +352,20 @@ export default function LojaPublicaPage() {
         <div className="mt-5">
 
           <div className="mb-4">
+
             <h2 className="text-2xl font-bold">
               Produtos
             </h2>
+
           </div>
 
           {produtosAtivos.length === 0 ? (
             <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
+
               <p className="font-semibold">
                 Nenhum produto disponível.
               </p>
+
             </div>
           ) : (
             <div className="space-y-4">
@@ -301,11 +381,14 @@ export default function LojaPublicaPage() {
 
                   return (
                     <article
-                      key={produto.id}
+                      key={
+                        produto.id
+                      }
                       className="overflow-hidden rounded-3xl bg-white shadow-sm"
                     >
 
                       <div className="relative h-48 w-full">
+
                         <Image
                           src={
                             produto.imagem
@@ -316,6 +399,7 @@ export default function LojaPublicaPage() {
                           fill
                           className="object-cover"
                         />
+
                       </div>
 
                       <div className="p-5">
@@ -349,17 +433,26 @@ export default function LojaPublicaPage() {
                               type="button"
                               onClick={() =>
                                 adicionarProduto({
-                                  id: produto.id,
-                                  nome: produto.nome,
-                                  preco: produto.preco,
-                                  imagem: produto.imagem,
+                                  id:
+                                    produto.id,
+
+                                  nome:
+                                    produto.nome,
+
+                                  preco:
+                                    produto.preco,
+
+                                  imagem:
+                                    produto.imagem,
                                 })
                               }
                               className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-950 text-white active:scale-95"
                             >
+
                               <Plus
                                 size={20}
                               />
+
                             </button>
                           ) : (
                             <div className="flex items-center gap-3 rounded-2xl bg-zinc-100 p-1">
@@ -373,9 +466,11 @@ export default function LojaPublicaPage() {
                                 }
                                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm"
                               >
+
                                 <Minus
                                   size={17}
                                 />
+
                               </button>
 
                               <span className="min-w-5 text-center font-bold">
@@ -386,17 +481,26 @@ export default function LojaPublicaPage() {
                                 type="button"
                                 onClick={() =>
                                   adicionarProduto({
-                                    id: produto.id,
-                                    nome: produto.nome,
-                                    preco: produto.preco,
-                                    imagem: produto.imagem,
+                                    id:
+                                      produto.id,
+
+                                    nome:
+                                      produto.nome,
+
+                                    preco:
+                                      produto.preco,
+
+                                    imagem:
+                                      produto.imagem,
                                   })
                                 }
                                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-950 text-white"
                               >
+
                                 <Plus
                                   size={17}
                                 />
+
                               </button>
 
                             </div>
@@ -442,6 +546,7 @@ export default function LojaPublicaPage() {
               </div>
 
               <div className="text-left">
+
                 <p className="text-xs text-zinc-400">
                   Seu pedido
                 </p>
@@ -449,6 +554,7 @@ export default function LojaPublicaPage() {
                 <p className="font-semibold">
                   Ver carrinho
                 </p>
+
               </div>
 
             </div>
