@@ -133,13 +133,38 @@ export default function PagamentoPage() {
       loja?.chave_pix
     );
 
-  const cartaoDisponivel =
-    Boolean(
-      loja?.aceita_cartao
-    ) &&
-    Boolean(
-      loja?.mercado_pago_conectado
-    );
+const cartaoDisponivel =
+  Boolean(
+    loja?.aceita_cartao
+  ) &&
+  Boolean(
+    loja?.mercado_pago_conectado
+  );
+
+console.log(
+  "DEBUG PAGAMENTO LOJA:",
+  {
+    id:
+      loja?.id,
+
+    nome:
+      loja?.nome,
+
+    slug:
+      loja?.slug,
+
+    aceita_pix:
+      loja?.aceita_pix,
+
+    aceita_cartao:
+      loja?.aceita_cartao,
+
+    mercado_pago_conectado:
+      loja?.mercado_pago_conectado,
+
+    cartaoDisponivel,
+  }
+);
 
   useEffect(() => {
     if (
