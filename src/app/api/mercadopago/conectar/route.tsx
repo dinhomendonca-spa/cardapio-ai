@@ -9,14 +9,14 @@ function criarState(
   lojaId: string
 ) {
   const segredo =
-  process.env
-    .MERCADO_PAGO_STATE_SECRET ||
-  process.env
-    .MERCADO_PAGO_CLIENT_SECRET;
+    process.env
+      .MERCADO_PAGO_STATE_SECRET ||
+    process.env
+      .MERCADO_PAGO_CLIENT_SECRET;
 
   if (!segredo) {
     throw new Error(
-      "MERCADO_PAGO_CLIENT_SECRET não configurado."
+      "Segredo do state não configurado."
     );
   }
 
