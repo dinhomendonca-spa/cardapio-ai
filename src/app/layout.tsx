@@ -45,14 +45,85 @@ const geistMono =
     ],
   });
 
-export const metadata: Metadata =
-  {
+export const metadata: Metadata = {
+  metadataBase:
+    new URL(
+      "https://lojas-ai.vercel.app"
+    ),
+
+  title: {
+    default:
+      "Lojas AI",
+
+    template:
+      "%s | Lojas AI",
+  },
+
+  description:
+    "Sua loja online de forma simples. Produtos, carrinho, Pix e pedidos direto pelo WhatsApp.",
+
+  icons: {
+    icon:
+      "/images/lojas-ai.png",
+
+    shortcut:
+      "/images/lojas-ai.png",
+
+    apple:
+      "/images/lojas-ai.png",
+  },
+
+  openGraph: {
     title:
-      "Lojas-ai",
+      "Lojas AI",
 
     description:
-      "Pedidos online simples e rápidos",
-  };
+      "Sua loja online de forma simples. Produtos, carrinho, Pix e pedidos direto pelo WhatsApp.",
+
+    url:
+      "https://lojas-ai.vercel.app",
+
+    siteName:
+      "Lojas AI",
+
+    images: [
+      {
+        url:
+          "/images/lojas-ai.png",
+
+        width:
+          1200,
+
+        height:
+          1200,
+
+        alt:
+          "Lojas AI",
+      },
+    ],
+
+    locale:
+      "pt_BR",
+
+    type:
+      "website",
+  },
+
+  twitter: {
+    card:
+      "summary_large_image",
+
+    title:
+      "Lojas AI",
+
+    description:
+      "Sua loja online de forma simples.",
+
+    images: [
+      "/images/lojas-ai.png",
+    ],
+  },
+};
 
 export default function RootLayout({
   children,
@@ -66,15 +137,23 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+
         <AuthProvider>
+
           <StoreProvider>
+
             <ProductProvider>
+
               <CartProvider>
                 {children}
               </CartProvider>
+
             </ProductProvider>
+
           </StoreProvider>
+
         </AuthProvider>
+
       </body>
     </html>
   );
