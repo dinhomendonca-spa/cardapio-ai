@@ -25,7 +25,9 @@ import {
   useState,
 } from "react";
 
-import { supabase } from "@/lib/supabase";
+import {
+  supabase,
+} from "@/lib/supabase";
 
 type Produto = {
   id: number;
@@ -40,187 +42,257 @@ type Produto = {
 };
 
 export default function EditarProdutoPage() {
-  const params = useParams();
-  const router = useRouter();
+  const params =
+    useParams();
 
-  const id = Number(params.id);
+  const router =
+    useRouter();
+
+  const id =
+    Number(
+      params.id
+    );
 
   const inputImagemRef =
-    useRef<HTMLInputElement>(null);
+    useRef<HTMLInputElement>(
+      null
+    );
 
-  const [produto, setProduto] =
-    useState<Produto | null>(null);
+  const [
+    produto,
+    setProduto,
+  ] =
+    useState<Produto | null>(
+      null
+    );
 
-  const [nome, setNome] =
+  const [
+    nome,
+    setNome,
+  ] =
     useState("");
 
-  const [descricao, setDescricao] =
+  const [
+    descricao,
+    setDescricao,
+  ] =
     useState("");
 
-  const [categoria, setCategoria] =
+  const [
+    categoria,
+    setCategoria,
+  ] =
     useState("");
 
-  const [preco, setPreco] =
+  const [
+    preco,
+    setPreco,
+  ] =
     useState("");
 
-  const [estoque, setEstoque] =
+  const [
+    estoque,
+    setEstoque,
+  ] =
     useState("");
 
   const [
     estoqueControlado,
     setEstoqueControlado,
-  ] = useState(true);
+  ] =
+    useState(
+      true
+    );
 
   const [
     imagemAtual,
     setImagemAtual,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     arquivo,
     setArquivo,
-  ] = useState<File | null>(null);
+  ] =
+    useState<File | null>(
+      null
+    );
 
   const [
     preview,
     setPreview,
-  ] = useState<string | null>(null);
+  ] =
+    useState<string | null>(
+      null
+    );
 
   const [
     carregando,
     setCarregando,
-  ] = useState(true);
+  ] =
+    useState(
+      true
+    );
 
   const [
     salvando,
     setSalvando,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
+
+  /*
+   * ======================================
+   * CARREGAR PRODUTO
+   * ======================================
+   */
 
   useEffect(() => {
-    const carregarProduto = async () => {
-      try {
-        setCarregando(true);
+    const carregarProduto =
+      async () => {
+        try {
+          setCarregando(
+            true
+          );
 
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from("produtos")
-            .select("*")
-            .eq("id", id)
-            .single();
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .from(
+                "produtos"
+              )
+              .select(
+                "*"
+              )
+              .eq(
+                "id",
+                id
+              )
+              .single();
 
-        if (
-          error ||
-          !data
-        ) {
-          throw (
+          if (
             error ||
-            new Error(
-              "Produto não encontrado."
+            !data
+          ) {
+            throw (
+              error ||
+              new Error(
+                "Produto não encontrado."
+              )
+            );
+          }
+
+          const produtoCarregado: Produto =
+            {
+              id:
+                Number(
+                  data.id
+                ),
+
+              nome:
+                data.nome ??
+                "",
+
+              descricao:
+                data.descricao ??
+                "",
+
+              categoria:
+                data.categoria ??
+                "",
+
+              preco:
+                Number(
+                  data.preco ??
+                    0
+                ),
+
+              estoque:
+                Number(
+                  data.estoque ??
+                    0
+                ),
+
+              estoque_controlado:
+                data.estoque_controlado ??
+                true,
+
+              imagem:
+                data.imagem ??
+                "/images/logo.png",
+
+              ativo:
+                data.ativo ??
+                true,
+            };
+
+          setProduto(
+            produtoCarregado
+          );
+
+          setNome(
+            produtoCarregado.nome
+          );
+
+          setDescricao(
+            produtoCarregado.descricao
+          );
+
+          setCategoria(
+            produtoCarregado.categoria
+          );
+
+          setPreco(
+            String(
+              produtoCarregado.preco
+            ).replace(
+              ".",
+              ","
             )
           );
-        }
 
-        const produtoCarregado: Produto = {
-          id:
-            Number(data.id),
+          setEstoque(
+            String(
+              produtoCarregado.estoque
+            )
+          );
 
-          nome:
-            data.nome ?? "",
+          setEstoqueControlado(
+            produtoCarregado.estoque_controlado
+          );
 
-          descricao:
-            data.descricao ?? "",
-
-          categoria:
-            data.categoria ?? "",
-
-          preco:
-            Number(
-              data.preco ?? 0
-            ),
-
-          estoque:
-            Number(
-              data.estoque ?? 0
-            ),
-
-          estoque_controlado:
-            data.estoque_controlado ??
-            true,
-
-          imagem:
-            data.imagem ??
-            "/images/logo.png",
-
-          ativo:
-            data.ativo ??
-            true,
-        };
-
-        setProduto(
-          produtoCarregado
-        );
-
-        setNome(
-          produtoCarregado.nome
-        );
-
-        setDescricao(
-          produtoCarregado.descricao
-        );
-
-        setCategoria(
-          produtoCarregado.categoria
-        );
-
-        setPreco(
-          String(
-            produtoCarregado.preco
-          ).replace(
-            ".",
-            ","
-          )
-        );
-
-        setEstoque(
-          String(
-            produtoCarregado.estoque
-          )
-        );
-
-        setEstoqueControlado(
-          produtoCarregado.estoque_controlado
-        );
-
-        setImagemAtual(
-          produtoCarregado.imagem
-        );
-      } catch (
-        error
-      ) {
-        console.error(
-          "Erro ao carregar produto:",
+          setImagemAtual(
+            produtoCarregado.imagem
+          );
+        } catch (
           error
-        );
+        ) {
+          console.error(
+            "Erro ao carregar produto:",
+            error
+          );
 
-        alert(
-          "Produto não encontrado."
-        );
+          alert(
+            "Produto não encontrado."
+          );
 
-        router.push(
-          "/admin/produtos"
-        );
-      } finally {
-        setCarregando(
-          false
-        );
-      }
-    };
+          router.push(
+            "/admin/produtos"
+          );
+        } finally {
+          setCarregando(
+            false
+          );
+        }
+      };
 
     if (
-      Number.isInteger(id) &&
+      Number.isInteger(
+        id
+      ) &&
       id > 0
     ) {
       carregarProduto();
@@ -238,6 +310,12 @@ export default function EditarProdutoPage() {
     router,
   ]);
 
+  /*
+   * ======================================
+   * SELECIONAR NOVA IMAGEM
+   * ======================================
+   */
+
   const selecionarImagem = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
@@ -248,26 +326,73 @@ export default function EditarProdutoPage() {
       return;
     }
 
-    if (preview) {
+    if (
+      !imagem.type.startsWith(
+        "image/"
+      )
+    ) {
+      alert(
+        "Selecione um arquivo de imagem."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    const tamanhoMaximoArquivo =
+      15 *
+      1024 *
+      1024;
+
+    if (
+      imagem.size >
+      tamanhoMaximoArquivo
+    ) {
+      alert(
+        "A imagem deve ter no máximo 15 MB."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    if (
+      preview
+    ) {
       URL.revokeObjectURL(
         preview
       );
     }
+
+    const novaPreview =
+      URL.createObjectURL(
+        imagem
+      );
 
     setArquivo(
       imagem
     );
 
     setPreview(
-      URL.createObjectURL(
-        imagem
-      )
+      novaPreview
     );
   };
 
+  /*
+   * ======================================
+   * LIMPAR PREVIEW
+   * ======================================
+   */
+
   useEffect(() => {
     return () => {
-      if (preview) {
+      if (
+        preview
+      ) {
         URL.revokeObjectURL(
           preview
         );
@@ -277,24 +402,254 @@ export default function EditarProdutoPage() {
     preview,
   ]);
 
+  /*
+   * ======================================
+   * ABRIR SELETOR
+   * ======================================
+   */
+
   const abrirSeletorImagem =
     () => {
       inputImagemRef.current?.click();
     };
 
+  /*
+   * ======================================
+   * OTIMIZAR IMAGEM
+   * ======================================
+   *
+   * - máximo 1200 px
+   * - mantém proporção
+   * - converte para WebP
+   * - qualidade 82%
+   * ======================================
+   */
+
+  const otimizarImagem =
+    async (
+      arquivoOriginal: File
+    ): Promise<File> => {
+      const tamanhoMaximo =
+        1200;
+
+      const qualidade =
+        0.82;
+
+      const urlOriginal =
+        URL.createObjectURL(
+          arquivoOriginal
+        );
+
+      try {
+        const imagem =
+          await new Promise<HTMLImageElement>(
+            (
+              resolve,
+              reject
+            ) => {
+              const img =
+                new window.Image();
+
+              img.onload =
+                () => {
+                  resolve(
+                    img
+                  );
+                };
+
+              img.onerror =
+                () => {
+                  reject(
+                    new Error(
+                      "Não foi possível processar esta imagem."
+                    )
+                  );
+                };
+
+              img.src =
+                urlOriginal;
+            }
+          );
+
+        let largura =
+          imagem.naturalWidth;
+
+        let altura =
+          imagem.naturalHeight;
+
+        if (
+          largura <= 0 ||
+          altura <= 0
+        ) {
+          throw new Error(
+            "Dimensões da imagem inválidas."
+          );
+        }
+
+        if (
+          largura >
+            tamanhoMaximo ||
+          altura >
+            tamanhoMaximo
+        ) {
+          const proporcao =
+            Math.min(
+              tamanhoMaximo /
+                largura,
+
+              tamanhoMaximo /
+                altura
+            );
+
+          largura =
+            Math.round(
+              largura *
+                proporcao
+            );
+
+          altura =
+            Math.round(
+              altura *
+                proporcao
+            );
+        }
+
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+
+        canvas.width =
+          largura;
+
+        canvas.height =
+          altura;
+
+        const contexto =
+          canvas.getContext(
+            "2d"
+          );
+
+        if (
+          !contexto
+        ) {
+          throw new Error(
+            "Não foi possível preparar a imagem."
+          );
+        }
+
+        contexto.fillStyle =
+          "#ffffff";
+
+        contexto.fillRect(
+          0,
+          0,
+          largura,
+          altura
+        );
+
+        contexto.imageSmoothingEnabled =
+          true;
+
+        contexto.imageSmoothingQuality =
+          "high";
+
+        contexto.drawImage(
+          imagem,
+          0,
+          0,
+          largura,
+          altura
+        );
+
+        const blob =
+          await new Promise<Blob>(
+            (
+              resolve,
+              reject
+            ) => {
+              canvas.toBlob(
+                (
+                  resultado
+                ) => {
+                  if (
+                    !resultado
+                  ) {
+                    reject(
+                      new Error(
+                        "Não foi possível comprimir a imagem."
+                      )
+                    );
+
+                    return;
+                  }
+
+                  resolve(
+                    resultado
+                  );
+                },
+
+                "image/webp",
+
+                qualidade
+              );
+            }
+          );
+
+        const nomeSemExtensao =
+          arquivoOriginal.name
+            .replace(
+              /\.[^/.]+$/,
+              ""
+            )
+            .replace(
+              /[^a-zA-Z0-9-_]/g,
+              "-"
+            );
+
+        return new File(
+          [
+            blob,
+          ],
+
+          `${nomeSemExtensao || "produto"}.webp`,
+
+          {
+            type:
+              "image/webp",
+
+            lastModified:
+              Date.now(),
+          }
+        );
+      } finally {
+        URL.revokeObjectURL(
+          urlOriginal
+        );
+      }
+    };
+
+  /*
+   * ======================================
+   * FAZER UPLOAD DA NOVA IMAGEM
+   * ======================================
+   */
+
   const fazerUploadNovaImagem =
     async () => {
-      if (!arquivo) {
+      if (
+        !arquivo
+      ) {
         return imagemAtual;
       }
 
-      const extensao =
-        arquivo.name
-          .split(".")
-          .pop() || "jpg";
+      const imagemOtimizada =
+        await otimizarImagem(
+          arquivo
+        );
 
       const nomeArquivo =
-        `${Date.now()}-${crypto.randomUUID()}.${extensao}`;
+        `${Date.now()}-${crypto.randomUUID()}.webp`;
 
       const {
         error,
@@ -305,17 +660,22 @@ export default function EditarProdutoPage() {
           )
           .upload(
             nomeArquivo,
-            arquivo,
+            imagemOtimizada,
             {
               cacheControl:
-                "3600",
+                "31536000",
 
               upsert:
                 false,
+
+              contentType:
+                "image/webp",
             }
           );
 
-      if (error) {
+      if (
+        error
+      ) {
         throw error;
       }
 
@@ -333,6 +693,12 @@ export default function EditarProdutoPage() {
       return data.publicUrl;
     };
 
+  /*
+   * ======================================
+   * SALVAR PRODUTO
+   * ======================================
+   */
+
   const salvarProduto =
     async () => {
       const precoNumerico =
@@ -348,7 +714,9 @@ export default function EditarProdutoPage() {
           estoque
         );
 
-      if (!nome.trim()) {
+      if (
+        !nome.trim()
+      ) {
         alert(
           "Preencha o nome do produto."
         );
@@ -356,7 +724,9 @@ export default function EditarProdutoPage() {
         return;
       }
 
-      if (!categoria.trim()) {
+      if (
+        !categoria.trim()
+      ) {
         alert(
           "Preencha a categoria do produto."
         );
@@ -380,14 +750,16 @@ export default function EditarProdutoPage() {
       if (
         estoqueControlado &&
         (
-          estoque.trim() === "" ||
+          estoque.trim() ===
+            "" ||
           Number.isNaN(
             estoqueNumerico
           ) ||
           !Number.isInteger(
             estoqueNumerico
           ) ||
-          estoqueNumerico < 0
+          estoqueNumerico <
+            0
         )
       ) {
         alert(
@@ -401,6 +773,14 @@ export default function EditarProdutoPage() {
         setSalvando(
           true
         );
+
+        /*
+         * Se nenhuma nova imagem foi
+         * selecionada, mantém a atual.
+         *
+         * Se houver nova imagem,
+         * otimiza e envia em WebP.
+         */
 
         const imagemUrl =
           await fazerUploadNovaImagem();
@@ -441,7 +821,9 @@ export default function EditarProdutoPage() {
               id
             );
 
-        if (error) {
+        if (
+          error
+        ) {
           throw error;
         }
 
@@ -467,6 +849,12 @@ export default function EditarProdutoPage() {
         );
       }
     };
+
+  /*
+   * ======================================
+   * CARREGAMENTO
+   * ======================================
+   */
 
   if (
     carregando ||
@@ -905,6 +1293,29 @@ export default function EditarProdutoPage() {
 
           </button>
 
+          {arquivo && (
+            <div
+              className="
+                mt-3
+                rounded-2xl
+                border
+                border-emerald-300/10
+                bg-emerald-400/[0.06]
+                p-3
+              "
+            >
+              <p
+                className="
+                  text-xs
+                  leading-5
+                  text-emerald-300
+                "
+              >
+                ✓ A nova foto será redimensionada e comprimida automaticamente.
+              </p>
+            </div>
+          )}
+
         </section>
 
         {/* INFORMAÇÕES */}
@@ -946,8 +1357,6 @@ export default function EditarProdutoPage() {
               space-y-4
             "
           >
-
-            {/* NOME */}
 
             <div>
 
@@ -998,8 +1407,6 @@ export default function EditarProdutoPage() {
               />
 
             </div>
-
-            {/* DESCRIÇÃO */}
 
             <div>
 
@@ -1053,8 +1460,6 @@ export default function EditarProdutoPage() {
 
             </div>
 
-            {/* CATEGORIA */}
-
             <div>
 
               <label
@@ -1104,8 +1509,6 @@ export default function EditarProdutoPage() {
               />
 
             </div>
-
-            {/* PREÇO */}
 
             <div>
 
@@ -1249,8 +1652,6 @@ export default function EditarProdutoPage() {
             </div>
 
           </div>
-
-          {/* TOGGLE */}
 
           <button
             type="button"
@@ -1516,7 +1917,9 @@ export default function EditarProdutoPage() {
                 className="animate-spin"
               />
 
-              Salvando...
+              {arquivo
+                ? "Otimizando e salvando..."
+                : "Salvando..."}
             </>
           ) : (
             <>

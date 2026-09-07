@@ -19,6 +19,7 @@ import {
 
 import {
   ChangeEvent,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -91,6 +92,11 @@ export default function NovoProdutoPage() {
   ] =
     useState(false);
 
+  /*
+   * ======================================
+   * SELECIONAR IMAGEM
+   * ======================================
+   */
   const selecionarImagem = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
@@ -101,35 +107,342 @@ export default function NovoProdutoPage() {
       return;
     }
 
+    if (
+      !imagem.type.startsWith(
+        "image/"
+      )
+    ) {
+      alert(
+        "Selecione um arquivo de imagem."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    /*
+     * Permitimos imagens grandes
+     * porque serão comprimidas antes
+     * de serem enviadas ao Supabase.
+     */
+
+    const tamanhoMaximoArquivo =
+      15 *
+      1024 *
+      1024;
+
+    if (
+      imagem.size >
+      tamanhoMaximoArquivo
+    ) {
+      alert(
+        "A imagem deve ter no máximo 15 MB."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    if (preview) {
+      URL.revokeObjectURL(
+        preview
+      );
+    }
+
+    const novaPreview =
+      URL.createObjectURL(
+        imagem
+      );
+
     setArquivo(
       imagem
     );
 
     setPreview(
-      URL.createObjectURL(
-        imagem
-      )
+      novaPreview
     );
   };
 
+  /*
+   * ======================================
+   * LIMPA URL DO PREVIEW
+   * ======================================
+   */
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(
+          preview
+        );
+      }
+    };
+  }, [
+    preview,
+  ]);
+
+  /*
+   * ======================================
+   * ABRIR SELETOR
+   * ======================================
+   */
   const abrirSeletorImagem =
     () => {
       inputImagemRef.current?.click();
     };
 
+  /*
+   * ======================================
+   * OTIMIZAR IMAGEM
+   * ======================================
+   *
+   * - máximo 1200px
+   * - mantém proporção
+   * - converte para WebP
+   * - qualidade 82%
+   * ======================================
+   */
+  const otimizarImagem =
+    async (
+      arquivoOriginal: File
+    ): Promise<File> => {
+      const tamanhoMaximo =
+        1200;
+
+      const qualidade =
+        0.82;
+
+      const urlOriginal =
+        URL.createObjectURL(
+          arquivoOriginal
+        );
+
+      try {
+        const imagem =
+          await new Promise<HTMLImageElement>(
+            (
+              resolve,
+              reject
+            ) => {
+              const img =
+                new window.Image();
+
+              img.onload =
+                () => {
+                  resolve(
+                    img
+                  );
+                };
+
+              img.onerror =
+                () => {
+                  reject(
+                    new Error(
+                      "Não foi possível processar esta imagem."
+                    )
+                  );
+                };
+
+              img.src =
+                urlOriginal;
+            }
+          );
+
+        let largura =
+          imagem.naturalWidth;
+
+        let altura =
+          imagem.naturalHeight;
+
+        if (
+          largura <= 0 ||
+          altura <= 0
+        ) {
+          throw new Error(
+            "Dimensões da imagem inválidas."
+          );
+        }
+
+        /*
+         * Redimensiona somente
+         * quando necessário.
+         */
+
+        if (
+          largura >
+            tamanhoMaximo ||
+          altura >
+            tamanhoMaximo
+        ) {
+          const proporcao =
+            Math.min(
+              tamanhoMaximo /
+                largura,
+
+              tamanhoMaximo /
+                altura
+            );
+
+          largura =
+            Math.round(
+              largura *
+                proporcao
+            );
+
+          altura =
+            Math.round(
+              altura *
+                proporcao
+            );
+        }
+
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+
+        canvas.width =
+          largura;
+
+        canvas.height =
+          altura;
+
+        const contexto =
+          canvas.getContext(
+            "2d"
+          );
+
+        if (!contexto) {
+          throw new Error(
+            "Não foi possível preparar a imagem."
+          );
+        }
+
+        /*
+         * Fundo branco.
+         *
+         * Isso evita fundo preto
+         * caso a imagem original
+         * possua transparência.
+         */
+
+        contexto.fillStyle =
+          "#ffffff";
+
+        contexto.fillRect(
+          0,
+          0,
+          largura,
+          altura
+        );
+
+        /*
+         * Melhora a qualidade
+         * do redimensionamento.
+         */
+
+        contexto.imageSmoothingEnabled =
+          true;
+
+        contexto.imageSmoothingQuality =
+          "high";
+
+        contexto.drawImage(
+          imagem,
+          0,
+          0,
+          largura,
+          altura
+        );
+
+        const blob =
+          await new Promise<Blob>(
+            (
+              resolve,
+              reject
+            ) => {
+              canvas.toBlob(
+                (
+                  resultado
+                ) => {
+                  if (
+                    !resultado
+                  ) {
+                    reject(
+                      new Error(
+                        "Não foi possível comprimir a imagem."
+                      )
+                    );
+
+                    return;
+                  }
+
+                  resolve(
+                    resultado
+                  );
+                },
+
+                "image/webp",
+
+                qualidade
+              );
+            }
+          );
+
+        const nomeSemExtensao =
+          arquivoOriginal.name
+            .replace(
+              /\.[^/.]+$/,
+              ""
+            )
+            .replace(
+              /[^a-zA-Z0-9-_]/g,
+              "-"
+            );
+
+        return new File(
+          [
+            blob,
+          ],
+
+          `${nomeSemExtensao || "produto"}.webp`,
+
+          {
+            type:
+              "image/webp",
+
+            lastModified:
+              Date.now(),
+          }
+        );
+      } finally {
+        URL.revokeObjectURL(
+          urlOriginal
+        );
+      }
+    };
+
+  /*
+   * ======================================
+   * UPLOAD DA IMAGEM OTIMIZADA
+   * ======================================
+   */
   const fazerUploadImagem =
     async () => {
       if (!arquivo) {
         return "/images/logo.png";
       }
 
-      const extensao =
-        arquivo.name
-          .split(".")
-          .pop();
+      const imagemOtimizada =
+        await otimizarImagem(
+          arquivo
+        );
 
       const nomeArquivo =
-        `${Date.now()}-${crypto.randomUUID()}.${extensao}`;
+        `${Date.now()}-${crypto.randomUUID()}.webp`;
 
       const {
         error,
@@ -140,13 +453,23 @@ export default function NovoProdutoPage() {
           )
           .upload(
             nomeArquivo,
-            arquivo,
+            imagemOtimizada,
             {
+              /*
+               * 1 ano de cache.
+               *
+               * Cada upload recebe
+               * um nome único, então
+               * podemos usar cache longo.
+               */
               cacheControl:
-                "3600",
+                "31536000",
 
               upsert:
                 false,
+
+              contentType:
+                "image/webp",
             }
           );
 
@@ -168,6 +491,11 @@ export default function NovoProdutoPage() {
       return data.publicUrl;
     };
 
+  /*
+   * ======================================
+   * SALVAR PRODUTO
+   * ======================================
+   */
   const salvarProduto =
     async () => {
       const precoNumerico =
@@ -215,7 +543,8 @@ export default function NovoProdutoPage() {
         Number.isNaN(
           estoqueNumerico
         ) ||
-        estoqueNumerico < 0 ||
+        estoqueNumerico <
+          0 ||
         !Number.isInteger(
           estoqueNumerico
         )
@@ -232,8 +561,18 @@ export default function NovoProdutoPage() {
           true
         );
 
+        /*
+         * Primeiro otimiza
+         * e envia a imagem.
+         */
+
         const imagemUrl =
           await fazerUploadImagem();
+
+        /*
+         * Depois cadastra
+         * o produto no banco.
+         */
 
         await adicionarProduto({
           nome:
@@ -293,7 +632,6 @@ export default function NovoProdutoPage() {
         text-white
       "
     >
-
       {/* LUZES DE FUNDO */}
 
       <div
@@ -352,7 +690,6 @@ export default function NovoProdutoPage() {
           backdrop-blur-2xl
         "
       >
-
         <div
           className="
             mx-auto
@@ -364,7 +701,6 @@ export default function NovoProdutoPage() {
             py-4
           "
         >
-
           <Link
             href="/admin/produtos"
             className="
@@ -393,7 +729,6 @@ export default function NovoProdutoPage() {
           </Link>
 
           <div>
-
             <p
               className="
                 text-xs
@@ -416,11 +751,8 @@ export default function NovoProdutoPage() {
             >
               Novo produto
             </h1>
-
           </div>
-
         </div>
-
       </header>
 
       {/* CONTEÚDO */}
@@ -436,7 +768,6 @@ export default function NovoProdutoPage() {
           py-5
         "
       >
-
         {/* APRESENTAÇÃO */}
 
         <section
@@ -452,7 +783,6 @@ export default function NovoProdutoPage() {
             backdrop-blur-2xl
           "
         >
-
           <div
             className="
               flex
@@ -460,7 +790,6 @@ export default function NovoProdutoPage() {
               gap-4
             "
           >
-
             <div
               className="
                 flex
@@ -485,7 +814,6 @@ export default function NovoProdutoPage() {
             </div>
 
             <div>
-
               <h2
                 className="
                   font-black
@@ -505,11 +833,8 @@ export default function NovoProdutoPage() {
               >
                 Adicione as informações e o estoque do produto.
               </p>
-
             </div>
-
           </div>
-
         </section>
 
         {/* FOTO */}
@@ -525,7 +850,6 @@ export default function NovoProdutoPage() {
             backdrop-blur-2xl
           "
         >
-
           <div
             className="
               flex
@@ -533,7 +857,6 @@ export default function NovoProdutoPage() {
               gap-3
             "
           >
-
             <div
               className="
                 flex
@@ -554,7 +877,6 @@ export default function NovoProdutoPage() {
             </div>
 
             <div>
-
               <h2
                 className="
                   font-bold
@@ -573,9 +895,7 @@ export default function NovoProdutoPage() {
               >
                 Escolha uma imagem do produto
               </p>
-
             </div>
-
           </div>
 
           <input
@@ -615,7 +935,6 @@ export default function NovoProdutoPage() {
               hover:bg-sky-400/[0.06]
             "
           >
-
             {preview ? (
               <>
                 <Image
@@ -642,7 +961,6 @@ export default function NovoProdutoPage() {
                     p-4
                   "
                 >
-
                   <div
                     className="
                       rounded-2xl
@@ -659,7 +977,6 @@ export default function NovoProdutoPage() {
                   >
                     Toque para trocar
                   </div>
-
                 </div>
               </>
             ) : (
@@ -674,7 +991,6 @@ export default function NovoProdutoPage() {
                   py-10
                 "
               >
-
                 <div
                   className="
                     flex
@@ -716,11 +1032,41 @@ export default function NovoProdutoPage() {
                   Toque para selecionar
                 </span>
 
+                <span
+                  className="
+                    mt-2
+                    text-[11px]
+                    text-slate-600
+                  "
+                >
+                  A imagem será otimizada automaticamente
+                </span>
               </div>
             )}
-
           </button>
 
+          {arquivo && (
+            <div
+              className="
+                mt-3
+                rounded-2xl
+                border
+                border-emerald-300/10
+                bg-emerald-400/[0.06]
+                p-3
+              "
+            >
+              <p
+                className="
+                  text-xs
+                  leading-5
+                  text-emerald-300
+                "
+              >
+                ✓ A foto será redimensionada e comprimida automaticamente antes do envio.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* INFORMAÇÕES */}
@@ -736,7 +1082,6 @@ export default function NovoProdutoPage() {
             backdrop-blur-2xl
           "
         >
-
           <h2
             className="
               font-black
@@ -762,11 +1107,9 @@ export default function NovoProdutoPage() {
               space-y-4
             "
           >
-
             {/* NOME */}
 
             <div>
-
               <label
                 htmlFor="nome"
                 className="
@@ -812,13 +1155,11 @@ export default function NovoProdutoPage() {
                   focus:ring-sky-400/5
                 "
               />
-
             </div>
 
             {/* DESCRIÇÃO */}
 
             <div>
-
               <label
                 htmlFor="descricao"
                 className="
@@ -866,13 +1207,11 @@ export default function NovoProdutoPage() {
                   focus:ring-sky-400/5
                 "
               />
-
             </div>
 
             {/* CATEGORIA */}
 
             <div>
-
               <label
                 htmlFor="categoria"
                 className="
@@ -918,13 +1257,11 @@ export default function NovoProdutoPage() {
                   focus:ring-sky-400/5
                 "
               />
-
             </div>
 
             {/* PREÇO */}
 
             <div>
-
               <label
                 htmlFor="preco"
                 className="
@@ -939,7 +1276,6 @@ export default function NovoProdutoPage() {
               </label>
 
               <div className="relative">
-
                 <span
                   className="
                     pointer-events-none
@@ -989,13 +1325,9 @@ export default function NovoProdutoPage() {
                     focus:ring-sky-400/5
                   "
                 />
-
               </div>
-
             </div>
-
           </div>
-
         </section>
 
         {/* ESTOQUE */}
@@ -1011,7 +1343,6 @@ export default function NovoProdutoPage() {
             backdrop-blur-2xl
           "
         >
-
           <div
             className="
               flex
@@ -1019,7 +1350,6 @@ export default function NovoProdutoPage() {
               gap-3
             "
           >
-
             <div
               className="
                 flex
@@ -1041,7 +1371,6 @@ export default function NovoProdutoPage() {
             </div>
 
             <div>
-
               <h2
                 className="
                   font-black
@@ -1061,13 +1390,10 @@ export default function NovoProdutoPage() {
               >
                 Informe quantas unidades estão disponíveis para venda.
               </p>
-
             </div>
-
           </div>
 
           <div className="mt-5">
-
             <label
               htmlFor="estoque"
               className="
@@ -1131,7 +1457,6 @@ export default function NovoProdutoPage() {
                 p-3
               "
             >
-
               <Boxes
                 size={15}
                 className="
@@ -1150,11 +1475,8 @@ export default function NovoProdutoPage() {
               >
                 Quando o estoque chegar a zero, o produto será identificado como esgotado. Use 0 para produtos sem unidades disponíveis.
               </p>
-
             </div>
-
           </div>
-
         </section>
 
         {/* SALVAR */}
@@ -1193,7 +1515,6 @@ export default function NovoProdutoPage() {
             disabled:opacity-50
           "
         >
-
           {salvando ? (
             <>
               <Loader2
@@ -1201,7 +1522,7 @@ export default function NovoProdutoPage() {
                 className="animate-spin"
               />
 
-              Salvando...
+              Otimizando e salvando...
             </>
           ) : (
             <>
@@ -1212,7 +1533,6 @@ export default function NovoProdutoPage() {
               Salvar produto
             </>
           )}
-
         </button>
 
       </section>
