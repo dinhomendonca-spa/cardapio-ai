@@ -7,6 +7,7 @@ import {
   Boxes,
   ImagePlus,
   Loader2,
+  Pencil,
   Save,
 } from "lucide-react";
 
@@ -70,41 +71,61 @@ export default function EditarProdutoPage() {
     setEstoqueControlado,
   ] = useState(true);
 
-  const [imagemAtual, setImagemAtual] =
-    useState("");
+  const [
+    imagemAtual,
+    setImagemAtual,
+  ] = useState("");
 
-  const [arquivo, setArquivo] =
-    useState<File | null>(null);
+  const [
+    arquivo,
+    setArquivo,
+  ] = useState<File | null>(null);
 
-  const [preview, setPreview] =
-    useState<string | null>(null);
+  const [
+    preview,
+    setPreview,
+  ] = useState<string | null>(null);
 
-  const [carregando, setCarregando] =
-    useState(true);
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
 
-  const [salvando, setSalvando] =
-    useState(false);
+  const [
+    salvando,
+    setSalvando,
+  ] = useState(false);
 
   useEffect(() => {
     const carregarProduto = async () => {
       try {
         setCarregando(true);
 
-        const { data, error } =
+        const {
+          data,
+          error,
+        } =
           await supabase
             .from("produtos")
             .select("*")
             .eq("id", id)
             .single();
 
-        if (error || !data) {
-          throw error || new Error(
-            "Produto não encontrado."
+        if (
+          error ||
+          !data
+        ) {
+          throw (
+            error ||
+            new Error(
+              "Produto não encontrado."
+            )
           );
         }
 
         const produtoCarregado: Produto = {
-          id: Number(data.id),
+          id:
+            Number(data.id),
 
           nome:
             data.nome ?? "",
@@ -116,23 +137,31 @@ export default function EditarProdutoPage() {
             data.categoria ?? "",
 
           preco:
-            Number(data.preco ?? 0),
+            Number(
+              data.preco ?? 0
+            ),
 
           estoque:
-            Number(data.estoque ?? 0),
+            Number(
+              data.estoque ?? 0
+            ),
 
           estoque_controlado:
-            data.estoque_controlado ?? true,
+            data.estoque_controlado ??
+            true,
 
           imagem:
             data.imagem ??
             "/images/logo.png",
 
           ativo:
-            data.ativo ?? true,
+            data.ativo ??
+            true,
         };
 
-        setProduto(produtoCarregado);
+        setProduto(
+          produtoCarregado
+        );
 
         setNome(
           produtoCarregado.nome
@@ -149,7 +178,10 @@ export default function EditarProdutoPage() {
         setPreco(
           String(
             produtoCarregado.preco
-          ).replace(".", ",")
+          ).replace(
+            ".",
+            ","
+          )
         );
 
         setEstoque(
@@ -165,7 +197,9 @@ export default function EditarProdutoPage() {
         setImagemAtual(
           produtoCarregado.imagem
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Erro ao carregar produto:",
           error
@@ -179,7 +213,9 @@ export default function EditarProdutoPage() {
           "/admin/produtos"
         );
       } finally {
-        setCarregando(false);
+        setCarregando(
+          false
+        );
       }
     };
 
@@ -197,7 +233,10 @@ export default function EditarProdutoPage() {
         "/admin/produtos"
       );
     }
-  }, [id, router]);
+  }, [
+    id,
+    router,
+  ]);
 
   const selecionarImagem = (
     event: ChangeEvent<HTMLInputElement>
@@ -215,7 +254,9 @@ export default function EditarProdutoPage() {
       );
     }
 
-    setArquivo(imagem);
+    setArquivo(
+      imagem
+    );
 
     setPreview(
       URL.createObjectURL(
@@ -232,11 +273,14 @@ export default function EditarProdutoPage() {
         );
       }
     };
-  }, [preview]);
+  }, [
+    preview,
+  ]);
 
-  const abrirSeletorImagem = () => {
-    inputImagemRef.current?.click();
-  };
+  const abrirSeletorImagem =
+    () => {
+      inputImagemRef.current?.click();
+    };
 
   const fazerUploadNovaImagem =
     async () => {
@@ -252,15 +296,22 @@ export default function EditarProdutoPage() {
       const nomeArquivo =
         `${Date.now()}-${crypto.randomUUID()}.${extensao}`;
 
-      const { error } =
+      const {
+        error,
+      } =
         await supabase.storage
-          .from("product-images")
+          .from(
+            "product-images"
+          )
           .upload(
             nomeArquivo,
             arquivo,
             {
-              cacheControl: "3600",
-              upsert: false,
+              cacheControl:
+                "3600",
+
+              upsert:
+                false,
             }
           );
 
@@ -268,9 +319,13 @@ export default function EditarProdutoPage() {
         throw error;
       }
 
-      const { data } =
+      const {
+        data,
+      } =
         supabase.storage
-          .from("product-images")
+          .from(
+            "product-images"
+          )
           .getPublicUrl(
             nomeArquivo
           );
@@ -289,7 +344,9 @@ export default function EditarProdutoPage() {
         );
 
       const estoqueNumerico =
-        Number(estoque);
+        Number(
+          estoque
+        );
 
       if (!nome.trim()) {
         alert(
@@ -308,7 +365,9 @@ export default function EditarProdutoPage() {
       }
 
       if (
-        Number.isNaN(precoNumerico) ||
+        Number.isNaN(
+          precoNumerico
+        ) ||
         precoNumerico <= 0
       ) {
         alert(
@@ -339,14 +398,20 @@ export default function EditarProdutoPage() {
       }
 
       try {
-        setSalvando(true);
+        setSalvando(
+          true
+        );
 
         const imagemUrl =
           await fazerUploadNovaImagem();
 
-        const { error } =
+        const {
+          error,
+        } =
           await supabase
-            .from("produtos")
+            .from(
+              "produtos"
+            )
             .update({
               nome:
                 nome.trim(),
@@ -371,7 +436,10 @@ export default function EditarProdutoPage() {
               imagem:
                 imagemUrl,
             })
-            .eq("id", id);
+            .eq(
+              "id",
+              id
+            );
 
         if (error) {
           throw error;
@@ -382,7 +450,9 @@ export default function EditarProdutoPage() {
         );
 
         router.refresh();
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Erro ao editar produto:",
           error
@@ -392,7 +462,9 @@ export default function EditarProdutoPage() {
           "Não foi possível editar o produto."
         );
       } finally {
-        setSalvando(false);
+        setSalvando(
+          false
+        );
       }
     };
 
@@ -401,25 +473,146 @@ export default function EditarProdutoPage() {
     !produto
   ) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <Loader2
-          className="animate-spin"
-          size={28}
-        />
+      <main
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#020b18]
+          text-white
+        "
+      >
+        <div className="text-center">
+
+          <Loader2
+            className="
+              mx-auto
+              animate-spin
+              text-sky-400
+            "
+            size={32}
+          />
+
+          <p
+            className="
+              mt-4
+              text-sm
+              text-slate-400
+            "
+          >
+            Carregando produto...
+          </p>
+
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-100 pb-10 text-zinc-950">
+    <main
+      className="
+        relative
+        min-h-screen
+        overflow-hidden
+        bg-[#020b18]
+        pb-12
+        text-white
+      "
+    >
 
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+      {/* FUNDO DECORATIVO */}
 
-        <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -left-40
+          -top-40
+          h-96
+          w-96
+          rounded-full
+          bg-sky-500/20
+          blur-[120px]
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -right-44
+          top-72
+          h-96
+          w-96
+          rounded-full
+          bg-blue-600/20
+          blur-[120px]
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          bottom-0
+          left-1/2
+          h-80
+          w-80
+          -translate-x-1/2
+          rounded-full
+          bg-cyan-400/10
+          blur-[110px]
+        "
+      />
+
+      {/* HEADER */}
+
+      <header
+        className="
+          sticky
+          top-0
+          z-40
+          border-b
+          border-sky-300/10
+          bg-[#020b18]/80
+          backdrop-blur-2xl
+        "
+      >
+
+        <div
+          className="
+            mx-auto
+            flex
+            max-w-md
+            items-center
+            gap-4
+            px-4
+            py-4
+          "
+        >
 
           <Link
             href="/admin/produtos"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-100"
+            className="
+              flex
+              h-11
+              w-11
+              shrink-0
+              items-center
+              justify-center
+              rounded-2xl
+              border
+              border-sky-300/15
+              bg-white/[0.06]
+              text-sky-200
+              shadow-[0_10px_30px_rgba(0,0,0,0.25)]
+              backdrop-blur-xl
+              transition
+              hover:border-sky-300/30
+              hover:bg-sky-400/10
+              active:scale-95
+            "
           >
             <ArrowLeft
               size={20}
@@ -427,30 +620,200 @@ export default function EditarProdutoPage() {
           </Link>
 
           <div>
-            <p className="text-xs text-zinc-500">
+
+            <p
+              className="
+                text-xs
+                font-semibold
+                uppercase
+                tracking-[0.18em]
+                text-sky-300
+              "
+            >
               Produtos
             </p>
 
-            <h1 className="text-lg font-bold">
+            <h1
+              className="
+                mt-1
+                text-xl
+                font-black
+                text-white
+              "
+            >
               Editar produto
             </h1>
+
           </div>
 
         </div>
 
       </header>
 
-      <section className="mx-auto max-w-md space-y-5 px-4 py-5">
+      {/* CONTEÚDO */}
+
+      <section
+        className="
+          relative
+          z-10
+          mx-auto
+          max-w-md
+          space-y-4
+          px-4
+          py-5
+        "
+      >
+
+        {/* APRESENTAÇÃO */}
+
+        <section
+          className="
+            rounded-[28px]
+            border
+            border-sky-300/15
+            bg-gradient-to-br
+            from-sky-400/10
+            to-blue-600/5
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.28)]
+            backdrop-blur-2xl
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-4
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-sky-300/25
+                bg-gradient-to-br
+                from-sky-400
+                to-blue-600
+                text-white
+                shadow-[0_10px_30px_rgba(14,165,233,0.30)]
+              "
+            >
+              <Pencil
+                size={22}
+              />
+            </div>
+
+            <div
+              className="
+                min-w-0
+                flex-1
+              "
+            >
+
+              <h2
+                className="
+                  truncate
+                  font-black
+                  text-white
+                "
+              >
+                {produto.nome}
+              </h2>
+
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  text-slate-400
+                "
+              >
+                Atualize as informações do produto.
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
 
         {/* FOTO */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
 
-          <h2 className="font-bold">
-            Foto do produto
-          </h2>
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-sky-300/15
+            bg-white/[0.055]
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+            backdrop-blur-2xl
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-10
+                w-10
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-sky-300/15
+                bg-sky-400/10
+                text-sky-300
+              "
+            >
+              <ImagePlus
+                size={19}
+              />
+            </div>
+
+            <div>
+
+              <h2
+                className="
+                  font-bold
+                  text-white
+                "
+              >
+                Foto do produto
+              </h2>
+
+              <p
+                className="
+                  mt-0.5
+                  text-xs
+                  text-slate-400
+                "
+              >
+                Toque na imagem para trocar
+              </p>
+
+            </div>
+
+          </div>
 
           <input
-            ref={inputImagemRef}
+            ref={
+              inputImagemRef
+            }
             type="file"
             accept="image/*"
             onChange={
@@ -464,7 +827,21 @@ export default function EditarProdutoPage() {
             onClick={
               abrirSeletorImagem
             }
-            className="relative mt-4 flex min-h-44 w-full overflow-hidden rounded-3xl border-2 border-dashed border-zinc-200"
+            className="
+              group
+              relative
+              mt-4
+              flex
+              min-h-52
+              w-full
+              overflow-hidden
+              rounded-[26px]
+              border
+              border-sky-300/20
+              bg-white/[0.04]
+              shadow-[0_14px_40px_rgba(0,0,0,0.20)]
+              backdrop-blur-xl
+            "
           >
 
             <Image
@@ -479,125 +856,326 @@ export default function EditarProdutoPage() {
               fill
               className="object-cover"
               unoptimized={
-                Boolean(preview)
+                Boolean(
+                  preview
+                )
               }
             />
 
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition hover:opacity-100">
+            <div
+              className="
+                absolute
+                inset-0
+                flex
+                items-end
+                justify-center
+                bg-gradient-to-t
+                from-[#020b18]/90
+                via-transparent
+                to-transparent
+                p-4
+              "
+            >
 
-              <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 font-semibold">
-
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  rounded-2xl
+                  border
+                  border-white/10
+                  bg-[#020b18]/65
+                  px-4
+                  py-2.5
+                  text-xs
+                  font-bold
+                  text-white
+                  backdrop-blur-xl
+                "
+              >
                 <ImagePlus
-                  size={18}
+                  size={16}
                 />
 
                 Trocar imagem
-
               </div>
 
             </div>
 
           </button>
 
-          <p className="mt-3 text-center text-xs text-zinc-500">
-            Toque na imagem para trocar
-          </p>
-
         </section>
 
         {/* INFORMAÇÕES */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
 
-          <h2 className="font-bold">
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-sky-300/15
+            bg-white/[0.055]
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+            backdrop-blur-2xl
+          "
+        >
+
+          <h2
+            className="
+              font-black
+              text-white
+            "
+          >
             Informações
           </h2>
 
-          <div className="mt-4 space-y-4">
+          <p
+            className="
+              mt-1
+              text-sm
+              text-slate-400
+            "
+          >
+            Dados exibidos para o cliente.
+          </p>
+
+          <div
+            className="
+              mt-5
+              space-y-4
+            "
+          >
+
+            {/* NOME */}
 
             <div>
+
               <label
                 htmlFor="nome"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Nome do produto
               </label>
 
               <input
                 id="nome"
-                value={nome}
-                onChange={(e) =>
+                value={
+                  nome
+                }
+                onChange={(
+                  e
+                ) =>
                   setNome(
                     e.target.value
                   )
                 }
                 placeholder="Nome do produto"
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
+
             </div>
 
+            {/* DESCRIÇÃO */}
+
             <div>
+
               <label
                 htmlFor="descricao"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Descrição
               </label>
 
               <textarea
                 id="descricao"
-                value={descricao}
-                onChange={(e) =>
+                value={
+                  descricao
+                }
+                onChange={(
+                  e
+                ) =>
                   setDescricao(
                     e.target.value
                   )
                 }
                 placeholder="Descrição"
                 rows={4}
-                className="w-full resize-none rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="
+                  w-full
+                  resize-none
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
+
             </div>
 
+            {/* CATEGORIA */}
+
             <div>
+
               <label
                 htmlFor="categoria"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Categoria
               </label>
 
               <input
                 id="categoria"
-                value={categoria}
-                onChange={(e) =>
+                value={
+                  categoria
+                }
+                onChange={(
+                  e
+                ) =>
                   setCategoria(
                     e.target.value
                   )
                 }
                 placeholder="Ex: Cabos, Capinhas, Fones..."
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
+
             </div>
 
+            {/* PREÇO */}
+
             <div>
+
               <label
                 htmlFor="preco"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Preço
               </label>
 
-              <input
-                id="preco"
-                value={preco}
-                onChange={(e) =>
-                  setPreco(
-                    e.target.value
-                  )
-                }
-                placeholder="Ex: 49,90"
-                inputMode="decimal"
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-              />
+              <div className="relative">
+
+                <span
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-4
+                    top-1/2
+                    -translate-y-1/2
+                    text-sm
+                    font-bold
+                    text-sky-300
+                  "
+                >
+                  R$
+                </span>
+
+                <input
+                  id="preco"
+                  value={
+                    preco
+                  }
+                  onChange={(
+                    e
+                  ) =>
+                    setPreco(
+                      e.target.value
+                    )
+                  }
+                  placeholder="49,90"
+                  inputMode="decimal"
+                  className="
+                    w-full
+                    rounded-2xl
+                    border
+                    border-sky-300/10
+                    bg-white/[0.06]
+                    py-4
+                    pl-12
+                    pr-4
+                    text-white
+                    outline-none
+                    backdrop-blur-xl
+                    transition
+                    placeholder:text-slate-500
+                    focus:border-sky-300/40
+                    focus:bg-sky-400/[0.07]
+                    focus:ring-4
+                    focus:ring-sky-400/5
+                  "
+                />
+
+              </div>
+
             </div>
 
           </div>
@@ -605,63 +1183,178 @@ export default function EditarProdutoPage() {
         </section>
 
         {/* ESTOQUE */}
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
 
-          <div className="flex items-start gap-3">
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-sky-300/15
+            bg-white/[0.055]
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+            backdrop-blur-2xl
+          "
+        >
 
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100">
+          <div
+            className="
+              flex
+              items-start
+              gap-3
+            "
+          >
 
+            <div
+              className="
+                flex
+                h-11
+                w-11
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-sky-300/20
+                bg-sky-400/10
+                text-sky-300
+              "
+            >
               <Boxes
                 size={20}
               />
-
             </div>
 
             <div>
-              <h2 className="font-bold">
+
+              <h2
+                className="
+                  font-black
+                  text-white
+                "
+              >
                 Controle de estoque
               </h2>
 
-              <p className="mt-1 text-sm leading-5 text-zinc-500">
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  leading-5
+                  text-slate-400
+                "
+              >
                 Controle a quantidade disponível deste produto.
               </p>
+
             </div>
 
           </div>
 
-          <label className="mt-5 flex cursor-pointer items-center justify-between rounded-2xl bg-zinc-100 p-4">
+          {/* TOGGLE */}
+
+          <button
+            type="button"
+            onClick={() =>
+              setEstoqueControlado(
+                !estoqueControlado
+              )
+            }
+            className="
+              mt-5
+              flex
+              w-full
+              items-center
+              justify-between
+              gap-4
+              rounded-[22px]
+              border
+              border-sky-300/10
+              bg-white/[0.05]
+              p-4
+              text-left
+              backdrop-blur-xl
+              transition
+              hover:border-sky-300/25
+              hover:bg-sky-400/[0.06]
+            "
+          >
 
             <div>
-              <p className="text-sm font-bold">
+
+              <p
+                className="
+                  text-sm
+                  font-bold
+                  text-white
+                "
+              >
                 Controlar estoque
               </p>
 
-              <p className="mt-1 text-xs text-zinc-500">
-                Ative para limitar as vendas pela quantidade disponível.
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  leading-5
+                  text-slate-400
+                "
+              >
+                Limita as vendas conforme a quantidade disponível.
               </p>
+
             </div>
 
-            <input
-              type="checkbox"
-              checked={
-                estoqueControlado
-              }
-              onChange={(e) =>
-                setEstoqueControlado(
-                  e.target.checked
-                )
-              }
-              className="h-5 w-5 accent-zinc-950"
-            />
+            <div
+              className={`
+                relative
+                h-7
+                w-12
+                shrink-0
+                rounded-full
+                border
+                transition
+                ${
+                  estoqueControlado
+                    ? "border-sky-300/40 bg-gradient-to-r from-sky-400 to-blue-600 shadow-[0_0_20px_rgba(56,189,248,0.25)]"
+                    : "border-white/10 bg-white/10"
+                }
+              `}
+            >
 
-          </label>
+              <div
+                className={`
+                  absolute
+                  top-1
+                  h-5
+                  w-5
+                  rounded-full
+                  bg-white
+                  shadow-md
+                  transition-all
+                  ${
+                    estoqueControlado
+                      ? "left-6"
+                      : "left-1"
+                  }
+                `}
+              />
 
-          {estoqueControlado && (
+            </div>
+
+          </button>
+
+          {estoqueControlado ? (
             <div className="mt-4">
 
               <label
                 htmlFor="estoque"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Quantidade disponível
               </label>
@@ -669,8 +1362,12 @@ export default function EditarProdutoPage() {
               <input
                 id="estoque"
                 type="number"
-                value={estoque}
-                onChange={(e) =>
+                value={
+                  estoque
+                }
+                onChange={(
+                  e
+                ) =>
                   setEstoque(
                     e.target.value
                   )
@@ -679,24 +1376,94 @@ export default function EditarProdutoPage() {
                 step="1"
                 inputMode="numeric"
                 placeholder="Ex: 20"
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 text-lg font-semibold outline-none"
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-lg
+                  font-bold
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
 
-              <p className="mt-2 text-xs text-zinc-500">
-                Quando chegar a 0, o produto poderá ser marcado como esgotado na loja.
-              </p>
+              <div
+                className="
+                  mt-3
+                  flex
+                  gap-2
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-sky-400/[0.06]
+                  p-3
+                "
+              >
+
+                <Boxes
+                  size={15}
+                  className="
+                    mt-0.5
+                    shrink-0
+                    text-sky-300
+                  "
+                />
+
+                <p
+                  className="
+                    text-xs
+                    leading-5
+                    text-slate-400
+                  "
+                >
+                  Quando chegar a 0, o produto será exibido como esgotado.
+                </p>
+
+              </div>
 
             </div>
-          )}
+          ) : (
+            <div
+              className="
+                mt-4
+                rounded-[22px]
+                border
+                border-amber-300/15
+                bg-amber-400/[0.07]
+                p-4
+                backdrop-blur-xl
+              "
+            >
 
-          {!estoqueControlado && (
-            <div className="mt-4 rounded-2xl bg-amber-50 p-4">
-
-              <p className="text-sm font-semibold text-amber-800">
+              <p
+                className="
+                  text-sm
+                  font-bold
+                  text-amber-300
+                "
+              >
                 Estoque não controlado
               </p>
 
-              <p className="mt-1 text-xs leading-5 text-amber-700">
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  leading-5
+                  text-amber-100/60
+                "
+              >
                 O produto poderá ser vendido sem limite de quantidade.
               </p>
 
@@ -706,6 +1473,7 @@ export default function EditarProdutoPage() {
         </section>
 
         {/* SALVAR */}
+
         <button
           type="button"
           onClick={
@@ -714,13 +1482,37 @@ export default function EditarProdutoPage() {
           disabled={
             salvando
           }
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 py-4 font-semibold text-white shadow-lg disabled:opacity-60"
+          className="
+            flex
+            min-h-16
+            w-full
+            items-center
+            justify-center
+            gap-3
+            rounded-[22px]
+            border
+            border-sky-300/30
+            bg-gradient-to-r
+            from-sky-500
+            to-blue-600
+            px-5
+            font-black
+            text-white
+            shadow-[0_15px_45px_rgba(14,165,233,0.30)]
+            transition
+            duration-200
+            hover:-translate-y-0.5
+            hover:shadow-[0_18px_55px_rgba(14,165,233,0.40)]
+            active:scale-[0.98]
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
         >
 
           {salvando ? (
             <>
               <Loader2
-                size={19}
+                size={20}
                 className="animate-spin"
               />
 
@@ -729,7 +1521,7 @@ export default function EditarProdutoPage() {
           ) : (
             <>
               <Save
-                size={19}
+                size={20}
               />
 
               Salvar alterações

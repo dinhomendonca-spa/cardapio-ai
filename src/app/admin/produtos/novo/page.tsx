@@ -7,6 +7,7 @@ import {
   Boxes,
   ImagePlus,
   Loader2,
+  PackagePlus,
   Save,
 } from "lucide-react";
 
@@ -178,7 +179,9 @@ export default function NovoProdutoPage() {
         );
 
       const estoqueNumerico =
-        Number(estoque);
+        Number(
+          estoque
+        );
 
       if (!nome.trim()) {
         alert(
@@ -280,15 +283,109 @@ export default function NovoProdutoPage() {
     };
 
   return (
-    <main className="min-h-screen bg-zinc-100 pb-10 text-zinc-950">
+    <main
+      className="
+        relative
+        min-h-screen
+        overflow-hidden
+        bg-[#020b18]
+        pb-12
+        text-white
+      "
+    >
 
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+      {/* LUZES DE FUNDO */}
 
-        <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -left-40
+          -top-40
+          h-96
+          w-96
+          rounded-full
+          bg-sky-500/20
+          blur-[120px]
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          -right-44
+          top-72
+          h-96
+          w-96
+          rounded-full
+          bg-blue-600/20
+          blur-[120px]
+        "
+      />
+
+      <div
+        className="
+          pointer-events-none
+          absolute
+          bottom-0
+          left-1/2
+          h-80
+          w-80
+          -translate-x-1/2
+          rounded-full
+          bg-cyan-400/10
+          blur-[110px]
+        "
+      />
+
+      {/* HEADER */}
+
+      <header
+        className="
+          sticky
+          top-0
+          z-40
+          border-b
+          border-sky-300/10
+          bg-[#020b18]/80
+          backdrop-blur-2xl
+        "
+      >
+
+        <div
+          className="
+            mx-auto
+            flex
+            max-w-md
+            items-center
+            gap-4
+            px-4
+            py-4
+          "
+        >
 
           <Link
             href="/admin/produtos"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-100"
+            className="
+              flex
+              h-11
+              w-11
+              shrink-0
+              items-center
+              justify-center
+              rounded-2xl
+              border
+              border-sky-300/15
+              bg-white/[0.06]
+              text-sky-200
+              shadow-[0_10px_30px_rgba(0,0,0,0.25)]
+              backdrop-blur-xl
+              transition
+              hover:border-sky-300/30
+              hover:bg-sky-400/10
+              active:scale-95
+            "
           >
             <ArrowLeft
               size={20}
@@ -297,11 +394,26 @@ export default function NovoProdutoPage() {
 
           <div>
 
-            <p className="text-xs text-zinc-500">
+            <p
+              className="
+                text-xs
+                font-semibold
+                uppercase
+                tracking-[0.18em]
+                text-sky-300
+              "
+            >
               Produtos
             </p>
 
-            <h1 className="text-lg font-bold">
+            <h1
+              className="
+                mt-1
+                text-xl
+                font-black
+                text-white
+              "
+            >
               Novo produto
             </h1>
 
@@ -311,13 +423,160 @@ export default function NovoProdutoPage() {
 
       </header>
 
-      <section className="mx-auto max-w-md space-y-5 px-4 py-5">
+      {/* CONTEÚDO */}
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
+      <section
+        className="
+          relative
+          z-10
+          mx-auto
+          max-w-md
+          space-y-4
+          px-4
+          py-5
+        "
+      >
 
-          <h2 className="font-bold">
-            Foto do produto
-          </h2>
+        {/* APRESENTAÇÃO */}
+
+        <section
+          className="
+            rounded-[28px]
+            border
+            border-sky-300/15
+            bg-gradient-to-br
+            from-sky-400/10
+            to-blue-600/5
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.28)]
+            backdrop-blur-2xl
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-4
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-sky-300/25
+                bg-gradient-to-br
+                from-sky-400
+                to-blue-600
+                text-white
+                shadow-[0_10px_30px_rgba(14,165,233,0.30)]
+              "
+            >
+              <PackagePlus
+                size={22}
+              />
+            </div>
+
+            <div>
+
+              <h2
+                className="
+                  font-black
+                  text-white
+                "
+              >
+                Cadastrar produto
+              </h2>
+
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  leading-5
+                  text-slate-400
+                "
+              >
+                Adicione as informações e o estoque do produto.
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* FOTO */}
+
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-sky-300/15
+            bg-white/[0.055]
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+            backdrop-blur-2xl
+          "
+        >
+
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-10
+                w-10
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-sky-300/15
+                bg-sky-400/10
+                text-sky-300
+              "
+            >
+              <ImagePlus
+                size={19}
+              />
+            </div>
+
+            <div>
+
+              <h2
+                className="
+                  font-bold
+                  text-white
+                "
+              >
+                Foto do produto
+              </h2>
+
+              <p
+                className="
+                  mt-0.5
+                  text-xs
+                  text-slate-400
+                "
+              >
+                Escolha uma imagem do produto
+              </p>
+
+            </div>
+
+          </div>
 
           <input
             ref={
@@ -336,28 +595,125 @@ export default function NovoProdutoPage() {
             onClick={
               abrirSeletorImagem
             }
-            className="relative mt-4 flex min-h-44 w-full overflow-hidden rounded-3xl border-2 border-dashed border-zinc-200"
+            className="
+              group
+              relative
+              mt-4
+              flex
+              min-h-48
+              w-full
+              overflow-hidden
+              rounded-[26px]
+              border
+              border-dashed
+              border-sky-300/25
+              bg-white/[0.04]
+              shadow-inner
+              backdrop-blur-xl
+              transition
+              hover:border-sky-300/45
+              hover:bg-sky-400/[0.06]
+            "
           >
 
             {preview ? (
-              <Image
-                src={
-                  preview
-                }
-                alt="Pré-visualização"
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="flex w-full flex-col items-center justify-center text-zinc-500">
-
-                <ImagePlus
-                  size={28}
+              <>
+                <Image
+                  src={
+                    preview
+                  }
+                  alt="Pré-visualização"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
 
-                <span className="mt-2 text-sm font-semibold">
+                <div
+                  className="
+                    absolute
+                    inset-0
+                    flex
+                    items-end
+                    justify-center
+                    bg-gradient-to-t
+                    from-[#020b18]/80
+                    via-transparent
+                    to-transparent
+                    p-4
+                  "
+                >
+
+                  <div
+                    className="
+                      rounded-2xl
+                      border
+                      border-white/10
+                      bg-[#020b18]/60
+                      px-4
+                      py-2
+                      text-xs
+                      font-bold
+                      text-white
+                      backdrop-blur-xl
+                    "
+                  >
+                    Toque para trocar
+                  </div>
+
+                </div>
+              </>
+            ) : (
+              <div
+                className="
+                  flex
+                  w-full
+                  flex-col
+                  items-center
+                  justify-center
+                  px-6
+                  py-10
+                "
+              >
+
+                <div
+                  className="
+                    flex
+                    h-14
+                    w-14
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    border
+                    border-sky-300/20
+                    bg-sky-400/10
+                    text-sky-300
+                    shadow-[0_10px_30px_rgba(14,165,233,0.10)]
+                  "
+                >
+                  <ImagePlus
+                    size={25}
+                  />
+                </div>
+
+                <span
+                  className="
+                    mt-3
+                    text-sm
+                    font-bold
+                    text-white
+                  "
+                >
                   Adicionar imagem
+                </span>
+
+                <span
+                  className="
+                    mt-1
+                    text-xs
+                    text-slate-500
+                  "
+                >
+                  Toque para selecionar
                 </span>
 
               </div>
@@ -365,26 +721,61 @@ export default function NovoProdutoPage() {
 
           </button>
 
-          {preview && (
-            <p className="mt-3 text-center text-xs text-zinc-500">
-              Toque na imagem para trocar
-            </p>
-          )}
-
         </section>
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
+        {/* INFORMAÇÕES */}
 
-          <h2 className="font-bold">
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-sky-300/15
+            bg-white/[0.055]
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+            backdrop-blur-2xl
+          "
+        >
+
+          <h2
+            className="
+              font-black
+              text-white
+            "
+          >
             Informações
           </h2>
 
-          <div className="mt-4 space-y-3">
+          <p
+            className="
+              mt-1
+              text-sm
+              text-slate-400
+            "
+          >
+            Dados que serão exibidos para o cliente.
+          </p>
+
+          <div
+            className="
+              mt-5
+              space-y-4
+            "
+          >
+
+            {/* NOME */}
 
             <div>
+
               <label
                 htmlFor="nome"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Nome do produto
               </label>
@@ -402,14 +793,41 @@ export default function NovoProdutoPage() {
                   )
                 }
                 placeholder="Ex: Cabo USB-C"
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
+
             </div>
 
+            {/* DESCRIÇÃO */}
+
             <div>
+
               <label
                 htmlFor="descricao"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Descrição
               </label>
@@ -428,14 +846,42 @@ export default function NovoProdutoPage() {
                 }
                 placeholder="Descrição do produto"
                 rows={4}
-                className="w-full resize-none rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="
+                  w-full
+                  resize-none
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
+
             </div>
 
+            {/* CATEGORIA */}
+
             <div>
+
               <label
                 htmlFor="categoria"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Categoria
               </label>
@@ -453,45 +899,142 @@ export default function NovoProdutoPage() {
                   )
                 }
                 placeholder="Ex: Capinhas, Cabos, Fones..."
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="
+                  w-full
+                  rounded-2xl
+                  border
+                  border-sky-300/10
+                  bg-white/[0.06]
+                  px-4
+                  py-4
+                  text-white
+                  outline-none
+                  backdrop-blur-xl
+                  transition
+                  placeholder:text-slate-500
+                  focus:border-sky-300/40
+                  focus:bg-sky-400/[0.07]
+                  focus:ring-4
+                  focus:ring-sky-400/5
+                "
               />
+
             </div>
 
+            {/* PREÇO */}
+
             <div>
+
               <label
                 htmlFor="preco"
-                className="mb-2 block text-sm font-semibold"
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-slate-200
+                "
               >
                 Preço
               </label>
 
-              <input
-                id="preco"
-                value={
-                  preco
-                }
-                onChange={(
-                  e
-                ) =>
-                  setPreco(
-                    e.target.value
-                  )
-                }
-                placeholder="Ex: 49,90"
-                inputMode="decimal"
-                className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-              />
+              <div className="relative">
+
+                <span
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-4
+                    top-1/2
+                    -translate-y-1/2
+                    text-sm
+                    font-bold
+                    text-sky-300
+                  "
+                >
+                  R$
+                </span>
+
+                <input
+                  id="preco"
+                  value={
+                    preco
+                  }
+                  onChange={(
+                    e
+                  ) =>
+                    setPreco(
+                      e.target.value
+                    )
+                  }
+                  placeholder="49,90"
+                  inputMode="decimal"
+                  className="
+                    w-full
+                    rounded-2xl
+                    border
+                    border-sky-300/10
+                    bg-white/[0.06]
+                    py-4
+                    pl-12
+                    pr-4
+                    text-white
+                    outline-none
+                    backdrop-blur-xl
+                    transition
+                    placeholder:text-slate-500
+                    focus:border-sky-300/40
+                    focus:bg-sky-400/[0.07]
+                    focus:ring-4
+                    focus:ring-sky-400/5
+                  "
+                />
+
+              </div>
+
             </div>
 
           </div>
 
         </section>
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
+        {/* ESTOQUE */}
 
-          <div className="flex items-start gap-3">
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-sky-300/15
+            bg-white/[0.055]
+            p-5
+            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+            backdrop-blur-2xl
+          "
+        >
 
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100">
+          <div
+            className="
+              flex
+              items-start
+              gap-3
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-11
+                w-11
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-sky-300/20
+                bg-sky-400/10
+                text-sky-300
+              "
+            >
               <Boxes
                 size={20}
               />
@@ -499,23 +1042,41 @@ export default function NovoProdutoPage() {
 
             <div>
 
-              <h2 className="font-bold">
-                Estoque
+              <h2
+                className="
+                  font-black
+                  text-white
+                "
+              >
+                Controle de estoque
               </h2>
 
-              <p className="mt-1 text-sm leading-5 text-zinc-500">
-                Informe quantas unidades deste produto estão disponíveis.
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  leading-5
+                  text-slate-400
+                "
+              >
+                Informe quantas unidades estão disponíveis para venda.
               </p>
 
             </div>
 
           </div>
 
-          <div className="mt-4">
+          <div className="mt-5">
 
             <label
               htmlFor="estoque"
-              className="mb-2 block text-sm font-semibold"
+              className="
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-slate-200
+              "
             >
               Quantidade disponível
             </label>
@@ -537,16 +1098,66 @@ export default function NovoProdutoPage() {
               min="0"
               step="1"
               inputMode="numeric"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              className="
+                w-full
+                rounded-2xl
+                border
+                border-sky-300/10
+                bg-white/[0.06]
+                px-4
+                py-4
+                text-white
+                outline-none
+                backdrop-blur-xl
+                transition
+                placeholder:text-slate-500
+                focus:border-sky-300/40
+                focus:bg-sky-400/[0.07]
+                focus:ring-4
+                focus:ring-sky-400/5
+              "
             />
 
-            <p className="mt-2 text-xs leading-5 text-zinc-500">
-              Use 0 quando o produto estiver sem estoque.
-            </p>
+            <div
+              className="
+                mt-3
+                flex
+                items-start
+                gap-2
+                rounded-2xl
+                border
+                border-sky-300/10
+                bg-sky-400/[0.06]
+                p-3
+              "
+            >
+
+              <Boxes
+                size={15}
+                className="
+                  mt-0.5
+                  shrink-0
+                  text-sky-300
+                "
+              />
+
+              <p
+                className="
+                  text-xs
+                  leading-5
+                  text-slate-400
+                "
+              >
+                Quando o estoque chegar a zero, o produto será identificado como esgotado. Use 0 para produtos sem unidades disponíveis.
+              </p>
+
+            </div>
 
           </div>
 
         </section>
+
+        {/* SALVAR */}
 
         <button
           type="button"
@@ -556,13 +1167,37 @@ export default function NovoProdutoPage() {
           disabled={
             salvando
           }
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 py-4 font-semibold text-white shadow-lg disabled:opacity-60"
+          className="
+            flex
+            min-h-16
+            w-full
+            items-center
+            justify-center
+            gap-3
+            rounded-[22px]
+            border
+            border-sky-300/30
+            bg-gradient-to-r
+            from-sky-500
+            to-blue-600
+            px-5
+            font-black
+            text-white
+            shadow-[0_15px_45px_rgba(14,165,233,0.30)]
+            transition
+            duration-200
+            hover:-translate-y-0.5
+            hover:shadow-[0_18px_55px_rgba(14,165,233,0.40)]
+            active:scale-[0.98]
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
         >
 
           {salvando ? (
             <>
               <Loader2
-                size={19}
+                size={20}
                 className="animate-spin"
               />
 
@@ -571,7 +1206,7 @@ export default function NovoProdutoPage() {
           ) : (
             <>
               <Save
-                size={19}
+                size={20}
               />
 
               Salvar produto

@@ -95,51 +95,38 @@ const statusInfo: Record<
   {
     titulo: string;
     descricao: string;
-    classe: string;
   }
 > = {
   novo: {
     titulo: "Novo",
     descricao: "Pedido recebido",
-    classe:
-      "bg-blue-50 text-blue-700",
   },
 
   em_preparo: {
     titulo: "Em preparo",
-    descricao:
-      "Pedido sendo preparado",
-    classe:
-      "bg-amber-50 text-amber-700",
+    descricao: "Pedido sendo preparado",
   },
 
   saiu_para_entrega: {
     titulo: "Saiu para entrega",
-    descricao:
-      "Pedido com o motoboy",
-    classe:
-      "bg-violet-50 text-violet-700",
+    descricao: "Pedido com o motoboy",
   },
 
   concluido: {
     titulo: "Concluído",
-    descricao:
-      "Pedido finalizado",
-    classe:
-      "bg-green-50 text-green-700",
+    descricao: "Pedido finalizado",
   },
 
   cancelado: {
     titulo: "Cancelado",
-    descricao:
-      "Pedido cancelado",
-    classe:
-      "bg-red-50 text-red-700",
+    descricao: "Pedido cancelado",
   },
 };
 
 export default function PedidosPage() {
-  const { loja } = useStore();
+  const {
+    loja,
+  } = useStore();
 
   const [
     pedidos,
@@ -190,7 +177,9 @@ export default function PedidosPage() {
   const formatarPreco = (
     valor: number
   ) =>
-    Number(valor).toLocaleString(
+    Number(
+      valor
+    ).toLocaleString(
       "pt-BR",
       {
         style: "currency",
@@ -203,12 +192,15 @@ export default function PedidosPage() {
   ) => {
     return new Date(
       data
-    ).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    ).toLocaleString(
+      "pt-BR",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
   };
 
   const formatarTelefone = (
@@ -216,7 +208,10 @@ export default function PedidosPage() {
   ) => {
     const numeros = (
       telefone || ""
-    ).replace(/\D/g, "");
+    ).replace(
+      /\D/g,
+      ""
+    );
 
     if (
       numeros.length === 11
@@ -242,7 +237,10 @@ export default function PedidosPage() {
       )}-${numeros.slice(6)}`;
     }
 
-    return telefone || "Não informado";
+    return (
+      telefone ||
+      "Não informado"
+    );
   };
 
   const linkWhatsAppCliente = (
@@ -251,22 +249,37 @@ export default function PedidosPage() {
     const numero = (
       pedido.cliente_telefone ||
       ""
-    ).replace(/\D/g, "");
+    ).replace(
+      /\D/g,
+      ""
+    );
 
     if (!numero) {
       return "";
     }
 
     const numeroComPais =
-      numero.startsWith("55")
+      numero.startsWith(
+        "55"
+      )
         ? numero
         : `55${numero}`;
 
-    const mensagem = `Olá, ${pedido.cliente_nome || "cliente"}! 👋
+    const mensagem = `Olá, ${
+      pedido.cliente_nome ||
+      "cliente"
+    }! 👋
 
-Estou entrando em contato sobre o seu pedido #${pedido.id} na ${loja?.nome || "loja"}.
+Estou entrando em contato sobre o seu pedido #${pedido.id} na ${
+      loja?.nome ||
+      "loja"
+    }.
 
-Status atual: ${statusInfo[pedido.status].titulo}.`;
+Status atual: ${
+      statusInfo[
+        pedido.status
+      ].titulo
+    }.`;
 
     return `https://wa.me/${numeroComPais}?text=${encodeURIComponent(
       mensagem
@@ -354,7 +367,8 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           );
 
           oscillator.start(
-            agora + inicio
+            agora +
+              inicio
           );
 
           oscillator.stop(
@@ -375,13 +389,17 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           0.2,
           0.22
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Erro ao tocar som:",
           error
         );
       }
-    }, [somAtivado]);
+    }, [
+      somAtivado,
+    ]);
 
   const carregarPedidos =
     useCallback(
@@ -389,7 +407,10 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
         mostrarLoading = true
       ) => {
         if (!loja) {
-          setCarregando(false);
+          setCarregando(
+            false
+          );
+
           return;
         }
 
@@ -405,31 +426,34 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           const {
             data,
             error,
-          } = await supabase
-            .from("pedidos")
-            .select(`
-              *,
-              pedido_itens (
-                id,
-                pedido_id,
-                produto_id,
-                nome,
-                preco,
-                quantidade,
-                subtotal
+          } =
+            await supabase
+              .from(
+                "pedidos"
               )
-            `)
-            .eq(
-              "loja_id",
-              loja.id
-            )
-            .order(
-              "criado_em",
-              {
-                ascending:
-                  false,
-              }
-            );
+              .select(`
+                *,
+                pedido_itens (
+                  id,
+                  pedido_id,
+                  produto_id,
+                  nome,
+                  preco,
+                  quantidade,
+                  subtotal
+                )
+              `)
+              .eq(
+                "loja_id",
+                loja.id
+              )
+              .order(
+                "criado_em",
+                {
+                  ascending:
+                    false,
+                }
+              );
 
           if (error) {
             throw error;
@@ -439,7 +463,9 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
             (data ??
               []) as Pedido[]
           );
-        } catch (error) {
+        } catch (
+          error
+        ) {
           console.error(
             "Erro ao carregar pedidos:",
             error
@@ -462,7 +488,9 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           }
         }
       },
-      [loja]
+      [
+        loja,
+      ]
     );
 
   const carregarPedidoPorId =
@@ -473,25 +501,28 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
         const {
           data,
           error,
-        } = await supabase
-          .from("pedidos")
-          .select(`
-            *,
-            pedido_itens (
-              id,
-              pedido_id,
-              produto_id,
-              nome,
-              preco,
-              quantidade,
-              subtotal
+        } =
+          await supabase
+            .from(
+              "pedidos"
             )
-          `)
-          .eq(
-            "id",
-            pedidoId
-          )
-          .single();
+            .select(`
+              *,
+              pedido_itens (
+                id,
+                pedido_id,
+                produto_id,
+                nome,
+                preco,
+                quantidade,
+                subtotal
+              )
+            `)
+            .eq(
+              "id",
+              pedidoId
+            )
+            .single();
 
         if (error) {
           console.error(
@@ -502,14 +533,18 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           return null;
         }
 
-        return data as Pedido;
+        return (
+          data as Pedido
+        );
       },
       []
     );
 
   useEffect(() => {
     carregarPedidos();
-  }, [carregarPedidos]);
+  }, [
+    carregarPedidos,
+  ]);
 
   /*
    * REALTIME
@@ -527,10 +562,17 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
-            schema: "public",
-            table: "pedidos",
-            filter: `loja_id=eq.${loja.id}`,
+            event:
+              "INSERT",
+
+            schema:
+              "public",
+
+            table:
+              "pedidos",
+
+            filter:
+              `loja_id=eq.${loja.id}`,
           },
           async (
             payload
@@ -541,7 +583,9 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
               );
 
             await new Promise(
-              (resolve) =>
+              (
+                resolve
+              ) =>
                 setTimeout(
                   resolve,
                   500
@@ -562,10 +606,14 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
             }
 
             setPedidos(
-              (atual) => {
+              (
+                atual
+              ) => {
                 const existe =
                   atual.some(
-                    (item) =>
+                    (
+                      item
+                    ) =>
                       item.id ===
                       pedido.id
                   );
@@ -604,10 +652,17 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
         .on(
           "postgres_changes",
           {
-            event: "UPDATE",
-            schema: "public",
-            table: "pedidos",
-            filter: `loja_id=eq.${loja.id}`,
+            event:
+              "UPDATE",
+
+            schema:
+              "public",
+
+            table:
+              "pedidos",
+
+            filter:
+              `loja_id=eq.${loja.id}`,
           },
           async (
             payload
@@ -627,9 +682,13 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
             }
 
             setPedidos(
-              (atual) =>
+              (
+                atual
+              ) =>
                 atual.map(
-                  (item) =>
+                  (
+                    item
+                  ) =>
                     item.id ===
                     pedido.id
                       ? pedido
@@ -639,7 +698,9 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           }
         )
         .subscribe(
-          (status) => {
+          (
+            status
+          ) => {
             setConectadoRealtime(
               status ===
                 "SUBSCRIBED"
@@ -668,11 +729,14 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
     }
 
     const intervalo =
-      setInterval(() => {
-        carregarPedidos(
-          false
-        );
-      }, 30000);
+      setInterval(
+        () => {
+          carregarPedidos(
+            false
+          );
+        },
+        30000
+      );
 
     return () => {
       clearInterval(
@@ -730,9 +794,13 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           pedidoId
         );
 
-        const { error } =
+        const {
+          error,
+        } =
           await supabase
-            .from("pedidos")
+            .from(
+              "pedidos"
+            )
             .update({
               status:
                 novoStatus,
@@ -747,20 +815,27 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
         }
 
         setPedidos(
-          (atual) =>
+          (
+            atual
+          ) =>
             atual.map(
-              (pedido) =>
+              (
+                pedido
+              ) =>
                 pedido.id ===
                 pedidoId
                   ? {
                       ...pedido,
+
                       status:
                         novoStatus,
                     }
                   : pedido
             )
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         console.error(
           "Erro ao atualizar status:",
           error
@@ -786,14 +861,16 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
         );
 
       if (
-        indiceAtual === -1
+        indiceAtual ===
+        -1
       ) {
         return;
       }
 
       const proximoStatus =
         ordemStatus[
-          indiceAtual + 1
+          indiceAtual +
+            1
         ];
 
       if (
@@ -813,35 +890,55 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
       return {
         novos:
           pedidos.filter(
-            (pedido) =>
+            (
+              pedido
+            ) =>
               pedido.status ===
               "novo"
           ).length,
 
         preparo:
           pedidos.filter(
-            (pedido) =>
+            (
+              pedido
+            ) =>
               pedido.status ===
               "em_preparo"
           ).length,
 
         entrega:
           pedidos.filter(
-            (pedido) =>
+            (
+              pedido
+            ) =>
               pedido.status ===
               "saiu_para_entrega"
           ).length,
       };
-    }, [pedidos]);
+    }, [
+      pedidos,
+    ]);
 
   return (
-    <main className="min-h-screen bg-zinc-100 pb-10 text-zinc-950">
+    <main className="relative min-h-screen overflow-hidden bg-[#020b18] pb-12 text-white">
+
+      {/* FUNDO */}
+
+      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-sky-500/20 blur-[120px]" />
+
+      <div className="pointer-events-none absolute -right-44 top-72 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]" />
+
+      <div className="pointer-events-none absolute bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-cyan-400/10 blur-[120px]" />
+
       {/* HEADER */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+
+      <header className="sticky top-0 z-40 border-b border-sky-300/10 bg-[#020b18]/80 backdrop-blur-2xl">
+
+        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-4">
+
           <Link
             href="/admin"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100 active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-300/15 bg-white/[0.06] text-sky-200 shadow-lg backdrop-blur-xl transition hover:border-sky-300/30 hover:bg-sky-400/10 active:scale-95"
           >
             <ArrowLeft
               size={20}
@@ -849,35 +946,41 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           </Link>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-medium text-zinc-500">
+
+            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-sky-300">
               {loja?.nome ||
                 "Sua loja"}
             </p>
 
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-extrabold">
+            <div className="mt-1 flex items-center gap-2">
+
+              <h1 className="text-xl font-black">
                 Pedidos
               </h1>
 
               <span
-                className={`h-2 w-2 rounded-full ${
+                className={`h-2.5 w-2.5 rounded-full ${
                   conectadoRealtime
-                    ? "bg-green-500"
+                    ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"
                     : "bg-amber-400"
                 }`}
               />
+
             </div>
+
           </div>
 
           <button
             type="button"
             onClick={() =>
               setSomAtivado(
-                (atual) =>
+                (
+                  atual
+                ) =>
                   !atual
               )
             }
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-300/15 bg-white/[0.06] text-sky-200 backdrop-blur-xl transition hover:border-sky-300/30 hover:bg-sky-400/10"
           >
             {somAtivado ? (
               <Volume2
@@ -898,7 +1001,7 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
             disabled={
               carregando
             }
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 disabled:opacity-50"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-300/15 bg-white/[0.06] text-sky-200 backdrop-blur-xl transition hover:border-sky-300/30 hover:bg-sky-400/10 disabled:opacity-50"
           >
             <RefreshCw
               size={18}
@@ -909,17 +1012,24 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
               }
             />
           </button>
+
         </div>
+
       </header>
 
-      {/* ALERTA NOVO PEDIDO */}
+      {/* NOVO PEDIDO */}
+
       {novoPedido && (
-        <div className="sticky top-[69px] z-30 px-3 pt-3">
-          <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-green-600 p-3 text-white shadow-xl">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
+        <div className="sticky top-[77px] z-30 px-4 pt-3">
+
+          <div className="mx-auto flex max-w-md items-center gap-3 rounded-[24px] border border-emerald-300/30 bg-emerald-500/20 p-3 text-white shadow-[0_15px_45px_rgba(16,185,129,0.25)] backdrop-blur-2xl">
+
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/20 text-emerald-300">
+
               <BellRing
                 size={21}
               />
+
             </div>
 
             <button
@@ -935,22 +1045,24 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
               }}
               className="min-w-0 flex-1 text-left"
             >
-              <p className="text-[11px] font-medium text-green-100">
-                NOVO PEDIDO
+
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                Novo pedido
               </p>
 
-              <p className="font-extrabold">
+              <p className="truncate font-black">
                 {novoPedido.cliente_nome ||
                   `Pedido #${novoPedido.id}`}
               </p>
 
-              <p className="text-xs text-green-100">
+              <p className="text-xs text-emerald-100/70">
                 Pedido #
                 {novoPedido.id} •{" "}
                 {formatarPreco(
                   novoPedido.total
                 )}
               </p>
+
             </button>
 
             <button
@@ -960,22 +1072,31 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                   null
                 )
               }
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10"
             >
-              <X size={17} />
+              <X
+                size={17}
+              />
             </button>
+
           </div>
+
         </div>
       )}
 
-      <section className="mx-auto max-w-md space-y-3 px-3 py-3">
+      {/* CONTEÚDO */}
+
+      <section className="relative z-10 mx-auto max-w-md space-y-4 px-4 py-5">
+
         {/* REALTIME */}
-        <div className="flex items-center gap-2 px-1 text-[10px] font-medium text-zinc-500">
+
+        <div className="flex items-center gap-2 px-1 text-xs font-semibold text-slate-400">
+
           {conectadoRealtime ? (
             <>
               <Bell
-                size={12}
-                className="text-green-600"
+                size={13}
+                className="text-emerald-400"
               />
 
               Pedidos em tempo real
@@ -983,79 +1104,102 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
           ) : (
             <>
               <RefreshCw
-                size={12}
+                size={13}
+                className="text-amber-300"
               />
 
               Atualização automática ativa
             </>
           )}
+
         </div>
 
         {/* RESUMO */}
+
         <section className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-white p-3 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+
+          <div className="rounded-[22px] border border-sky-300/15 bg-white/[0.06] p-4 shadow-lg backdrop-blur-2xl">
+
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
               Novos
             </p>
 
-            <p className="mt-1 text-2xl font-extrabold">
+            <p className="mt-1 text-2xl font-black text-sky-300">
               {totais.novos}
             </p>
+
           </div>
 
-          <div className="rounded-2xl bg-white p-3 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+          <div className="rounded-[22px] border border-amber-300/15 bg-white/[0.06] p-4 shadow-lg backdrop-blur-2xl">
+
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
               Preparo
             </p>
 
-            <p className="mt-1 text-2xl font-extrabold">
+            <p className="mt-1 text-2xl font-black text-amber-300">
               {totais.preparo}
             </p>
+
           </div>
 
-          <div className="rounded-2xl bg-white p-3 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+          <div className="rounded-[22px] border border-violet-300/15 bg-white/[0.06] p-4 shadow-lg backdrop-blur-2xl">
+
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
               Entrega
             </p>
 
-            <p className="mt-1 text-2xl font-extrabold">
+            <p className="mt-1 text-2xl font-black text-violet-300">
               {totais.entrega}
             </p>
+
           </div>
+
         </section>
 
-        {/* LISTA */}
+        {/* CARREGANDO */}
+
         {carregando ? (
-          <section className="rounded-3xl bg-white p-8 text-center shadow-sm">
+          <section className="rounded-[30px] border border-sky-300/15 bg-white/[0.055] p-10 text-center shadow-2xl backdrop-blur-2xl">
+
             <RefreshCw
-              size={28}
-              className="mx-auto animate-spin text-zinc-400"
+              size={30}
+              className="mx-auto animate-spin text-sky-300"
             />
 
-            <p className="mt-3 text-sm font-semibold">
+            <p className="mt-4 text-sm font-bold text-slate-300">
               Carregando pedidos...
             </p>
+
           </section>
         ) : pedidos.length ===
           0 ? (
-          <section className="rounded-3xl bg-white p-8 text-center shadow-sm">
-            <ShoppingBag
-              size={34}
-              className="mx-auto text-zinc-300"
-            />
+          <section className="rounded-[30px] border border-sky-300/15 bg-white/[0.055] p-10 text-center shadow-2xl backdrop-blur-2xl">
 
-            <h2 className="mt-3 font-extrabold">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] border border-sky-300/15 bg-sky-400/10">
+
+              <ShoppingBag
+                size={30}
+                className="text-sky-300"
+              />
+
+            </div>
+
+            <h2 className="mt-4 font-black">
               Nenhum pedido ainda
             </h2>
 
-            <p className="mt-1 text-sm leading-5 text-zinc-500">
+            <p className="mt-2 text-sm leading-5 text-slate-400">
               Os novos pedidos aparecerão aqui automaticamente.
             </p>
+
           </section>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
+
             {pedidos.map(
-              (pedido) => {
+              (
+                pedido
+              ) => {
                 const info =
                   statusInfo[
                     pedido.status
@@ -1076,7 +1220,9 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                         .filter(
                           Boolean
                         )
-                        .join(", ")
+                        .join(
+                          ", "
+                        )
                     : "Retirada no local";
 
                 const podeAvancar =
@@ -1095,95 +1241,120 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                     key={
                       pedido.id
                     }
-                    className={`overflow-hidden rounded-3xl bg-white shadow-sm ${
+                    className={`overflow-hidden rounded-[30px] border bg-white/[0.055] shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl ${
                       pedido.status ===
                       "novo"
-                        ? "ring-2 ring-blue-100"
-                        : ""
+                        ? "border-sky-300/40 shadow-[0_15px_50px_rgba(14,165,233,0.15)]"
+                        : "border-white/[0.08]"
                     }`}
                   >
+
                     <div className="p-4">
+
                       {/* CABEÇALHO */}
+
                       <div className="flex items-start justify-between gap-3">
+
                         <div className="min-w-0">
+
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-lg font-extrabold">
+
+                            <h2 className="text-lg font-black text-white">
                               Pedido #
-                              {
-                                pedido.id
-                              }
+                              {pedido.id}
                             </h2>
 
                             <span
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${info.classe}`}
+                              className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${
+                                pedido.status ===
+                                "novo"
+                                  ? "border-sky-300/20 bg-sky-400/10 text-sky-300"
+                                  : pedido.status ===
+                                    "em_preparo"
+                                  ? "border-amber-300/20 bg-amber-400/10 text-amber-300"
+                                  : pedido.status ===
+                                    "saiu_para_entrega"
+                                  ? "border-violet-300/20 bg-violet-400/10 text-violet-300"
+                                  : pedido.status ===
+                                    "concluido"
+                                  ? "border-emerald-300/20 bg-emerald-400/10 text-emerald-300"
+                                  : "border-red-300/20 bg-red-400/10 text-red-300"
+                              }`}
                             >
-                              {
-                                info.titulo
-                              }
+                              {info.titulo}
                             </span>
+
                           </div>
 
-                          <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+                          <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+
                             <Clock3
-                              size={
-                                14
-                              }
+                              size={14}
                             />
 
                             {formatarData(
                               pedido.criado_em
                             )}
+
                           </div>
+
                         </div>
 
                         <div className="shrink-0 text-right">
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
                             Total
                           </p>
 
-                          <p className="mt-0.5 text-lg font-extrabold">
+                          <p className="mt-1 text-lg font-black text-sky-300">
                             {formatarPreco(
                               pedido.total
                             )}
                           </p>
+
                         </div>
+
                       </div>
 
                       {/* CLIENTE */}
-                      <div className="mt-4 rounded-2xl bg-zinc-950 p-3 text-white">
+
+                      <div className="mt-4 rounded-[22px] border border-sky-300/10 bg-[#020b18]/50 p-4 backdrop-blur-xl">
+
                         <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-sky-300/15 bg-sky-400/10 text-sky-300">
+
                             <User
-                              size={
-                                17
-                              }
+                              size={18}
                             />
+
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">
                               Cliente
                             </p>
 
-                            <p className="mt-0.5 truncate text-sm font-extrabold">
+                            <p className="mt-1 truncate text-sm font-black">
                               {pedido.cliente_nome ||
                                 "Cliente não informado"}
                             </p>
 
-                            <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-300">
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+
                               <Phone
-                                size={
-                                  13
-                                }
+                                size={13}
                               />
 
-                              <span>
-                                {formatarTelefone(
-                                  pedido.cliente_telefone
-                                )}
-                              </span>
+                              {formatarTelefone(
+                                pedido.cliente_telefone
+                              )}
+
                             </div>
+
                           </div>
+
                         </div>
 
                         {whatsappCliente && (
@@ -1193,57 +1364,62 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                             }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-3 text-xs font-bold text-white active:scale-[0.99]"
+                            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-300/20 bg-emerald-500/15 px-3 text-xs font-black text-emerald-300 backdrop-blur-xl transition hover:bg-emerald-500/20"
                           >
                             <MessageCircle
-                              size={
-                                16
-                              }
+                              size={16}
                             />
 
                             WhatsApp do cliente
                           </a>
                         )}
+
                       </div>
 
                       {/* RECEBIMENTO */}
-                      <div className="mt-3 flex items-start gap-2 rounded-2xl bg-zinc-50 p-3">
-                        {pedido.tipo_entrega ===
-                        "entrega" ? (
-                          <Truck
-                            size={17}
-                            className="mt-0.5 shrink-0"
-                          />
-                        ) : (
-                          <ShoppingBag
-                            size={17}
-                            className="mt-0.5 shrink-0"
-                          />
-                        )}
+
+                      <div className="mt-3 flex items-start gap-3 rounded-[22px] border border-white/[0.07] bg-white/[0.04] p-4 backdrop-blur-xl">
+
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-400/10 text-sky-300">
+
+                          {pedido.tipo_entrega ===
+                          "entrega" ? (
+                            <Truck
+                              size={17}
+                            />
+                          ) : (
+                            <ShoppingBag
+                              size={17}
+                            />
+                          )}
+
+                        </div>
 
                         <div className="min-w-0">
-                          <p className="text-xs font-bold">
+
+                          <p className="text-xs font-black">
                             {pedido.tipo_entrega ===
                             "entrega"
                               ? "Entrega"
                               : "Retirada"}
                           </p>
 
-                          <p className="mt-0.5 text-xs leading-5 text-zinc-500">
+                          <p className="mt-1 text-xs leading-5 text-slate-400">
                             {endereco}
                           </p>
 
                           {pedido.complemento && (
-                            <p className="text-xs leading-5 text-zinc-500">
-                              {
-                                pedido.complemento
-                              }
+                            <p className="text-xs leading-5 text-slate-400">
+                              {pedido.complemento}
                             </p>
                           )}
+
                         </div>
+
                       </div>
 
                       {/* ITENS */}
+
                       <button
                         type="button"
                         onClick={() =>
@@ -1253,30 +1429,32 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                               : pedido.id
                           )
                         }
-                        className="mt-3 flex min-h-11 w-full items-center justify-between rounded-2xl bg-zinc-100 px-3 text-left"
+                        className="mt-3 flex min-h-12 w-full items-center justify-between rounded-[20px] border border-sky-300/10 bg-white/[0.05] px-4 text-left backdrop-blur-xl transition hover:bg-sky-400/[0.07]"
                       >
-                        <span className="text-xs font-bold">
+
+                        <span className="text-xs font-black text-slate-200">
                           Ver itens do pedido
                         </span>
 
                         {aberto ? (
                           <ChevronUp
-                            size={
-                              17
-                            }
+                            size={17}
+                            className="text-sky-300"
                           />
                         ) : (
                           <ChevronDown
-                            size={
-                              17
-                            }
+                            size={17}
+                            className="text-sky-300"
                           />
                         )}
+
                       </button>
 
                       {aberto && (
-                        <div className="mt-3 rounded-2xl border border-zinc-100 p-3">
-                          <div className="space-y-2.5">
+                        <div className="mt-3 rounded-[22px] border border-sky-300/10 bg-[#020b18]/40 p-4 backdrop-blur-xl">
+
+                          <div className="space-y-3">
+
                             {pedido.pedido_itens.map(
                               (
                                 item
@@ -1287,28 +1465,29 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                                   }
                                   className="flex justify-between gap-3 text-sm"
                                 >
-                                  <span className="min-w-0 text-zinc-600">
-                                    {
-                                      item.quantidade
-                                    }
+
+                                  <span className="min-w-0 text-slate-400">
+                                    {item.quantidade}
                                     x{" "}
-                                    {
-                                      item.nome
-                                    }
+                                    {item.nome}
                                   </span>
 
-                                  <span className="shrink-0 font-semibold">
+                                  <span className="shrink-0 font-bold text-slate-200">
                                     {formatarPreco(
                                       item.subtotal
                                     )}
                                   </span>
+
                                 </div>
                               )
                             )}
+
                           </div>
 
-                          <div className="mt-3 space-y-2 border-t border-zinc-100 pt-3 text-xs">
-                            <div className="flex justify-between text-zinc-500">
+                          <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-xs">
+
+                            <div className="flex justify-between text-slate-400">
+
                               <span>
                                 Produtos
                               </span>
@@ -1318,9 +1497,11 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                                   pedido.subtotal
                                 )}
                               </span>
+
                             </div>
 
-                            <div className="flex justify-between text-zinc-500">
+                            <div className="flex justify-between text-slate-400">
+
                               <span>
                                 Entrega
                               </span>
@@ -1333,24 +1514,30 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                                       pedido.taxa_entrega
                                     )}
                               </span>
+
                             </div>
 
-                            <div className="flex justify-between pt-1 font-bold">
+                            <div className="flex justify-between border-t border-white/10 pt-3 text-sm font-black">
+
                               <span>
                                 Total
                               </span>
 
-                              <span>
+                              <span className="text-sky-300">
                                 {formatarPreco(
                                   pedido.total
                                 )}
                               </span>
+
                             </div>
+
                           </div>
+
                         </div>
                       )}
 
                       {/* MAPS */}
+
                       {pedido.tipo_entrega ===
                         "entrega" &&
                         pedido.rua && (
@@ -1372,12 +1559,10 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-100 text-xs font-bold"
+                            className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-sky-300/10 bg-sky-400/[0.07] text-xs font-black text-sky-200 backdrop-blur-xl"
                           >
                             <MapPin
-                              size={
-                                15
-                              }
+                              size={15}
                             />
 
                             Abrir endereço no Maps
@@ -1385,7 +1570,9 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                         )}
 
                       {/* AÇÕES */}
-                      <div className="mt-3 grid grid-cols-2 gap-2">
+
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+
                         {podeAvancar ? (
                           <button
                             type="button"
@@ -1398,15 +1585,14 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                               atualizandoId ===
                               pedido.id
                             }
-                            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-3 text-xs font-bold text-white disabled:opacity-50"
+                            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-sky-300/25 bg-gradient-to-r from-sky-500 to-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_30px_rgba(14,165,233,0.25)] transition active:scale-[0.98] disabled:opacity-50"
                           >
+
                             {pedido.status ===
                               "novo" && (
                               <>
                                 <PackageCheck
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
 
                                 Iniciar preparo
@@ -1417,9 +1603,7 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                               "em_preparo" && (
                               <>
                                 <Truck
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
 
                                 Saiu para entrega
@@ -1430,26 +1614,29 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                               "saiu_para_entrega" && (
                               <>
                                 <CheckCircle2
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
 
                                 Concluir
                               </>
                             )}
+
                           </button>
                         ) : (
                           <div
-                            className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-3 text-xs font-bold ${info.classe}`}
+                            className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-3 text-xs font-black ${
+                              pedido.status ===
+                              "concluido"
+                                ? "border-emerald-300/20 bg-emerald-400/10 text-emerald-300"
+                                : "border-red-300/20 bg-red-400/10 text-red-300"
+                            }`}
                           >
+
                             {pedido.status ===
                             "concluido" ? (
                               <>
                                 <CheckCircle2
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
 
                                 Concluído
@@ -1457,14 +1644,13 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                             ) : (
                               <>
                                 <XCircle
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                 />
 
                                 Cancelado
                               </>
                             )}
+
                           </div>
                         )}
 
@@ -1484,26 +1670,30 @@ Status atual: ${statusInfo[pedido.status].titulo}.`;
                                 atualizandoId ===
                                 pedido.id
                               }
-                              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-red-50 px-3 text-xs font-bold text-red-600 disabled:opacity-50"
+                              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-red-300/15 bg-red-500/10 px-3 text-xs font-black text-red-300 backdrop-blur-xl transition hover:bg-red-500/15 disabled:opacity-50"
                             >
                               <XCircle
-                                size={
-                                  16
-                                }
+                                size={16}
                               />
 
                               Cancelar
                             </button>
                           )}
+
                       </div>
+
                     </div>
+
                   </article>
                 );
               }
             )}
+
           </div>
         )}
+
       </section>
+
     </main>
   );
 }
