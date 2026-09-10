@@ -1,19 +1,24 @@
 "use client";
 
 import {
-  AlertTriangle,
-  Loader2,
-  LogOut,
-  Store,
-} from "lucide-react";
-
-import {
+  type ReactNode,
   useEffect,
+  useRef,
+  useState,
 } from "react";
 
 import {
+  usePathname,
   useRouter,
 } from "next/navigation";
+
+import {
+  AlertTriangle,
+  Loader2,
+  LogOut,
+  RefreshCw,
+  Store,
+} from "lucide-react";
 
 import {
   useAuth,
@@ -23,17 +28,34 @@ import {
   useStore,
 } from "@/context/StoreContext";
 
+type RespostaStatus = {
+  status: string;
+  ativo: boolean;
+  erro?: string;
+};
+
+const ROTAS_TUTORIAL = new Set([
+  "/admin/loja",
+  "/admin/entrega",
+  "/admin/produtos",
+  "/admin/produtos/novo",
+  "/admin/publicar",
+]);
+
 export default function AdminLayout({
   children,
 }: {
-  children:
-    React.ReactNode;
+  children: ReactNode;
 }) {
   const router =
     useRouter();
 
+  const pathname =
+    usePathname();
+
   const {
     user,
+    session,
     carregandoAuth,
     sair,
   } = useAuth();
@@ -44,28 +66,172 @@ export default function AdminLayout({
     erroLoja,
   } = useStore();
 
+  const verificacaoIniciada =
+    useRef(false);
+
+  const [
+    verificandoAssinatura,
+    setVerificandoAssinatura,
+  ] = useState(true);
+
+  const [
+    acessoAtivo,
+    setAcessoAtivo,
+  ] = useState(false);
+
+  const [
+    erroAssinatura,
+    setErroAssinatura,
+  ] = useState("");
+
   useEffect(() => {
-    if (
-      !carregandoAuth &&
-      !user
-    ) {
+    if (carregandoAuth) {
+      return;
+    }
+
+    if (!user) {
       router.replace(
         "/login"
       );
+
+      return;
     }
+
+    if (
+      !session?.access_token ||
+      verificacaoIniciada.current
+    ) {
+      return;
+    }
+
+    verificacaoIniciada.current =
+      true;
+
+    let cancelado = false;
+
+    const verificarAssinatura =
+      async () => {
+        setVerificandoAssinatura(
+          true
+        );
+
+        setErroAssinatura("");
+
+        try {
+          const resposta =
+            await fetch(
+              "/api/assinatura/status",
+              {
+                method:
+                  "GET",
+
+                headers: {
+                  authorization:
+                    `Bearer ${session.access_token}`,
+                },
+
+                cache:
+                  "no-store",
+              }
+            );
+
+          const resultado =
+            (await resposta.json()) as
+              RespostaStatus;
+
+          if (!resposta.ok) {
+            throw new Error(
+              resultado.erro ||
+              "Não foi possível verificar sua assinatura."
+            );
+          }
+
+          if (cancelado) {
+            return;
+          }
+
+          if (
+            !resultado.ativo
+          ) {
+            router.replace(
+              "/assinar"
+            );
+
+            return;
+          }
+
+          setAcessoAtivo(
+            true
+          );
+
+          setVerificandoAssinatura(
+            false
+          );
+        } catch (error) {
+          if (cancelado) {
+            return;
+          }
+
+          setErroAssinatura(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível verificar sua assinatura."
+          );
+
+          setVerificandoAssinatura(
+            false
+          );
+
+          verificacaoIniciada.current =
+            false;
+        }
+      };
+
+    verificarAssinatura();
+
+    return () => {
+      cancelado = true;
+    };
   }, [
     user,
+    session?.access_token,
     carregandoAuth,
+    router,
+  ]);
+
+  const rotaTutorialPermitida =
+    ROTAS_TUTORIAL.has(
+      pathname
+    );
+
+  const precisaIniciarTutorial =
+    Boolean(
+      acessoAtivo &&
+      loja &&
+      !loja.configuracao_concluida &&
+      !rotaTutorialPermitida
+    );
+
+  useEffect(() => {
+    if (
+      precisaIniciarTutorial
+    ) {
+      router.replace(
+        "/admin/loja"
+      );
+    }
+  }, [
+    precisaIniciarTutorial,
     router,
   ]);
 
   const fazerLogout =
     async () => {
-      try {
+           try {
         await sair();
 
         router.replace(
-          "/login"
+                   "/login"
         );
       } catch (error) {
         console.error(
@@ -79,23 +245,32 @@ export default function AdminLayout({
       }
     };
 
+  const carregamentoInicialDaLoja =
+    Boolean(
+      user &&
+      acessoAtivo &&
+      carregando &&
+      !loja
+    );
+
   if (
     carregandoAuth ||
-    (
-      user &&
-      carregando
-    )
+    verificandoAssinatura ||
+    carregamentoInicialDaLoja ||
+    precisaIniciarTutorial
   ) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100">
+      <main className="flex min-h-screen items-center justify-center bg-[#020b18] text-white">
         <div className="text-center">
           <Loader2
-            size={30}
-            className="mx-auto animate-spin"
+            size={32}
+            className="mx-auto animate-spin text-sky-400"
           />
 
-          <p className="mt-3 text-sm font-medium text-zinc-500">
-            Carregando painel...
+          <p className="mt-3 text-sm font-medium text-slate-400">
+            {precisaIniciarTutorial
+              ? "Preparando a configuração da loja..."
+              : "Verificando seu acesso..."}
           </p>
         </div>
       </main>
@@ -104,7 +279,63 @@ export default function AdminLayout({
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-zinc-950" />
+      <main className="min-h-screen bg-[#020b18]" />
+    );
+  }
+
+  if (erroAssinatura) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#020b18] px-4 text-white">
+        <section className="w-full max-w-sm rounded-[28px] border border-red-400/15 bg-white/[0.06] p-6 text-center shadow-2xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-400/10 text-red-300">
+            <AlertTriangle
+              size={25}
+            />
+          </div>
+
+          <h1 className="mt-4 text-xl font-extrabold">
+            Não foi possível verificar
+          </h1>
+
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            {erroAssinatura}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              window.location.reload()
+            }
+            className="mt-5 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 font-bold text-slate-950"
+          >
+            <RefreshCw
+              size={17}
+            />
+
+            Tentar novamente
+          </button>
+
+          <button
+            type="button"
+            onClick={
+              fazerLogout
+            }
+            className="mt-3 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-4 font-bold text-white"
+          >
+            <LogOut
+              size={17}
+            />
+
+            Sair
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (!acessoAtivo) {
+    return (
+      <main className="min-h-screen bg-[#020b18]" />
     );
   }
 
@@ -151,7 +382,7 @@ export default function AdminLayout({
             onClick={
               fazerLogout
             }
-            className="mt-4 flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 font-bold text-white"
+            className="mt-4 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 font-bold text-white"
           >
             <LogOut
               size={17}

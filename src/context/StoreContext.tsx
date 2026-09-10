@@ -23,91 +23,55 @@ import {
 
 export type Loja = {
   id: number;
-
   nome: string;
-
   descricao: string;
-
   whatsapp: string;
-
   chave_pix: string;
 
-  /*
-   * ======================================
-   * PAGAMENTOS
-   * ======================================
-   */
-
   aceita_pix: boolean;
-
   aceita_cartao: boolean;
-
   mercado_pago_conectado: boolean;
 
-  /*
-   * ======================================
-   * DADOS DA LOJA
-   * ======================================
-   */
-
   cidade: string;
-
   estado: string;
-
   logo: string;
-
   banner: string;
 
   ativo: boolean;
+  configuracao_concluida: boolean;
+  bloqueada_por_assinatura: boolean;
 
   taxa_entrega: number;
-
   taxa_entrega_a_combinar: boolean;
-
   retirada_permitida: boolean;
 
   endereco: string;
-
   numero: string;
-
   bairro: string;
-
   cep: string;
 
   latitude: number | null;
-
   longitude: number | null;
-
   google_maps_url: string;
 
   slug: string;
-
   dono_id?: string | null;
 
   aberto_manual?: boolean;
-
   usar_horario?: boolean;
-
   horario_abertura?: string | null;
-
   horario_fechamento?: string | null;
-
   mensagem_fora_horario?: string | null;
 
   pedido_minimo?: number;
-
   entrega_ativa?: boolean;
-
   tempo_entrega_min?: number;
-
   tempo_entrega_max?: number;
 };
 
 export type Perfil = {
   id: string;
-
   nome: string;
-
   loja_id: number | null;
 
   papel:
@@ -120,22 +84,18 @@ export type Perfil = {
 
 type StoreContextType = {
   loja: Loja | null;
-
   perfil: Perfil | null;
-
   carregando: boolean;
-
   erroLoja: string | null;
-
   slugPublico: string | null;
-
   recarregarLoja: () => Promise<void>;
 
   salvarLoja: (
     dados: Partial<
       Omit<
         Loja,
-        "id"
+        "id" |
+        "bloqueada_por_assinatura"
       >
     >
   ) => Promise<void>;
@@ -144,24 +104,10 @@ type StoreContextType = {
 const StoreContext =
   createContext<
     StoreContextType | undefined
-  >(
-    undefined
-  );
-
-/*
- * ==========================================
- * CHAVE DE PERSISTÊNCIA
- * ==========================================
- */
+  >(undefined);
 
 const CHAVE_LOJA_PUBLICA =
   "lojas_ai_loja_publica";
-
-/*
- * ==========================================
- * CONVERTER LOJA
- * ==========================================
- */
 
 function converterLoja(
   data: Record<
@@ -191,10 +137,6 @@ function converterLoja(
       data.chave_pix ??
       "",
 
-    /*
-     * PAGAMENTOS
-     */
-
     aceita_pix:
       data.aceita_pix ??
       true,
@@ -206,10 +148,6 @@ function converterLoja(
     mercado_pago_conectado:
       data.mercado_pago_conectado ??
       false,
-
-    /*
-     * DADOS DA LOJA
-     */
 
     cidade:
       data.cidade ??
@@ -231,10 +169,18 @@ function converterLoja(
       data.ativo ??
       true,
 
+    configuracao_concluida:
+      data.configuracao_concluida ??
+      false,
+
+    bloqueada_por_assinatura:
+      data.bloqueada_por_assinatura ??
+      true,
+
     taxa_entrega:
       Number(
         data.taxa_entrega ??
-          0
+        0
       ),
 
     taxa_entrega_a_combinar:
@@ -312,7 +258,7 @@ function converterLoja(
     pedido_minimo:
       Number(
         data.pedido_minimo ??
-          0
+        0
       ),
 
     entrega_ativa:
@@ -322,22 +268,16 @@ function converterLoja(
     tempo_entrega_min:
       Number(
         data.tempo_entrega_min ??
-          35
+        35
       ),
 
     tempo_entrega_max:
       Number(
         data.tempo_entrega_max ??
-          50
+        50
       ),
   };
 }
-
-/*
- * ==========================================
- * EXTRAIR SLUG
- * ==========================================
- */
 
 function extrairSlug(
   pathname: string
@@ -345,9 +285,7 @@ function extrairSlug(
   const partes =
     pathname
       .split("/")
-      .filter(
-        Boolean
-      );
+      .filter(Boolean);
 
   if (
     partes[0] !==
@@ -362,12 +300,6 @@ function extrairSlug(
   );
 }
 
-/*
- * ==========================================
- * PROVIDER
- * ==========================================
- */
-
 export function StoreProvider({
   children,
 }: {
@@ -379,8 +311,7 @@ export function StoreProvider({
   const {
     user,
     carregandoAuth,
-  } =
-    useAuth();
+  } = useAuth();
 
   const slugDaUrl =
     extrairSlug(
@@ -393,9 +324,7 @@ export function StoreProvider({
   ] =
     useState<
       Loja | null
-    >(
-      null
-    );
+    >(null);
 
   const [
     perfil,
@@ -403,17 +332,13 @@ export function StoreProvider({
   ] =
     useState<
       Perfil | null
-    >(
-      null
-    );
+    >(null);
 
   const [
     carregando,
     setCarregando,
   ] =
-    useState(
-      true
-    );
+    useState(true);
 
   const [
     erroLoja,
@@ -421,9 +346,7 @@ export function StoreProvider({
   ] =
     useState<
       string | null
-    >(
-      null
-    );
+    >(null);
 
   const [
     slugPersistido,
@@ -431,15 +354,7 @@ export function StoreProvider({
   ] =
     useState<
       string | null
-    >(
-      null
-    );
-
-  /*
-   * ==========================================
-   * LER LOJA SALVA NO NAVEGADOR
-   * ==========================================
-   */
+    >(null);
 
   useEffect(() => {
     try {
@@ -453,9 +368,7 @@ export function StoreProvider({
           slug
         );
       }
-    } catch (
-      error
-    ) {
+    } catch (error) {
       console.error(
         "Erro ao ler loja persistida:",
         error
@@ -463,16 +376,8 @@ export function StoreProvider({
     }
   }, []);
 
-  /*
-   * ==========================================
-   * SALVAR SLUG DA LOJA PÚBLICA
-   * ==========================================
-   */
-
   useEffect(() => {
-    if (
-      !slugDaUrl
-    ) {
+    if (!slugDaUrl) {
       return;
     }
 
@@ -485,9 +390,7 @@ export function StoreProvider({
       setSlugPersistido(
         slugDaUrl
       );
-    } catch (
-      error
-    ) {
+    } catch (error) {
       console.error(
         "Erro ao salvar loja pública:",
         error
@@ -496,12 +399,6 @@ export function StoreProvider({
   }, [
     slugDaUrl,
   ]);
-
-  /*
-   * ==========================================
-   * SLUG QUE DEVE SER USADO
-   * ==========================================
-   */
 
   const rotaDependeDaLoja =
     pathname ===
@@ -518,12 +415,6 @@ export function StoreProvider({
         : null
     );
 
-  /*
-   * ==========================================
-   * CARREGAR LOJA PÚBLICA
-   * ==========================================
-   */
-
   const carregarLojaPublica =
     useCallback(
       async (
@@ -534,12 +425,8 @@ export function StoreProvider({
           error,
         } =
           await supabase
-            .from(
-              "lojas"
-            )
-            .select(
-              "*"
-            )
+            .from("lojas")
+            .select("*")
             .eq(
               "slug",
               slug
@@ -548,23 +435,25 @@ export function StoreProvider({
               "ativo",
               true
             )
+            .eq(
+              "configuracao_concluida",
+              true
+            )
+            .eq(
+              "bloqueada_por_assinatura",
+              false
+            )
             .maybeSingle();
 
-        if (
-          error
-        ) {
+        if (error) {
           throw error;
         }
 
-        if (
-          !data
-        ) {
-          setLoja(
-            null
-          );
+        if (!data) {
+          setLoja(null);
 
           setErroLoja(
-            "Loja não encontrada ou indisponível."
+            "Esta loja está temporariamente indisponível."
           );
 
           return;
@@ -579,13 +468,7 @@ export function StoreProvider({
           lojaConvertida
         );
 
-        setErroLoja(
-          null
-        );
-
-        /*
-         * Mantém o slug salvo.
-         */
+        setErroLoja(null);
 
         try {
           window.localStorage.setItem(
@@ -597,31 +480,18 @@ export function StoreProvider({
             lojaConvertida.slug
           );
         } catch {
-          //
+          // O armazenamento local é opcional.
         }
       },
       []
     );
 
-  /*
-   * ==========================================
-   * CARREGAR LOJA ADMIN
-   * ==========================================
-   */
-
   const carregarLojaAdmin =
     useCallback(
       async () => {
-        if (
-          !user
-        ) {
-          setPerfil(
-            null
-          );
-
-          setLoja(
-            null
-          );
+        if (!user) {
+          setPerfil(null);
+          setLoja(null);
 
           return;
         }
@@ -634,9 +504,7 @@ export function StoreProvider({
             perfilError,
         } =
           await supabase
-            .from(
-              "perfis"
-            )
+            .from("perfis")
             .select(
               "id,nome,loja_id,papel,ativo"
             )
@@ -646,22 +514,13 @@ export function StoreProvider({
             )
             .maybeSingle();
 
-        if (
-          perfilError
-        ) {
+        if (perfilError) {
           throw perfilError;
         }
 
-        if (
-          !perfilData
-        ) {
-          setPerfil(
-            null
-          );
-
-          setLoja(
-            null
-          );
+        if (!perfilData) {
+          setPerfil(null);
+          setLoja(null);
 
           setErroLoja(
             "Usuário sem perfil."
@@ -703,9 +562,7 @@ export function StoreProvider({
         if (
           !perfilAtual.ativo
         ) {
-          setLoja(
-            null
-          );
+          setLoja(null);
 
           setErroLoja(
             "Usuário desativado."
@@ -717,9 +574,7 @@ export function StoreProvider({
         if (
           !perfilAtual.loja_id
         ) {
-          setLoja(
-            null
-          );
+          setLoja(null);
 
           setErroLoja(
             "Usuário sem loja vinculada."
@@ -736,30 +591,20 @@ export function StoreProvider({
             lojaError,
         } =
           await supabase
-            .from(
-              "lojas"
-            )
-            .select(
-              "*"
-            )
+            .from("lojas")
+            .select("*")
             .eq(
               "id",
               perfilAtual.loja_id
             )
             .maybeSingle();
 
-        if (
-          lojaError
-        ) {
+        if (lojaError) {
           throw lojaError;
         }
 
-        if (
-          !lojaData
-        ) {
-          setLoja(
-            null
-          );
+        if (!lojaData) {
+          setLoja(null);
 
           setErroLoja(
             "Loja não encontrada."
@@ -774,20 +619,12 @@ export function StoreProvider({
           )
         );
 
-        setErroLoja(
-          null
-        );
+        setErroLoja(null);
       },
       [
         user,
       ]
     );
-
-  /*
-   * ==========================================
-   * RECARREGAR
-   * ==========================================
-   */
 
   const recarregarLoja =
     useCallback(
@@ -799,19 +636,8 @@ export function StoreProvider({
         }
 
         try {
-          setCarregando(
-            true
-          );
-
-          setErroLoja(
-            null
-          );
-
-          /*
-           * ==================================
-           * ADMIN
-           * ==================================
-           */
+          setCarregando(true);
+          setErroLoja(null);
 
           if (
             pathname.startsWith(
@@ -823,18 +649,8 @@ export function StoreProvider({
             return;
           }
 
-          /*
-           * ==================================
-           * LOJA PÚBLICA
-           * ==================================
-           */
-
-          if (
-            slugPublico
-          ) {
-            setPerfil(
-              null
-            );
+          if (slugPublico) {
+            setPerfil(null);
 
             await carregarLojaPublica(
               slugPublico
@@ -843,51 +659,27 @@ export function StoreProvider({
             return;
           }
 
-          /*
-           * ==================================
-           * NÃO LIMPA A LOJA NA ROTA
-           * DE PAGAMENTO
-           * ==================================
-           */
-
           if (
             rotaDependeDaLoja
           ) {
             return;
           }
 
-          /*
-           * ==================================
-           * OUTRAS ROTAS
-           * ==================================
-           */
-
-          setLoja(
-            null
-          );
-
-          setPerfil(
-            null
-          );
-        } catch (
-          error
-        ) {
+          setLoja(null);
+          setPerfil(null);
+        } catch (error) {
           console.error(
             "Erro ao carregar loja:",
             error
           );
 
-          setLoja(
-            null
-          );
+          setLoja(null);
 
           setErroLoja(
             "Não foi possível carregar os dados da loja."
           );
         } finally {
-          setCarregando(
-            false
-          );
+          setCarregando(false);
         }
       },
       [
@@ -900,44 +692,29 @@ export function StoreProvider({
       ]
     );
 
-  /*
-   * ==========================================
-   * CARREGAMENTO AUTOMÁTICO
-   * ==========================================
-   */
-
   useEffect(() => {
     recarregarLoja();
   }, [
     recarregarLoja,
   ]);
 
-  /*
-   * ==========================================
-   * SALVAR LOJA
-   * ==========================================
-   */
-
   const salvarLoja =
     async (
       dados: Partial<
         Omit<
           Loja,
-          "id"
+          "id" |
+          "bloqueada_por_assinatura"
         >
       >
     ) => {
-      if (
-        !user
-      ) {
+      if (!user) {
         throw new Error(
           "Usuário não autenticado."
         );
       }
 
-      if (
-        !loja
-      ) {
+      if (!loja) {
         throw new Error(
           "Nenhuma loja vinculada."
         );
@@ -947,31 +724,19 @@ export function StoreProvider({
         error,
       } =
         await supabase
-          .from(
-            "lojas"
-          )
-          .update(
-            dados
-          )
+          .from("lojas")
+          .update(dados)
           .eq(
             "id",
             loja.id
           );
 
-      if (
-        error
-      ) {
+      if (error) {
         throw error;
       }
 
       await recarregarLoja();
     };
-
-  /*
-   * ==========================================
-   * PROVIDER
-   * ==========================================
-   */
 
   return (
     <StoreContext.Provider
@@ -990,21 +755,13 @@ export function StoreProvider({
   );
 }
 
-/*
- * ==========================================
- * HOOK
- * ==========================================
- */
-
 export function useStore() {
   const context =
     useContext(
       StoreContext
     );
 
-  if (
-    !context
-  ) {
+  if (!context) {
     throw new Error(
       "useStore deve ser usado dentro de StoreProvider"
     );

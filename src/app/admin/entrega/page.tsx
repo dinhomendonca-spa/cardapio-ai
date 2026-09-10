@@ -1,18 +1,22 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   ArrowLeft,
+  ArrowRight,
+  Check,
+  Circle,
   ExternalLink,
   Link as LinkIcon,
   Loader2,
   MapPin,
+  PackagePlus,
   Save,
   Store,
   Truck,
   WandSparkles,
 } from "lucide-react";
-
-import Link from "next/link";
 
 import {
   useEffect,
@@ -24,12 +28,60 @@ import {
   useStore,
 } from "@/context/StoreContext";
 
+function somenteNumeros(
+  valor: string
+) {
+  return valor.replace(
+    /\D/g,
+    ""
+  );
+}
+
+function formatarCep(
+  valor: string
+) {
+  const numeros =
+    somenteNumeros(
+      valor
+    ).slice(0, 8);
+
+  if (
+    numeros.length <= 5
+  ) {
+    return numeros;
+  }
+
+  return `${numeros.slice(
+    0,
+    5
+  )}-${numeros.slice(5)}`;
+}
+
+function converterValor(
+  valor: string
+) {
+  const normalizado =
+    valor
+      .trim()
+      .replace(/\./g, "")
+      .replace(",", ".");
+
+  return Number(
+    normalizado
+  );
+}
+
 export default function EntregaPage() {
   const {
     loja,
     carregando,
     salvarLoja,
   } = useStore();
+
+  const [
+    entregaAtiva,
+    setEntregaAtiva,
+  ] = useState(true);
 
   const [
     taxaEntrega,
@@ -45,6 +97,16 @@ export default function EntregaPage() {
     retiradaPermitida,
     setRetiradaPermitida,
   ] = useState(true);
+
+  const [
+    tempoMinimo,
+    setTempoMinimo,
+  ] = useState("");
+
+  const [
+    tempoMaximo,
+    setTempoMaximo,
+  ] = useState("");
 
   const [
     endereco,
@@ -86,10 +148,20 @@ export default function EntregaPage() {
     setSalvando,
   ] = useState(false);
 
+  const [
+    salvo,
+    setSalvo,
+  ] = useState(false);
+
   useEffect(() => {
     if (!loja) {
       return;
     }
+
+    setEntregaAtiva(
+      loja.entrega_ativa ??
+      true
+    );
 
     setTaxaEntrega(
       loja.taxa_entrega
@@ -103,6 +175,20 @@ export default function EntregaPage() {
 
     setRetiradaPermitida(
       loja.retirada_permitida
+    );
+
+    setTempoMinimo(
+      String(
+        loja.tempo_entrega_min ??
+        35
+      )
+    );
+
+    setTempoMaximo(
+      String(
+        loja.tempo_entrega_max ??
+        50
+      )
     );
 
     setEndereco(
@@ -126,23 +212,81 @@ export default function EntregaPage() {
     );
 
     setCep(
-      loja.cep
+      formatarCep(
+        loja.cep
+      )
     );
 
     setGoogleMapsUrl(
       loja.google_maps_url
     );
-  }, [loja]);
+  }, [
+    loja,
+  ]);
+
+  const taxa =
+    converterValor(
+      taxaEntrega
+    );
+
+  const minimo =
+    Number(
+      tempoMinimo
+    );
+
+  const maximo =
+    Number(
+      tempoMaximo
+    );
+
+  const possuiModalidade =
+    entregaAtiva ||
+    retiradaPermitida;
+
+  const taxaValida =
+    !entregaAtiva ||
+    taxaACombinar ||
+    (
+      Number.isFinite(taxa) &&
+      taxa >= 0
+    );
+
+  const prazoValido =
+    !entregaAtiva ||
+    (
+      Number.isInteger(minimo) &&
+      Number.isInteger(maximo) &&
+      minimo > 0 &&
+      maximo >= minimo
+    );
+
+  const enderecoValido =
+    endereco.trim().length >= 3 &&
+    numero.trim().length >= 1 &&
+    bairro.trim().length >= 2 &&
+    cidade.trim().length >= 2 &&
+    estado.trim().length === 2 &&
+    somenteNumeros(
+      cep
+    ).length === 8;
+
+  const etapaCompleta =
+    possuiModalidade &&
+    taxaValida &&
+    prazoValido &&
+    enderecoValido;
 
   const enderecoCompleto =
     useMemo(() => {
       return [
-        endereco,
-        numero,
-        bairro,
-        cidade,
-        estado,
-        cep,
+        endereco.trim(),
+        numero.trim(),
+        bairro.trim(),
+        cidade.trim(),
+        estado
+          .trim()
+          .toUpperCase(),
+        formatarCep(cep),
       ]
         .filter(Boolean)
         .join(", ");
@@ -158,10 +302,10 @@ export default function EntregaPage() {
   const gerarLinkGoogleMaps =
     () => {
       if (
-        !enderecoCompleto.trim()
+        !enderecoValido
       ) {
         alert(
-          "Preencha o endereço antes de gerar o link."
+          "Preencha o endereço completo antes de gerar o link."
         );
 
         return;
@@ -175,40 +319,26 @@ export default function EntregaPage() {
       setGoogleMapsUrl(
         link
       );
+
+      setSalvo(false);
     };
 
   const abrirGoogleMaps =
     () => {
-      if (
-        googleMapsUrl.trim()
-      ) {
-        window.open(
-          googleMapsUrl,
-          "_blank"
+      const link =
+        googleMapsUrl.trim() ||
+        (
+          enderecoCompleto
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                enderecoCompleto
+              )}`
+            : "https://www.google.com/maps"
         );
-
-        return;
-      }
-
-      if (
-        enderecoCompleto.trim()
-      ) {
-        const link =
-          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            enderecoCompleto
-          )}`;
-
-        window.open(
-          link,
-          "_blank"
-        );
-
-        return;
-      }
 
       window.open(
-        "https://www.google.com/maps",
-        "_blank"
+        link,
+        "_blank",
+        "noopener,noreferrer"
       );
     };
 
@@ -218,20 +348,18 @@ export default function EntregaPage() {
         return;
       }
 
-      const taxa =
-        Number(
-          taxaEntrega.replace(
-            ",",
-            "."
-          )
+      if (
+        !possuiModalidade
+      ) {
+        alert(
+          "Ative pelo menos entrega ou retirada no local."
         );
 
+        return;
+      }
+
       if (
-        !taxaACombinar &&
-        (
-          Number.isNaN(taxa) ||
-          taxa < 0
-        )
+        !taxaValida
       ) {
         alert(
           "Informe uma taxa de entrega válida."
@@ -240,49 +368,56 @@ export default function EntregaPage() {
         return;
       }
 
+      if (
+        !prazoValido
+      ) {
+        alert(
+          "Informe um prazo válido. O prazo máximo não pode ser menor que o mínimo."
+        );
+
+        return;
+      }
+
+      if (
+        !enderecoValido
+      ) {
+        alert(
+          "Preencha o endereço completo e informe um CEP com 8 números."
+        );
+
+        return;
+      }
+
       try {
         setSalvando(true);
+        setSalvo(false);
 
         await salvarLoja({
-          nome:
-            loja.nome,
-
-          descricao:
-            loja.descricao,
-
-          whatsapp:
-            loja.whatsapp,
-
-          chave_pix:
-            loja.chave_pix,
-
-          cidade:
-            cidade.trim(),
-
-          estado:
-            estado
-              .trim()
-              .toUpperCase(),
-
-          logo:
-            loja.logo,
-
-          banner:
-            loja.banner,
-
-          ativo:
-            loja.ativo,
+          entrega_ativa:
+            entregaAtiva,
 
           taxa_entrega:
-            taxaACombinar
-              ? 0
-              : taxa,
+            entregaAtiva &&
+            !taxaACombinar
+              ? taxa
+              : 0,
 
           taxa_entrega_a_combinar:
+            entregaAtiva &&
             taxaACombinar,
 
           retirada_permitida:
             retiradaPermitida,
+
+          tempo_entrega_min:
+            entregaAtiva
+              ? minimo
+              : 0,
+
+          tempo_entrega_max:
+            entregaAtiva
+              ? maximo
+              : 0,
 
           endereco:
             endereco.trim(),
@@ -293,22 +428,24 @@ export default function EntregaPage() {
           bairro:
             bairro.trim(),
 
+          cidade:
+            cidade.trim(),
+
+          estado:
+            estado
+              .trim()
+              .toUpperCase(),
+
           cep:
-            cep.trim(),
-
-          latitude:
-            loja.latitude,
-
-          longitude:
-            loja.longitude,
+            somenteNumeros(
+              cep
+            ),
 
           google_maps_url:
             googleMapsUrl.trim(),
         });
 
-        alert(
-          "Configurações de entrega salvas."
-        );
+        setSalvo(true);
       } catch (error) {
         console.error(
           "Erro ao salvar entrega:",
@@ -325,178 +462,168 @@ export default function EntregaPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <Loader2
-          size={28}
-          className="animate-spin"
-        />
+      <main className="flex min-h-screen items-center justify-center bg-[#020b18]">
+        <div className="text-center">
+          <Loader2
+            size={30}
+            className="mx-auto animate-spin text-sky-400"
+          />
+
+          <p className="mt-3 text-sm text-slate-400">
+            Carregando configurações...
+          </p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-zinc-100 pb-10 text-zinc-950">
-
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
-
+    <main className="min-h-screen bg-[#020b18] pb-12 text-white">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#020b18]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
-
           <Link
-            href="/admin"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-100"
+            href="/admin/loja"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
           >
             <ArrowLeft
               size={20}
             />
           </Link>
 
-          <div>
-            <p className="text-xs text-zinc-500">
-              Painel do comerciante
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-400">
+              Configuração inicial
             </p>
 
-            <h1 className="text-lg font-bold">
-              Entrega
+            <h1 className="truncate text-lg font-black">
+              Entrega e retirada
             </h1>
           </div>
 
+          <div className="ml-auto rounded-full bg-sky-500/15 px-3 py-1.5 text-xs font-bold text-sky-300">
+            2 de 4
+          </div>
         </div>
-
       </header>
 
       <section className="mx-auto max-w-md space-y-5 px-4 py-5">
-
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
-
-          <div className="flex items-center gap-3">
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-950 text-white">
+        <section className="rounded-[28px] border border-sky-300/20 bg-gradient-to-br from-sky-500/20 to-blue-600/10 p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
               <Truck
-                size={21}
+                size={22}
               />
             </div>
+
+            <div>
+              <h2 className="font-black">
+                Como os pedidos serão entregues?
+              </h2>
+
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                Ative entrega, retirada no local ou as duas opções.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <div className="flex items-center gap-3">
+            <Truck
+              size={20}
+              className="text-sky-300"
+            />
 
             <div>
               <h2 className="font-bold">
-                Configuração da entrega
+                Modalidades
               </h2>
 
-              <p className="text-sm text-zinc-500">
-                Defina taxa e retirada no local
+              <p className="text-xs text-slate-400">
+                Escolha pelo menos uma
               </p>
             </div>
 
+            {possuiModalidade ? (
+              <Check
+                size={20}
+                className="ml-auto text-emerald-400"
+              />
+            ) : (
+              <Circle
+                size={20}
+                className="ml-auto text-red-400"
+              />
+            )}
           </div>
 
-          <div className="mt-5 space-y-4">
-
-            <div>
-
-              <label className="mb-2 block text-sm font-semibold">
-                Taxa de entrega
-              </label>
-
-              <input
-                value={
-                  taxaEntrega
-                }
-                onChange={(
-                  e
-                ) =>
-                  setTaxaEntrega(
-                    e.target.value
-                  )
-                }
-                placeholder="6,00"
-                inputMode="decimal"
-                disabled={
-                  taxaACombinar
-                }
-                className={`w-full rounded-2xl px-4 py-4 outline-none transition ${
-                  taxaACombinar
-                    ? "cursor-not-allowed bg-zinc-200 text-zinc-400"
-                    : "bg-zinc-100"
-                }`}
-              />
-
-              <p className="mt-2 text-xs text-zinc-500">
-                Informe o valor da entrega ou marque a opção abaixo.
-              </p>
-
-            </div>
-
+          <div className="mt-5 space-y-3">
             <button
               type="button"
-              onClick={() =>
-                setTaxaACombinar(
-                  !taxaACombinar
-                )
-              }
-              className="flex w-full items-center justify-between rounded-2xl bg-zinc-100 px-4 py-4"
+              onClick={() => {
+                setEntregaAtiva(
+                  !entregaAtiva
+                );
+
+                setSalvo(false);
+              }}
+              className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.06] p-4"
             >
-
               <div className="pr-4 text-left">
-
-                <p className="font-semibold">
-                  Taxa a combinar
+                <p className="font-bold">
+                  Entrega no endereço
                 </p>
 
-                <p className="mt-1 text-sm text-zinc-500">
-                  O valor da entrega será combinado com o cliente
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  O pedido será levado até o cliente
                 </p>
-
               </div>
 
               <div
                 className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-                  taxaACombinar
-                    ? "bg-zinc-950"
-                    : "bg-zinc-300"
+                  entregaAtiva
+                    ? "bg-sky-500"
+                    : "bg-slate-700"
                 }`}
               >
-
                 <div
                   className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
-                    taxaACombinar
+                    entregaAtiva
                       ? "left-6"
                       : "left-1"
                   }`}
                 />
-
               </div>
-
             </button>
 
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
                 setRetiradaPermitida(
                   !retiradaPermitida
-                )
-              }
-              className="flex w-full items-center justify-between rounded-2xl bg-zinc-100 px-4 py-4"
+                );
+
+                setSalvo(false);
+              }}
+              className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.06] p-4"
             >
-
               <div className="pr-4 text-left">
-
-                <p className="font-semibold">
+                <p className="font-bold">
                   Retirada no local
                 </p>
 
-                <p className="text-sm text-zinc-500">
-                  Permitir que o cliente busque o pedido
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  O cliente poderá buscar o pedido na loja
                 </p>
-
               </div>
 
               <div
                 className={`relative h-7 w-12 shrink-0 rounded-full transition ${
                   retiradaPermitida
-                    ? "bg-zinc-950"
-                    : "bg-zinc-300"
+                    ? "bg-emerald-500"
+                    : "bg-slate-700"
                 }`}
               >
-
                 <div
                   className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
                     retiradaPermitida
@@ -504,159 +631,324 @@ export default function EntregaPage() {
                       : "left-1"
                   }`}
                 />
+              </div>
+            </button>
+          </div>
+        </section>
 
+        {entregaAtiva && (
+          <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+            <div className="flex items-center gap-3">
+              <Truck
+                size={20}
+                className="text-violet-300"
+              />
+
+              <div>
+                <h2 className="font-bold">
+                  Taxa e prazo
+                </h2>
+
+                <p className="text-xs text-slate-400">
+                  Valores mostrados no checkout
+                </p>
               </div>
 
-            </button>
+              {taxaValida &&
+              prazoValido ? (
+                <Check
+                  size={20}
+                  className="ml-auto text-emerald-400"
+                />
+              ) : (
+                <Circle
+                  size={20}
+                  className="ml-auto text-red-400"
+                />
+              )}
+            </div>
 
-          </div>
+            <div className="mt-5">
+              <label className="mb-2 block text-xs font-bold text-slate-300">
+                Taxa de entrega
+              </label>
 
-        </section>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                  R$
+                </span>
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
+                <input
+                  value={taxaEntrega}
+                  onChange={(event) => {
+                    setTaxaEntrega(
+                      event.target.value
+                    );
 
-          <div className="flex items-center gap-2">
+                    setSalvo(false);
+                  }}
+                  placeholder="6,00"
+                  inputMode="decimal"
+                  disabled={
+                    taxaACombinar
+                  }
+                  className={`h-14 w-full rounded-2xl border pl-12 pr-4 outline-none ${
+                    taxaACombinar
+                      ? "cursor-not-allowed border-white/5 bg-white/[0.03] text-slate-600"
+                      : "border-white/10 bg-white/[0.07] focus:border-sky-400"
+                  }`}
+                />
+              </div>
 
+              <button
+                type="button"
+                onClick={() => {
+                  setTaxaACombinar(
+                    !taxaACombinar
+                  );
+
+                  setSalvo(false);
+                }}
+                className="mt-3 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.06] p-4"
+              >
+                <div className="pr-4 text-left">
+                  <p className="font-bold">
+                    Taxa a combinar
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    O valor será confirmado diretamente com o cliente
+                  </p>
+                </div>
+
+                <div
+                  className={`relative h-7 w-12 shrink-0 rounded-full ${
+                    taxaACombinar
+                      ? "bg-violet-500"
+                      : "bg-slate-700"
+                  }`}
+                >
+                  <div
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                      taxaACombinar
+                        ? "left-6"
+                        : "left-1"
+                    }`}
+                  />
+                </div>
+              </button>
+
+              <div className="mt-5">
+                <label className="mb-2 block text-xs font-bold text-slate-300">
+                  Prazo estimado
+                </label>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      value={tempoMinimo}
+                      onChange={(event) => {
+                        setTempoMinimo(
+                          somenteNumeros(
+                            event.target.value
+                          ).slice(
+                            0,
+                            3
+                          )
+                        );
+
+                        setSalvo(false);
+                      }}
+                      placeholder="35"
+                      inputMode="numeric"
+                      className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-violet-400"
+                    />
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Mínimo em minutos
+                    </p>
+                  </div>
+
+                  <div>
+                    <input
+                      value={tempoMaximo}
+                      onChange={(event) => {
+                        setTempoMaximo(
+                          somenteNumeros(
+                            event.target.value
+                          ).slice(
+                            0,
+                            3
+                          )
+                        );
+
+                        setSalvo(false);
+                      }}
+                      placeholder="50"
+                      inputMode="numeric"
+                      className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-violet-400"
+                    />
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Máximo em minutos
+                    </p>
+                  </div>
+                </div>
+
+                {!prazoValido && (
+                  <p className="mt-2 text-xs font-medium text-red-300">
+                    O prazo máximo deve ser igual ou maior que o mínimo.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <div className="flex items-center gap-3">
             <Store
-              size={19}
+              size={20}
+              className="text-amber-300"
             />
 
-            <h2 className="font-bold">
-              Endereço da loja
-            </h2>
+            <div>
+              <h2 className="font-bold">
+                Endereço da loja
+              </h2>
 
+              <p className="text-xs text-slate-400">
+                Local de saída ou retirada
+              </p>
+            </div>
+
+            {enderecoValido ? (
+              <Check
+                size={20}
+                className="ml-auto text-emerald-400"
+              />
+            ) : (
+              <Circle
+                size={20}
+                className="ml-auto text-slate-600"
+              />
+            )}
           </div>
 
-          <div className="mt-4 space-y-3">
-
+          <div className="mt-5 space-y-3">
             <input
-              value={
-                endereco
-              }
-              onChange={(
-                e
-              ) =>
+              value={endereco}
+              onChange={(event) => {
                 setEndereco(
-                  e.target.value
-                )
-              }
-              placeholder="Rua / Avenida"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                  event.target.value
+                );
+
+                setSalvo(false);
+              }}
+              placeholder="Rua ou avenida"
+              className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
             />
 
             <div className="grid grid-cols-3 gap-3">
-
               <input
-                value={
-                  numero
-                }
-                onChange={(
-                  e
-                ) =>
+                value={numero}
+                onChange={(event) => {
                   setNumero(
-                    e.target.value
-                  )
-                }
+                    event.target.value
+                  );
+
+                  setSalvo(false);
+                }}
                 placeholder="Número"
-                className="rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="h-14 rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
               />
 
               <input
-                value={
-                  bairro
-                }
-                onChange={(
-                  e
-                ) =>
+                value={bairro}
+                onChange={(event) => {
                   setBairro(
-                    e.target.value
-                  )
-                }
-                placeholder="Bairro"
-                className="col-span-2 rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
-              />
+                    event.target.value
+                  );
 
+                  setSalvo(false);
+                }}
+                placeholder="Bairro"
+                className="col-span-2 h-14 rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-
               <input
-                value={
-                  cidade
-                }
-                onChange={(
-                  e
-                ) =>
+                value={cidade}
+                onChange={(event) => {
                   setCidade(
-                    e.target.value
-                  )
-                }
+                    event.target.value
+                  );
+
+                  setSalvo(false);
+                }}
                 placeholder="Cidade"
-                className="col-span-2 rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+                className="col-span-2 h-14 rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
               />
 
               <input
-                value={
-                  estado
-                }
-                onChange={(
-                  e
-                ) =>
+                value={estado}
+                onChange={(event) => {
                   setEstado(
-                    e.target.value
-                  )
-                }
+                    event.target.value
+                  );
+
+                  setSalvo(false);
+                }}
                 placeholder="UF"
                 maxLength={2}
-                className="rounded-2xl bg-zinc-100 px-4 py-4 uppercase outline-none"
+                className="h-14 rounded-2xl border border-white/10 bg-white/[0.07] px-4 uppercase outline-none focus:border-amber-400"
               />
-
             </div>
 
             <input
-              value={
-                cep
-              }
-              onChange={(
-                e
-              ) =>
+              value={cep}
+              onChange={(event) => {
                 setCep(
-                  e.target.value
-                )
-              }
-              placeholder="CEP"
+                  formatarCep(
+                    event.target.value
+                  )
+                );
+
+                setSalvo(false);
+              }}
+              placeholder="00000-000"
               inputMode="numeric"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              maxLength={9}
+              className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
             />
-
           </div>
-
         </section>
 
-        <section className="rounded-3xl bg-white p-5 shadow-sm">
-
-          <div className="flex items-center gap-2">
-
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <div className="flex items-center gap-3">
             <MapPin
-              size={19}
+              size={20}
+              className="text-red-300"
             />
 
-            <h2 className="font-bold">
-              Localização no Google Maps
-            </h2>
+            <div>
+              <h2 className="font-bold">
+                Localização no mapa
+              </h2>
 
+              <p className="text-xs text-slate-400">
+                Ajude o cliente a encontrar a loja
+              </p>
+            </div>
           </div>
-
-          <p className="mt-2 text-sm leading-6 text-zinc-500">
-            No computador, gere o link pelo endereço. No celular, você também pode abrir o Google Maps e confirmar o ponto.
-          </p>
 
           <button
             type="button"
             onClick={
               gerarLinkGoogleMaps
             }
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 py-4 font-semibold text-white"
+            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-sky-500 font-bold"
           >
             <WandSparkles
               size={18}
@@ -670,56 +962,87 @@ export default function EntregaPage() {
             onClick={
               abrirGoogleMaps
             }
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-100 px-5 py-4 font-semibold"
+            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] font-bold"
           >
             <ExternalLink
               size={18}
             />
 
-            Abrir no Google Maps
+            Conferir no Google Maps
           </button>
 
           <div className="mt-4">
-
-            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <label className="mb-2 flex items-center gap-2 text-xs font-bold text-slate-300">
               <LinkIcon
-                size={16}
+                size={15}
               />
 
               Link da localização
             </label>
 
             <input
-              value={
-                googleMapsUrl
-              }
-              onChange={(
-                e
-              ) =>
+              value={googleMapsUrl}
+              onChange={(event) => {
                 setGoogleMapsUrl(
-                  e.target.value
-                )
-              }
-              placeholder="Link do Google Maps"
+                  event.target.value
+                );
+
+                setSalvo(false);
+              }}
+              placeholder="O link será gerado automaticamente"
               inputMode="url"
-              className="w-full rounded-2xl bg-zinc-100 px-4 py-4 outline-none"
+              className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-red-400"
             />
-
           </div>
-
         </section>
+
+        {salvo && (
+          <section className="rounded-[24px] border border-emerald-400/25 bg-emerald-400/10 p-4">
+            <div className="flex items-start gap-3">
+              <Check
+                size={21}
+                className="mt-0.5 shrink-0 text-emerald-400"
+              />
+
+              <div>
+                <p className="font-bold text-emerald-200">
+                  Segunda etapa concluída
+                </p>
+
+                <p className="mt-1 text-sm leading-5 text-slate-300">
+                  Agora cadastre o primeiro produto da loja.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/admin/produtos/novo"
+              className="mt-4 flex h-14 items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
+            >
+              <span className="flex items-center gap-2">
+                <PackagePlus
+                  size={19}
+                />
+
+                Cadastrar produto
+              </span>
+
+              <ArrowRight
+                size={19}
+              />
+            </Link>
+          </section>
+        )}
 
         <button
           type="button"
-          onClick={
-            salvar
-          }
+          onClick={salvar}
           disabled={
-            salvando
+            salvando ||
+            !etapaCompleta
           }
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 py-4 font-semibold text-white shadow-lg disabled:opacity-60"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-5 font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
         >
-
           {salvando ? (
             <>
               <Loader2
@@ -735,14 +1058,17 @@ export default function EntregaPage() {
                 size={19}
               />
 
-              Salvar configurações
+              Salvar e continuar
             </>
           )}
-
         </button>
 
+        {!etapaCompleta && (
+          <p className="text-center text-xs leading-5 text-slate-500">
+            Escolha uma modalidade e preencha corretamente os dados obrigatórios.
+          </p>
+        )}
       </section>
-
     </main>
   );
 }

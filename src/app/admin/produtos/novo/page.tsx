@@ -1,21 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import {
   ArrowLeft,
+  ArrowRight,
   Boxes,
+  Check,
+  Circle,
   ImagePlus,
   Loader2,
   PackagePlus,
   Save,
+  Sparkles,
 } from "lucide-react";
-
-import Link from "next/link";
-
-import {
-  useRouter,
-} from "next/navigation";
 
 import {
   ChangeEvent,
@@ -29,16 +28,49 @@ import {
 } from "@/context/ProductContext";
 
 import {
+  useStore,
+} from "@/context/StoreContext";
+
+import {
   supabase,
 } from "@/lib/supabase";
 
-export default function NovoProdutoPage() {
-  const router =
-    useRouter();
+const CATEGORIAS_SUGERIDAS = [
+  "Destaques",
+  "Produtos",
+  "Acessórios",
+  "Promoções",
+];
 
+function converterPreco(
+  valor: string
+) {
+  const limpo =
+    valor.trim();
+
+  if (
+    limpo.includes(",")
+  ) {
+    return Number(
+      limpo
+        .replace(/\./g, "")
+        .replace(",", ".")
+    );
+  }
+
+  return Number(
+    limpo
+  );
+}
+
+export default function NovoProdutoPage() {
   const {
     adicionarProduto,
   } = useProducts();
+
+  const {
+    loja,
+  } = useStore();
 
   const inputImagemRef =
     useRef<HTMLInputElement>(
@@ -66,6 +98,11 @@ export default function NovoProdutoPage() {
   ] = useState("");
 
   const [
+    controlarEstoque,
+    setControlarEstoque,
+  ] = useState(true);
+
+  const [
     estoque,
     setEstoque,
   ] = useState("");
@@ -89,16 +126,28 @@ export default function NovoProdutoPage() {
   const [
     salvando,
     setSalvando,
-  ] =
-    useState(false);
+  ] = useState(false);
 
-  /*
-   * ======================================
-   * SELECIONAR IMAGEM
-   * ======================================
-   */
+  const [
+    produtoSalvo,
+    setProdutoSalvo,
+  ] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(
+          preview
+        );
+      }
+    };
+  }, [
+    preview,
+  ]);
+
   const selecionarImagem = (
-    event: ChangeEvent<HTMLInputElement>
+    event:
+      ChangeEvent<HTMLInputElement>
   ) => {
     const imagem =
       event.target.files?.[0];
@@ -122,20 +171,12 @@ export default function NovoProdutoPage() {
       return;
     }
 
-    /*
-     * Permitimos imagens grandes
-     * porque serão comprimidas antes
-     * de serem enviadas ao Supabase.
-     */
-
-    const tamanhoMaximoArquivo =
-      15 *
-      1024 *
-      1024;
+    const tamanhoMaximo =
+      15 * 1024 * 1024;
 
     if (
       imagem.size >
-      tamanhoMaximoArquivo
+      tamanhoMaximo
     ) {
       alert(
         "A imagem deve ter no máximo 15 MB."
@@ -153,58 +194,17 @@ export default function NovoProdutoPage() {
       );
     }
 
-    const novaPreview =
-      URL.createObjectURL(
-        imagem
-      );
-
     setArquivo(
       imagem
     );
 
     setPreview(
-      novaPreview
+      URL.createObjectURL(
+        imagem
+      )
     );
   };
 
-  /*
-   * ======================================
-   * LIMPA URL DO PREVIEW
-   * ======================================
-   */
-  useEffect(() => {
-    return () => {
-      if (preview) {
-        URL.revokeObjectURL(
-          preview
-        );
-      }
-    };
-  }, [
-    preview,
-  ]);
-
-  /*
-   * ======================================
-   * ABRIR SELETOR
-   * ======================================
-   */
-  const abrirSeletorImagem =
-    () => {
-      inputImagemRef.current?.click();
-    };
-
-  /*
-   * ======================================
-   * OTIMIZAR IMAGEM
-   * ======================================
-   *
-   * - máximo 1200px
-   * - mantém proporção
-   * - converte para WebP
-   * - qualidade 82%
-   * ======================================
-   */
   const otimizarImagem =
     async (
       arquivoOriginal: File
@@ -231,20 +231,18 @@ export default function NovoProdutoPage() {
                 new window.Image();
 
               img.onload =
-                () => {
+                () =>
                   resolve(
                     img
                   );
-                };
 
               img.onerror =
-                () => {
+                () =>
                   reject(
                     new Error(
                       "Não foi possível processar esta imagem."
                     )
                   );
-                };
 
               img.src =
                 urlOriginal;
@@ -265,11 +263,6 @@ export default function NovoProdutoPage() {
             "Dimensões da imagem inválidas."
           );
         }
-
-        /*
-         * Redimensiona somente
-         * quando necessário.
-         */
 
         if (
           largura >
@@ -321,14 +314,6 @@ export default function NovoProdutoPage() {
           );
         }
 
-        /*
-         * Fundo branco.
-         *
-         * Isso evita fundo preto
-         * caso a imagem original
-         * possua transparência.
-         */
-
         contexto.fillStyle =
           "#ffffff";
 
@@ -338,11 +323,6 @@ export default function NovoProdutoPage() {
           largura,
           altura
         );
-
-        /*
-         * Melhora a qualidade
-         * do redimensionamento.
-         */
 
         contexto.imageSmoothingEnabled =
           true;
@@ -368,9 +348,7 @@ export default function NovoProdutoPage() {
                 (
                   resultado
                 ) => {
-                  if (
-                    !resultado
-                  ) {
+                  if (!resultado) {
                     reject(
                       new Error(
                         "Não foi possível comprimir a imagem."
@@ -392,7 +370,7 @@ export default function NovoProdutoPage() {
             }
           );
 
-        const nomeSemExtensao =
+        const nomeLimpo =
           arquivoOriginal.name
             .replace(
               /\.[^/.]+$/,
@@ -408,7 +386,7 @@ export default function NovoProdutoPage() {
             blob,
           ],
 
-          `${nomeSemExtensao || "produto"}.webp`,
+          `${nomeLimpo || "produto"}.webp`,
 
           {
             type:
@@ -425,15 +403,12 @@ export default function NovoProdutoPage() {
       }
     };
 
-  /*
-   * ======================================
-   * UPLOAD DA IMAGEM OTIMIZADA
-   * ======================================
-   */
   const fazerUploadImagem =
     async () => {
       if (!arquivo) {
-        return "/images/logo.png";
+        throw new Error(
+          "Adicione uma foto do produto."
+        );
       }
 
       const imagemOtimizada =
@@ -442,7 +417,7 @@ export default function NovoProdutoPage() {
         );
 
       const nomeArquivo =
-        `${Date.now()}-${crypto.randomUUID()}.webp`;
+        `lojas/${loja?.id ?? "sem-loja"}/produtos/${Date.now()}-${crypto.randomUUID()}.webp`;
 
       const {
         error,
@@ -455,13 +430,6 @@ export default function NovoProdutoPage() {
             nomeArquivo,
             imagemOtimizada,
             {
-              /*
-               * 1 ano de cache.
-               *
-               * Cada upload recebe
-               * um nome único, então
-               * podemos usar cache longo.
-               */
               cacheControl:
                 "31536000",
 
@@ -491,88 +459,121 @@ export default function NovoProdutoPage() {
       return data.publicUrl;
     };
 
-  /*
-   * ======================================
-   * SALVAR PRODUTO
-   * ======================================
-   */
+  const precoNumerico =
+    converterPreco(
+      preco
+    );
+
+  const estoqueNumerico =
+    Number(
+      estoque
+    );
+
+  const imagemPreenchida =
+    arquivo !== null;
+
+  const nomePreenchido =
+    nome.trim().length >= 2;
+
+  const descricaoPreenchida =
+    descricao.trim().length >= 5;
+
+  const categoriaPreenchida =
+    categoria.trim().length >= 2;
+
+  const precoValido =
+    Number.isFinite(
+      precoNumerico
+    ) &&
+    precoNumerico > 0;
+
+  const estoqueValido =
+    !controlarEstoque ||
+    (
+      estoque.trim() !== "" &&
+      Number.isInteger(
+        estoqueNumerico
+      ) &&
+      estoqueNumerico >= 0
+    );
+
+  const itensConcluidos = [
+    imagemPreenchida,
+    nomePreenchido &&
+      descricaoPreenchida,
+    categoriaPreenchida,
+    precoValido,
+    estoqueValido,
+  ].filter(Boolean).length;
+
+  const formularioValido =
+    itensConcluidos === 5;
+
   const salvarProduto =
     async () => {
-      const precoNumerico =
-        Number(
-          preco.replace(
-            ",",
-            "."
-          )
-        );
-
-      const estoqueNumerico =
-        Number(
-          estoque
-        );
-
-      if (!nome.trim()) {
+      if (
+        !imagemPreenchida
+      ) {
         alert(
-          "Preencha o nome do produto."
-        );
-
-        return;
-      }
-
-      if (!categoria.trim()) {
-        alert(
-          "Preencha a categoria do produto."
+          "Adicione uma foto do produto."
         );
 
         return;
       }
 
       if (
-        !precoNumerico ||
-        precoNumerico <= 0
+        !nomePreenchido
       ) {
         alert(
-          "Informe um preço válido."
+          "Informe o nome do produto."
         );
 
         return;
       }
 
       if (
-        estoque.trim() === "" ||
-        Number.isNaN(
-          estoqueNumerico
-        ) ||
-        estoqueNumerico <
-          0 ||
-        !Number.isInteger(
-          estoqueNumerico
-        )
+        !descricaoPreenchida
       ) {
         alert(
-          "Informe uma quantidade de estoque válida."
+          "Escreva uma breve descrição do produto."
+        );
+
+        return;
+      }
+
+      if (
+        !categoriaPreenchida
+      ) {
+        alert(
+          "Informe uma categoria."
+        );
+
+        return;
+      }
+
+      if (!precoValido) {
+        alert(
+          "Informe um preço maior que zero."
+        );
+
+        return;
+      }
+
+      if (
+        !estoqueValido
+      ) {
+        alert(
+          "Informe uma quantidade inteira e igual ou maior que zero."
         );
 
         return;
       }
 
       try {
-        setSalvando(
-          true
-        );
-
-        /*
-         * Primeiro otimiza
-         * e envia a imagem.
-         */
+        setSalvando(true);
 
         const imagemUrl =
           await fazerUploadImagem();
-
-        /*
-         * Depois cadastra
-         * o produto no banco.
-         */
 
         await adicionarProduto({
           nome:
@@ -588,10 +589,12 @@ export default function NovoProdutoPage() {
             precoNumerico,
 
           estoque:
-            estoqueNumerico,
+            controlarEstoque
+              ? estoqueNumerico
+              : 0,
 
           estoque_controlado:
-            true,
+            controlarEstoque,
 
           imagem:
             imagemUrl,
@@ -600,943 +603,546 @@ export default function NovoProdutoPage() {
             true,
         });
 
-        router.push(
-          "/admin/produtos"
+        setProdutoSalvo(
+          true
         );
-      } catch (
-        error
-      ) {
+      } catch (error) {
         console.error(
           "Erro ao salvar produto:",
           error
         );
 
         alert(
-          "Não foi possível salvar o produto."
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar o produto."
         );
       } finally {
-        setSalvando(
-          false
-        );
+        setSalvando(false);
       }
     };
 
   return (
-    <main
-      className="
-        relative
-        min-h-screen
-        overflow-hidden
-        bg-[#020b18]
-        pb-12
-        text-white
-      "
-    >
-      {/* LUZES DE FUNDO */}
+    <main className="relative min-h-screen overflow-hidden bg-[#020b18] pb-12 text-white">
+      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-sky-500/20 blur-[120px]" />
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -left-40
-          -top-40
-          h-96
-          w-96
-          rounded-full
-          bg-sky-500/20
-          blur-[120px]
-        "
-      />
+      <div className="pointer-events-none absolute -right-44 top-72 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]" />
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -right-44
-          top-72
-          h-96
-          w-96
-          rounded-full
-          bg-blue-600/20
-          blur-[120px]
-        "
-      />
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          bottom-0
-          left-1/2
-          h-80
-          w-80
-          -translate-x-1/2
-          rounded-full
-          bg-cyan-400/10
-          blur-[110px]
-        "
-      />
-
-      {/* HEADER */}
-
-      <header
-        className="
-          sticky
-          top-0
-          z-40
-          border-b
-          border-sky-300/10
-          bg-[#020b18]/80
-          backdrop-blur-2xl
-        "
-      >
-        <div
-          className="
-            mx-auto
-            flex
-            max-w-md
-            items-center
-            gap-4
-            px-4
-            py-4
-          "
-        >
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#020b18]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
           <Link
-            href="/admin/produtos"
-            className="
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-2xl
-              border
-              border-sky-300/15
-              bg-white/[0.06]
-              text-sky-200
-              shadow-[0_10px_30px_rgba(0,0,0,0.25)]
-              backdrop-blur-xl
-              transition
-              hover:border-sky-300/30
-              hover:bg-sky-400/10
-              active:scale-95
-            "
+            href="/admin/entrega"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
           >
             <ArrowLeft
               size={20}
             />
           </Link>
 
-          <div>
-            <p
-              className="
-                text-xs
-                font-semibold
-                uppercase
-                tracking-[0.18em]
-                text-sky-300
-              "
-            >
-              Produtos
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-400">
+              Configuração inicial
             </p>
 
-            <h1
-              className="
-                mt-1
-                text-xl
-                font-black
-                text-white
-              "
-            >
-              Novo produto
+            <h1 className="truncate text-lg font-black">
+              Primeiro produto
             </h1>
+          </div>
+
+          <div className="ml-auto rounded-full bg-sky-500/15 px-3 py-1.5 text-xs font-bold text-sky-300">
+            3 de 4
           </div>
         </div>
       </header>
 
-      {/* CONTEÚDO */}
-
-      <section
-        className="
-          relative
-          z-10
-          mx-auto
-          max-w-md
-          space-y-4
-          px-4
-          py-5
-        "
-      >
-        {/* APRESENTAÇÃO */}
-
-        <section
-          className="
-            rounded-[28px]
-            border
-            border-sky-300/15
-            bg-gradient-to-br
-            from-sky-400/10
-            to-blue-600/5
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.28)]
-            backdrop-blur-2xl
-          "
-        >
-          <div
-            className="
-              flex
-              items-center
-              gap-4
-            "
-          >
-            <div
-              className="
-                flex
-                h-12
-                w-12
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-sky-300/25
-                bg-gradient-to-br
-                from-sky-400
-                to-blue-600
-                text-white
-                shadow-[0_10px_30px_rgba(14,165,233,0.30)]
-              "
-            >
-              <PackagePlus
+      <section className="relative z-10 mx-auto max-w-md space-y-5 px-4 py-5">
+        <section className="rounded-[28px] border border-sky-300/20 bg-gradient-to-br from-sky-500/20 to-blue-600/10 p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-500">
+              <Sparkles
                 size={22}
               />
             </div>
 
             <div>
-              <h2
-                className="
-                  font-black
-                  text-white
-                "
-              >
-                Cadastrar produto
+              <h2 className="font-black">
+                Cadastre seu primeiro produto
               </h2>
 
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  leading-5
-                  text-slate-400
-                "
-              >
-                Adicione as informações e o estoque do produto.
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                Use uma foto nítida e informações simples para facilitar a compra.
               </p>
             </div>
           </div>
+
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all"
+              style={{
+                width:
+                  `${itensConcluidos * 20}%`,
+              }}
+            />
+          </div>
+
+          <p className="mt-2 text-xs font-semibold text-sky-200">
+            {itensConcluidos} de 5 itens concluídos
+          </p>
         </section>
 
-        {/* FOTO */}
-
-        <section
-          className="
-            rounded-[30px]
-            border
-            border-sky-300/15
-            bg-white/[0.055]
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-            backdrop-blur-2xl
-          "
-        >
-          <div
-            className="
-              flex
-              items-center
-              gap-3
-            "
-          >
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-sky-300/15
-                bg-sky-400/10
-                text-sky-300
-              "
-            >
-              <ImagePlus
-                size={19}
+        {produtoSalvo ? (
+          <section className="rounded-[28px] border border-emerald-400/25 bg-emerald-400/10 p-6 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white">
+              <Check
+                size={30}
               />
             </div>
 
-            <div>
-              <h2
-                className="
-                  font-bold
-                  text-white
-                "
-              >
-                Foto do produto
-              </h2>
+            <h2 className="mt-4 text-xl font-black text-emerald-100">
+              Produto cadastrado!
+            </h2>
 
-              <p
-                className="
-                  mt-0.5
-                  text-xs
-                  text-slate-400
-                "
-              >
-                Escolha uma imagem do produto
-              </p>
-            </div>
-          </div>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Sua loja já possui o primeiro produto. Agora falta revisar e publicar.
+            </p>
 
-          <input
-            ref={
-              inputImagemRef
-            }
-            type="file"
-            accept="image/*"
-            onChange={
-              selecionarImagem
-            }
-            className="hidden"
-          />
+            <Link
+              href="/admin/publicar"
+              className="mt-5 flex h-14 items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
+            >
+              Revisar minha loja
 
-          <button
-            type="button"
-            onClick={
-              abrirSeletorImagem
-            }
-            className="
-              group
-              relative
-              mt-4
-              flex
-              min-h-48
-              w-full
-              overflow-hidden
-              rounded-[26px]
-              border
-              border-dashed
-              border-sky-300/25
-              bg-white/[0.04]
-              shadow-inner
-              backdrop-blur-xl
-              transition
-              hover:border-sky-300/45
-              hover:bg-sky-400/[0.06]
-            "
-          >
-            {preview ? (
-              <>
-                <Image
-                  src={
-                    preview
-                  }
-                  alt="Pré-visualização"
-                  fill
-                  className="object-cover"
-                  unoptimized
+              <ArrowRight
+                size={19}
+              />
+            </Link>
+          </section>
+        ) : (
+          <>
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+              <div className="flex items-center gap-3">
+                <ImagePlus
+                  size={21}
+                  className="text-violet-300"
                 />
 
-                <div
-                  className="
-                    absolute
-                    inset-0
-                    flex
-                    items-end
-                    justify-center
-                    bg-gradient-to-t
-                    from-[#020b18]/80
-                    via-transparent
-                    to-transparent
-                    p-4
-                  "
-                >
-                  <div
-                    className="
-                      rounded-2xl
-                      border
-                      border-white/10
-                      bg-[#020b18]/60
-                      px-4
-                      py-2
-                      text-xs
-                      font-bold
-                      text-white
-                      backdrop-blur-xl
-                    "
-                  >
-                    Toque para trocar
-                  </div>
+                <div>
+                  <h2 className="font-bold">
+                    Foto do produto
+                  </h2>
+
+                  <p className="text-xs text-slate-400">
+                    Obrigatória para publicação
+                  </p>
                 </div>
-              </>
-            ) : (
-              <div
-                className="
-                  flex
-                  w-full
-                  flex-col
-                  items-center
-                  justify-center
-                  px-6
-                  py-10
-                "
+
+                {imagemPreenchida ? (
+                  <Check
+                    size={20}
+                    className="ml-auto text-emerald-400"
+                  />
+                ) : (
+                  <Circle
+                    size={20}
+                    className="ml-auto text-slate-600"
+                  />
+                )}
+              </div>
+
+              <input
+                ref={inputImagemRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={
+                  selecionarImagem
+                }
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  inputImagemRef
+                    .current
+                    ?.click()
+                }
+                className="relative mt-5 flex min-h-56 w-full overflow-hidden rounded-[24px] border-2 border-dashed border-violet-400/30 bg-violet-400/[0.06]"
               >
-                <div
-                  className="
-                    flex
-                    h-14
-                    w-14
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    border
-                    border-sky-300/20
-                    bg-sky-400/10
-                    text-sky-300
-                    shadow-[0_10px_30px_rgba(14,165,233,0.10)]
-                  "
-                >
-                  <ImagePlus
-                    size={25}
+                {preview ? (
+                  <>
+                    <Image
+                      src={preview}
+                      alt="Produto selecionado"
+                      fill
+                      className="object-contain p-2"
+                      unoptimized
+                    />
+
+                    <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-2 text-xs font-bold">
+                      Trocar foto
+                    </span>
+                  </>
+                ) : (
+                  <div className="m-auto flex flex-col items-center px-6 text-center">
+                    <ImagePlus
+                      size={32}
+                      className="text-violet-300"
+                    />
+
+                    <strong className="mt-3">
+                      Adicionar foto
+                    </strong>
+
+                    <span className="mt-2 text-xs leading-5 text-slate-400">
+                      Prefira uma imagem quadrada, com boa iluminação e fundo limpo
+                    </span>
+                  </div>
+                )}
+              </button>
+
+              <p className="mt-3 text-center text-xs text-slate-500">
+                A imagem será otimizada automaticamente
+              </p>
+            </section>
+
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+              <div className="flex items-center gap-3">
+                <PackagePlus
+                  size={21}
+                  className="text-sky-300"
+                />
+
+                <div>
+                  <h2 className="font-bold">
+                    Informações
+                  </h2>
+
+                  <p className="text-xs text-slate-400">
+                    Dados exibidos ao comprador
+                  </p>
+                </div>
+
+                {nomePreenchido &&
+                descricaoPreenchida ? (
+                  <Check
+                    size={20}
+                    className="ml-auto text-emerald-400"
+                  />
+                ) : (
+                  <Circle
+                    size={20}
+                    className="ml-auto text-slate-600"
+                  />
+                )}
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label
+                    htmlFor="nome"
+                    className="mb-2 block text-xs font-bold text-slate-300"
+                  >
+                    Nome do produto
+                  </label>
+
+                  <input
+                    id="nome"
+                    value={nome}
+                    onChange={(event) =>
+                      setNome(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Ex.: Camiseta básica preta"
+                    maxLength={80}
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-sky-400"
                   />
                 </div>
 
-                <span
-                  className="
-                    mt-3
-                    text-sm
-                    font-bold
-                    text-white
-                  "
-                >
-                  Adicionar imagem
-                </span>
+                <div>
+                  <label
+                    htmlFor="descricao"
+                    className="mb-2 block text-xs font-bold text-slate-300"
+                  >
+                    Descrição
+                  </label>
 
-                <span
-                  className="
-                    mt-1
-                    text-xs
-                    text-slate-500
-                  "
-                >
-                  Toque para selecionar
-                </span>
+                  <textarea
+                    id="descricao"
+                    value={descricao}
+                    onChange={(event) =>
+                      setDescricao(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Explique tamanho, material, características ou conteúdo."
+                    rows={4}
+                    maxLength={300}
+                    className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-4 outline-none focus:border-sky-400"
+                  />
 
-                <span
-                  className="
-                    mt-2
-                    text-[11px]
-                    text-slate-600
-                  "
-                >
-                  A imagem será otimizada automaticamente
-                </span>
+                  <p className="mt-1 text-right text-xs text-slate-500">
+                    {descricao.length}/300
+                  </p>
+                </div>
               </div>
-            )}
-          </button>
+            </section>
 
-          {arquivo && (
-            <div
-              className="
-                mt-3
-                rounded-2xl
-                border
-                border-emerald-300/10
-                bg-emerald-400/[0.06]
-                p-3
-              "
-            >
-              <p
-                className="
-                  text-xs
-                  leading-5
-                  text-emerald-300
-                "
-              >
-                ✓ A foto será redimensionada e comprimida automaticamente antes do envio.
-              </p>
-            </div>
-          )}
-        </section>
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+              <div className="flex items-center gap-3">
+                <Boxes
+                  size={21}
+                  className="text-amber-300"
+                />
 
-        {/* INFORMAÇÕES */}
+                <div>
+                  <h2 className="font-bold">
+                    Categoria e preço
+                  </h2>
 
-        <section
-          className="
-            rounded-[30px]
-            border
-            border-sky-300/15
-            bg-white/[0.055]
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-            backdrop-blur-2xl
-          "
-        >
-          <h2
-            className="
-              font-black
-              text-white
-            "
-          >
-            Informações
-          </h2>
+                  <p className="text-xs text-slate-400">
+                    Organize e defina o valor
+                  </p>
+                </div>
 
-          <p
-            className="
-              mt-1
-              text-sm
-              text-slate-400
-            "
-          >
-            Dados que serão exibidos para o cliente.
-          </p>
+                {categoriaPreenchida &&
+                precoValido ? (
+                  <Check
+                    size={20}
+                    className="ml-auto text-emerald-400"
+                  />
+                ) : (
+                  <Circle
+                    size={20}
+                    className="ml-auto text-slate-600"
+                  />
+                )}
+              </div>
 
-          <div
-            className="
-              mt-5
-              space-y-4
-            "
-          >
-            {/* NOME */}
-
-            <div>
-              <label
-                htmlFor="nome"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
-              >
-                Nome do produto
-              </label>
-
-              <input
-                id="nome"
-                value={
-                  nome
-                }
-                onChange={(
-                  e
-                ) =>
-                  setNome(
-                    e.target.value
-                  )
-                }
-                placeholder="Ex: Cabo USB-C"
-                className="
-                  w-full
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
-              />
-            </div>
-
-            {/* DESCRIÇÃO */}
-
-            <div>
-              <label
-                htmlFor="descricao"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
-              >
-                Descrição
-              </label>
-
-              <textarea
-                id="descricao"
-                value={
-                  descricao
-                }
-                onChange={(
-                  e
-                ) =>
-                  setDescricao(
-                    e.target.value
-                  )
-                }
-                placeholder="Descrição do produto"
-                rows={4}
-                className="
-                  w-full
-                  resize-none
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
-              />
-            </div>
-
-            {/* CATEGORIA */}
-
-            <div>
-              <label
-                htmlFor="categoria"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
-              >
-                Categoria
-              </label>
-
-              <input
-                id="categoria"
-                value={
-                  categoria
-                }
-                onChange={(
-                  e
-                ) =>
-                  setCategoria(
-                    e.target.value
-                  )
-                }
-                placeholder="Ex: Capinhas, Cabos, Fones..."
-                className="
-                  w-full
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
-              />
-            </div>
-
-            {/* PREÇO */}
-
-            <div>
-              <label
-                htmlFor="preco"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
-              >
-                Preço
-              </label>
-
-              <div className="relative">
-                <span
-                  className="
-                    pointer-events-none
-                    absolute
-                    left-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-sm
-                    font-bold
-                    text-sky-300
-                  "
+              <div className="mt-5">
+                <label
+                  htmlFor="categoria"
+                  className="mb-2 block text-xs font-bold text-slate-300"
                 >
-                  R$
-                </span>
+                  Categoria
+                </label>
 
                 <input
-                  id="preco"
-                  value={
-                    preco
-                  }
-                  onChange={(
-                    e
-                  ) =>
-                    setPreco(
-                      e.target.value
+                  id="categoria"
+                  value={categoria}
+                  onChange={(event) =>
+                    setCategoria(
+                      event.target.value
                     )
                   }
-                  placeholder="49,90"
-                  inputMode="decimal"
-                  className="
-                    w-full
-                    rounded-2xl
-                    border
-                    border-sky-300/10
-                    bg-white/[0.06]
-                    py-4
-                    pl-12
-                    pr-4
-                    text-white
-                    outline-none
-                    backdrop-blur-xl
-                    transition
-                    placeholder:text-slate-500
-                    focus:border-sky-300/40
-                    focus:bg-sky-400/[0.07]
-                    focus:ring-4
-                    focus:ring-sky-400/5
-                  "
+                  placeholder="Ex.: Camisetas"
+                  maxLength={50}
+                  className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
                 />
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {CATEGORIAS_SUGERIDAS.map(
+                    (
+                      categoriaSugerida
+                    ) => (
+                      <button
+                        key={
+                          categoriaSugerida
+                        }
+                        type="button"
+                        onClick={() =>
+                          setCategoria(
+                            categoriaSugerida
+                          )
+                        }
+                        className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-slate-300"
+                      >
+                        {categoriaSugerida}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* ESTOQUE */}
+              <div className="mt-5">
+                <label
+                  htmlFor="preco"
+                  className="mb-2 block text-xs font-bold text-slate-300"
+                >
+                  Preço
+                </label>
 
-        <section
-          className="
-            rounded-[30px]
-            border
-            border-sky-300/15
-            bg-white/[0.055]
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-            backdrop-blur-2xl
-          "
-        >
-          <div
-            className="
-              flex
-              items-start
-              gap-3
-            "
-          >
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-sky-300/20
-                bg-sky-400/10
-                text-sky-300
-              "
-            >
-              <Boxes
-                size={20}
-              />
-            </div>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-emerald-300">
+                    R$
+                  </span>
 
-            <div>
-              <h2
-                className="
-                  font-black
-                  text-white
-                "
+                  <input
+                    id="preco"
+                    value={preco}
+                    onChange={(event) =>
+                      setPreco(
+                        event.target.value
+                      )
+                    }
+                    placeholder="49,90"
+                    inputMode="decimal"
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] py-4 pl-12 pr-4 outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                {preco.trim() &&
+                !precoValido ? (
+                  <p className="mt-2 text-xs font-medium text-red-300">
+                    Informe um valor maior que zero.
+                  </p>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+              <div className="flex items-center gap-3">
+                <Boxes
+                  size={21}
+                  className="text-cyan-300"
+                />
+
+                <div>
+                  <h2 className="font-bold">
+                    Estoque
+                  </h2>
+
+                  <p className="text-xs text-slate-400">
+                    Controle automático de disponibilidade
+                  </p>
+                </div>
+
+                {estoqueValido ? (
+                  <Check
+                    size={20}
+                    className="ml-auto text-emerald-400"
+                  />
+                ) : (
+                  <Circle
+                    size={20}
+                    className="ml-auto text-slate-600"
+                  />
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setControlarEstoque(
+                    !controlarEstoque
+                  );
+
+                  if (
+                    controlarEstoque
+                  ) {
+                    setEstoque("");
+                  }
+                }}
+                className="mt-5 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.06] p-4"
               >
-                Controle de estoque
-              </h2>
+                <div className="pr-4 text-left">
+                  <p className="font-bold">
+                    Controlar estoque
+                  </p>
 
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  leading-5
-                  text-slate-400
-                "
-              >
-                Informe quantas unidades estão disponíveis para venda.
-              </p>
-            </div>
-          </div>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Marque para o sistema indicar quando o produto esgotar
+                  </p>
+                </div>
 
-          <div className="mt-5">
-            <label
-              htmlFor="estoque"
-              className="
-                mb-2
-                block
-                text-sm
-                font-semibold
-                text-slate-200
-              "
-            >
-              Quantidade disponível
-            </label>
+                <div
+                  className={`relative h-7 w-12 shrink-0 rounded-full ${
+                    controlarEstoque
+                      ? "bg-cyan-500"
+                      : "bg-slate-700"
+                  }`}
+                >
+                  <div
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                      controlarEstoque
+                        ? "left-6"
+                        : "left-1"
+                    }`}
+                  />
+                </div>
+              </button>
 
-            <input
-              id="estoque"
-              type="number"
-              value={
-                estoque
+              {controlarEstoque && (
+                <div className="mt-4">
+                  <label
+                    htmlFor="estoque"
+                    className="mb-2 block text-xs font-bold text-slate-300"
+                  >
+                    Quantidade disponível
+                  </label>
+
+                  <input
+                    id="estoque"
+                    type="number"
+                    value={estoque}
+                    onChange={(event) =>
+                      setEstoque(
+                        event.target.value
+                      )
+                    }
+                    placeholder="20"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-cyan-400"
+                  />
+
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Quando chegar a zero, o produto será mostrado como esgotado.
+                  </p>
+                </div>
+              )}
+            </section>
+
+            <button
+              type="button"
+              onClick={
+                salvarProduto
               }
-              onChange={(
-                e
-              ) =>
-                setEstoque(
-                  e.target.value
-                )
+              disabled={
+                salvando ||
+                !formularioValido
               }
-              placeholder="Ex: 20"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              className="
-                w-full
-                rounded-2xl
-                border
-                border-sky-300/10
-                bg-white/[0.06]
-                px-4
-                py-4
-                text-white
-                outline-none
-                backdrop-blur-xl
-                transition
-                placeholder:text-slate-500
-                focus:border-sky-300/40
-                focus:bg-sky-400/[0.07]
-                focus:ring-4
-                focus:ring-sky-400/5
-              "
-            />
-
-            <div
-              className="
-                mt-3
-                flex
-                items-start
-                gap-2
-                rounded-2xl
-                border
-                border-sky-300/10
-                bg-sky-400/[0.06]
-                p-3
-              "
+              className="flex h-16 w-full items-center justify-center gap-3 rounded-[22px] bg-gradient-to-r from-sky-500 to-blue-600 px-5 font-black shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Boxes
-                size={15}
-                className="
-                  mt-0.5
-                  shrink-0
-                  text-sky-300
-                "
-              />
+              {salvando ? (
+                <>
+                  <Loader2
+                    size={20}
+                    className="animate-spin"
+                  />
 
-              <p
-                className="
-                  text-xs
-                  leading-5
-                  text-slate-400
-                "
-              >
-                Quando o estoque chegar a zero, o produto será identificado como esgotado. Use 0 para produtos sem unidades disponíveis.
+                  Otimizando e salvando...
+                </>
+              ) : (
+                <>
+                  <Save
+                    size={20}
+                  />
+
+                  Salvar primeiro produto
+                </>
+              )}
+            </button>
+
+            {!formularioValido && (
+              <p className="text-center text-xs leading-5 text-slate-500">
+                Complete os cinco itens para cadastrar o produto.
               </p>
-            </div>
-          </div>
-        </section>
-
-        {/* SALVAR */}
-
-        <button
-          type="button"
-          onClick={
-            salvarProduto
-          }
-          disabled={
-            salvando
-          }
-          className="
-            flex
-            min-h-16
-            w-full
-            items-center
-            justify-center
-            gap-3
-            rounded-[22px]
-            border
-            border-sky-300/30
-            bg-gradient-to-r
-            from-sky-500
-            to-blue-600
-            px-5
-            font-black
-            text-white
-            shadow-[0_15px_45px_rgba(14,165,233,0.30)]
-            transition
-            duration-200
-            hover:-translate-y-0.5
-            hover:shadow-[0_18px_55px_rgba(14,165,233,0.40)]
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          {salvando ? (
-            <>
-              <Loader2
-                size={20}
-                className="animate-spin"
-              />
-
-              Otimizando e salvando...
-            </>
-          ) : (
-            <>
-              <Save
-                size={20}
-              />
-
-              Salvar produto
-            </>
-          )}
-        </button>
-
+            )}
+          </>
+        )}
       </section>
-
     </main>
   );
 }
