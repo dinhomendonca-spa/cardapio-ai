@@ -9,6 +9,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/",
+          destination: "/vendas/index.html",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
 };
 
 export default nextConfig;
