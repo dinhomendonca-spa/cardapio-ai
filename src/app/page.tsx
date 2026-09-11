@@ -1,10 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
   Check,
   CircleCheck,
   LayoutDashboard,
-  Link2,
   MessageCircle,
   PackageCheck,
   QrCode,
@@ -15,22 +15,25 @@ import {
 
 const etapas = [
   {
-    numero: "01",
     titulo: "Crie sua loja",
     descricao:
-      "Faça seu cadastro, confirme o e-mail e ative sua assinatura.",
+      "Faça seu cadastro, confirme o e-mail e ative sua assinatura para acessar o painel.",
+    imagem: "/images/etapa-painel.png",
+    alt: "Painel do comerciante com acesso aos dados da loja e produtos",
   },
   {
-    numero: "02",
     titulo: "Configure do seu jeito",
     descricao:
-      "Cadastre produtos, formas de entrega, Pix e os dados da sua loja.",
+      "Cadastre produtos, horários, Pix e opções de entrega. Tudo organizado no seu painel.",
+    imagem: "/images/etapa-configuracao.png",
+    alt: "Opções de configuração de produtos, pedidos, QR Code, pagamento e entrega",
   },
   {
-    numero: "03",
-    titulo: "Divulgue e receba pedidos",
+    titulo: "Receba seus pedidos",
     descricao:
-      "Compartilhe seu link ou QR Code. Seus clientes compram pelo celular.",
+      "Compartilhe sua loja e acompanhe os pedidos, os dados de entrega e o contato com o cliente.",
+    imagem: "/images/etapa-pedidos.png",
+    alt: "Painel de pedidos com informações da compra e opções de atendimento",
   },
 ];
 
@@ -61,11 +64,33 @@ const beneficios = [
   },
 ];
 
+const produtosDemonstracao = [
+  {
+    nome: "Tênis Casual",
+    preco: "R$ 129,90",
+    imagem: "/images/tenis-demonstracao.png",
+    alt: "Tênis casual branco com detalhes azuis",
+    fundo: "bg-[#dcedfa]",
+  },
+  {
+    nome: "Kit de Cuidados",
+    preco: "R$ 49,90",
+    imagem: "/images/kit-cuidados-demonstracao.png",
+    alt: "Kit de cuidados pessoais com creme, sérum e sabonete",
+    fundo: "bg-[#f6d0bb]",
+  },
+];
+
 const perguntas = [
   {
     pergunta: "O que é o Visite Minha Loja?",
     resposta:
       "É uma plataforma para criar sua loja online, cadastrar produtos e receber pedidos dos seus clientes em um único lugar.",
+  },
+  {
+    pergunta: "Serve para quais tipos de negócio?",
+    resposta:
+      "Você pode usar para lojas de roupas, calçados, cosméticos, acessórios, eletrônicos, utensílios, alimentação e outros comércios que vendem produtos.",
   },
   {
     pergunta: "Preciso saber programar?",
@@ -102,12 +127,11 @@ export default function HomePage() {
         <div className="pointer-events-none absolute -right-40 top-72 h-96 w-96 rounded-full bg-blue-600/20 blur-[130px]" />
 
         <div className="relative mx-auto max-w-6xl px-5 pb-20 pt-5 sm:px-8">
-          <header className="mx-auto flex max-w-5xl items-center justify-between">
+          <header className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-lg shadow-cyan-500/20">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-lg shadow-cyan-500/20">
                 <ShoppingBag size={21} />
               </div>
-
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
                   Visite Minha Loja
@@ -120,16 +144,16 @@ export default function HomePage() {
 
             <Link
               href="/login"
-              className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold transition hover:bg-white/10"
+              className="shrink-0 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold transition hover:bg-white/10"
             >
               Entrar
             </Link>
           </header>
 
           <div className="mx-auto grid max-w-5xl items-center gap-12 pb-8 pt-16 md:grid-cols-2 md:pt-24">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm font-bold text-cyan-200">
-                <CircleCheck size={16} />
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-200 sm:text-sm">
+                <CircleCheck size={16} className="shrink-0" />
                 Sem comissão sobre suas vendas
               </div>
 
@@ -142,18 +166,23 @@ export default function HomePage() {
                 montarem o pedido e comprarem de um jeito simples.
               </p>
 
+              <p className="mt-4 text-sm leading-6 text-cyan-200">
+                Para lojas de roupas, calçados, cosméticos, eletrônicos,
+                alimentação e muito mais.
+              </p>
+
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/cadastro"
                   className="flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-6 text-lg font-black shadow-xl shadow-blue-500/20 transition hover:brightness-110 active:scale-[0.98]"
                 >
                   Criar minha loja
-                  <ArrowRight size={21} />
+                  <ArrowRight size={21} className="shrink-0" />
                 </Link>
 
                 <a
                   href="#como-funciona"
-                  className="flex min-h-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] px-6 text-base font-bold text-white transition hover:bg-white/[0.09]"
+                  className="flex min-h-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] px-6 text-base font-bold transition hover:bg-white/[0.09]"
                 >
                   Ver como funciona
                 </a>
@@ -164,25 +193,24 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md">
+            <div className="relative mx-auto w-full min-w-0 max-w-md">
               <div className="absolute inset-0 rounded-[38px] bg-cyan-400/20 blur-3xl" />
 
-              <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-[#071729] p-4 shadow-2xl shadow-black/40">
-                <div className="rounded-[22px] border border-white/10 bg-[#f8fafc] p-4 text-slate-900">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <div className="relative overflow-hidden rounded-[32px] border border-white/15 bg-[#071729] p-3 shadow-2xl shadow-black/40 sm:p-4">
+                <div className="rounded-[22px] border border-white/10 bg-[#f8fafc] p-3 text-slate-900 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
                         <Store size={17} />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-black">Sua loja online</p>
                         <p className="text-[10px] text-slate-500">
                           Produtos e pedidos em um só lugar
                         </p>
                       </div>
                     </div>
-
-                    <div className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700">
+                    <div className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700">
                       Aberta
                     </div>
                   </div>
@@ -194,21 +222,34 @@ export default function HomePage() {
                   </div>
 
                   <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-slate-100 p-3">
-                      <div className="h-16 rounded-xl bg-gradient-to-br from-orange-300 to-red-400" />
-                      <p className="mt-3 text-sm font-black">Produto 1</p>
-                      <p className="mt-1 text-xs text-slate-500">R$ 29,90</p>
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-100 p-3">
-                      <div className="h-16 rounded-xl bg-gradient-to-br from-cyan-300 to-blue-500" />
-                      <p className="mt-3 text-sm font-black">Produto 2</p>
-                      <p className="mt-1 text-xs text-slate-500">R$ 39,90</p>
-                    </div>
+                    {produtosDemonstracao.map((produto) => (
+                      <div
+                        key={produto.nome}
+                        className="min-w-0 rounded-2xl bg-slate-100 p-2.5 sm:p-3"
+                      >
+                        <div
+                          className={`relative aspect-square overflow-hidden rounded-xl ${produto.fundo}`}
+                        >
+                          <Image
+                            src={produto.imagem}
+                            alt={produto.alt}
+                            fill
+                            sizes="(max-width: 480px) 40vw, 170px"
+                            className="object-contain"
+                          />
+                        </div>
+                        <p className="mt-3 text-xs font-black leading-5 sm:text-sm">
+                          {produto.nome}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {produto.preco}
+                        </p>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="mt-5 flex items-center gap-3 rounded-2xl bg-blue-600 p-4 text-white">
-                    <ShoppingBag size={20} />
+                    <ShoppingBag size={20} className="shrink-0" />
                     <div>
                       <p className="text-sm font-black">Pedido organizado</p>
                       <p className="text-xs text-blue-100">
@@ -216,6 +257,10 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
+
+                  <p className="mt-3 text-center text-[10px] text-slate-500">
+                    Produtos e preços ilustrativos.
+                  </p>
                 </div>
               </div>
             </div>
@@ -223,8 +268,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="como-funciona" className="bg-white py-20 text-slate-950">
-        <div className="mx-auto max-w-5xl px-5 sm:px-8">
+      <section
+        id="como-funciona"
+        className="scroll-mt-6 bg-white py-20 text-slate-950"
+      >
+        <div className="mx-auto max-w-6xl px-5 sm:px-8">
           <p className="text-center text-xs font-black uppercase tracking-[0.2em] text-blue-600">
             Simples de começar
           </p>
@@ -233,20 +281,30 @@ export default function HomePage() {
             Sua loja pronta para vender em três etapas
           </h2>
 
-          <div className="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-3">
+          <div className="mt-12 grid items-start gap-8 md:grid-cols-3 md:gap-5">
             {etapas.map((etapa) => (
               <article
-                key={etapa.numero}
-                className="rounded-[28px] border border-slate-200 bg-slate-50 p-6"
+                key={etapa.titulo}
+                className="mx-auto w-full max-w-sm overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-lg shadow-slate-200/40"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-sm font-black text-blue-700">
-                  {etapa.numero}
-                </span>
+                <div className="p-3">
+                  <div className="relative aspect-[2/3] overflow-hidden rounded-[20px] bg-[#020b18]">
+                    <Image
+                      src={etapa.imagem}
+                      alt={etapa.alt}
+                      fill
+                      sizes="(max-width: 767px) 384px, 350px"
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
 
-                <h3 className="mt-6 text-xl font-black">{etapa.titulo}</h3>
-                <p className="mt-3 leading-7 text-slate-600">
-                  {etapa.descricao}
-                </p>
+                <div className="px-6 pb-7 pt-3">
+                  <h3 className="text-xl font-black">{etapa.titulo}</h3>
+                  <p className="mt-3 leading-7 text-slate-600">
+                    {etapa.descricao}
+                  </p>
+                </div>
               </article>
             ))}
           </div>
@@ -290,10 +348,9 @@ export default function HomePage() {
 
           <div className="rounded-[30px] border border-white/10 bg-white/[0.06] p-6">
             <div className="flex items-center gap-3 border-b border-white/10 pb-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400/15 text-emerald-300">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 text-emerald-300">
                 <MessageCircle size={21} />
               </div>
-
               <div>
                 <p className="font-black">Pedido recebido</p>
                 <p className="text-sm text-slate-400">
@@ -303,30 +360,34 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-4 pt-5 text-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-slate-400">Cliente</span>
                 <span className="font-bold">Maria Silva</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-slate-400">Itens</span>
-                <span className="font-bold">3 produtos</span>
+                <span className="font-bold">2 produtos</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-slate-400">Entrega</span>
                 <span className="font-bold">Retirada na loja</span>
               </div>
-              <div className="flex items-center justify-between border-t border-white/10 pt-4">
+              <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-4">
                 <span className="text-slate-400">Total</span>
                 <span className="text-lg font-black text-cyan-300">
-                  R$ 79,70
+                  R$ 179,80
                 </span>
               </div>
             </div>
 
             <div className="mt-6 flex items-center gap-3 rounded-2xl bg-cyan-400/10 p-4 text-sm font-bold text-cyan-200">
-              <LayoutDashboard size={19} />
+              <LayoutDashboard size={19} className="shrink-0" />
               Acompanhe tudo pelo painel da sua loja.
             </div>
+
+            <p className="mt-3 text-center text-xs text-slate-500">
+              Exemplo ilustrativo de pedido.
+            </p>
           </div>
         </div>
       </section>
@@ -350,7 +411,6 @@ export default function HomePage() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-100 text-blue-700">
                   <Icone size={22} />
                 </div>
-
                 <div>
                   <h3 className="text-lg font-black">{titulo}</h3>
                   <p className="mt-2 leading-7 text-slate-600">{descricao}</p>
@@ -363,7 +423,7 @@ export default function HomePage() {
 
       <section className="bg-[#020b18] py-20">
         <div className="mx-auto max-w-5xl px-5 sm:px-8">
-          <div className="mx-auto max-w-xl rounded-[32px] border border-cyan-300/20 bg-gradient-to-b from-cyan-400/15 to-blue-600/10 p-7 text-center shadow-2xl shadow-cyan-950/30 sm:p-10">
+          <div className="mx-auto max-w-xl rounded-[32px] border border-cyan-300/20 bg-gradient-to-b from-cyan-400/15 to-blue-600/10 p-6 text-center shadow-2xl shadow-cyan-950/30 sm:p-10">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
               Plano mensal
             </p>
@@ -372,8 +432,8 @@ export default function HomePage() {
               Sua loja online pronta para vender
             </h2>
 
-            <div className="mt-6 flex items-end justify-center gap-2">
-              <strong className="text-6xl font-black tracking-tight">
+            <div className="mt-6 flex flex-wrap items-end justify-center gap-2">
+              <strong className="text-5xl font-black tracking-tight sm:text-6xl">
                 R$ 59,90
               </strong>
               <span className="mb-2 text-slate-300">por mês</span>
@@ -400,15 +460,15 @@ export default function HomePage() {
 
             <Link
               href="/cadastro"
-              className="mt-9 flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-lg font-black text-slate-950 transition hover:bg-cyan-100 active:scale-[0.98]"
+              className="mt-9 flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-white px-5 text-base font-black text-slate-950 transition hover:bg-cyan-100 active:scale-[0.98] sm:text-lg"
             >
               Criar minha loja agora
-              <ArrowRight size={21} />
+              <ArrowRight size={21} className="shrink-0" />
             </Link>
 
             <p className="mt-4 text-xs leading-5 text-slate-400">
-              Faça seu cadastro, confirme seu e-mail e siga o tutorial de
-              configuração.
+              Faça seu cadastro, confirme seu e-mail e ative a assinatura
+              para configurar sua loja.
             </p>
           </div>
         </div>
@@ -430,13 +490,15 @@ export default function HomePage() {
                 key={pergunta}
                 className="group border-b border-slate-200 py-5"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 text-lg font-black">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 text-lg font-black [&::-webkit-details-marker]:hidden">
                   {pergunta}
-                  <span className="text-2xl font-normal text-blue-600 transition group-open:rotate-45">
+                  <span
+                    aria-hidden="true"
+                    className="shrink-0 text-2xl font-normal text-blue-600 transition group-open:rotate-45"
+                  >
                     +
                   </span>
                 </summary>
-
                 <p className="max-w-2xl pt-4 leading-7 text-slate-600">
                   {resposta}
                 </p>
@@ -457,7 +519,7 @@ export default function HomePage() {
             Sua loja online, simples e acessível.
           </p>
 
-          <div className="mt-5 flex items-center justify-center gap-4 text-sm text-slate-400">
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-sm text-slate-400">
             <Link href="/termos" className="hover:text-white">
               Termos de Uso
             </Link>
@@ -467,7 +529,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <p className="mt-6 text-xs text-slate-600">
+          <p className="mt-6 text-xs text-slate-500">
             © {new Date().getFullYear()} Visite Minha Loja. Todos os direitos
             reservados.
           </p>
