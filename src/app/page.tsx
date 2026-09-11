@@ -1,5 +1,4 @@
 import Link from "next/link";
-
 import {
   ArrowRight,
   Check,
@@ -12,44 +11,28 @@ import {
 
 const beneficios = [
   {
-    titulo:
-      "Loja online completa",
-
+    titulo: "Loja online completa",
     descricao:
       "Produtos, categorias, carrinho e checkout em um único endereço.",
-
-    icone:
-      Store,
+    icone: Store,
   },
   {
-    titulo:
-      "Pedidos organizados",
-
+    titulo: "Pedidos organizados",
     descricao:
       "Receba e acompanhe os pedidos pelo painel do comerciante.",
-
-    icone:
-      LayoutDashboard,
+    icone: LayoutDashboard,
   },
   {
-    titulo:
-      "Feita para o celular",
-
+    titulo: "Feita para o celular",
     descricao:
       "Seu cliente compra de forma simples pelo celular, tablet ou computador.",
-
-    icone:
-      Smartphone,
+    icone: Smartphone,
   },
   {
-    titulo:
-      "Link e QR Code",
-
+    titulo: "Link e QR Code",
     descricao:
       "Compartilhe sua loja nas redes sociais ou coloque o QR Code no estabelecimento.",
-
-    icone:
-      QrCode,
+    icone: QrCode,
   },
 ];
 
@@ -58,16 +41,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#020b18] text-white">
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute -left-48 -top-48 h-[420px] w-[420px] rounded-full bg-sky-500/20 blur-[130px]" />
-
         <div className="pointer-events-none absolute -right-48 top-64 h-[420px] w-[420px] rounded-full bg-blue-600/20 blur-[130px]" />
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-12 pt-6">
           <header className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 shadow-lg shadow-blue-500/20">
-                <ShoppingBag
-                  size={21}
-                />
+                <ShoppingBag size={21} />
               </div>
 
               <div>
@@ -91,10 +71,7 @@ export default function HomePage() {
 
           <div className="flex flex-1 flex-col justify-center py-16">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-sky-300/20 bg-sky-400/10 px-4 py-2 text-sm font-semibold text-sky-200">
-              <Check
-                size={16}
-              />
-
+              <Check size={16} />
               Sem comissão sobre suas vendas
             </div>
 
@@ -103,7 +80,8 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              Cadastre seus produtos, receba pedidos e compartilhe sua loja com clientes de qualquer lugar.
+              Cadastre seus produtos, receba pedidos e compartilhe sua loja com
+              clientes de qualquer lugar.
             </p>
 
             <div className="mt-8 rounded-[26px] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl">
@@ -122,7 +100,8 @@ export default function HomePage() {
               </div>
 
               <p className="mt-3 text-sm leading-6 text-slate-400">
-                Sem taxa de instalação e sem comissão cobrada pelo sistema sobre os pedidos.
+                Sem taxa de instalação e sem comissão cobrada pelo sistema sobre
+                os pedidos.
               </p>
             </div>
 
@@ -131,10 +110,7 @@ export default function HomePage() {
               className="mt-5 flex min-h-16 items-center justify-between rounded-[22px] bg-gradient-to-r from-sky-500 to-blue-600 px-6 text-lg font-black shadow-xl shadow-blue-500/20 transition active:scale-[0.98]"
             >
               Criar minha loja
-
-              <ArrowRight
-                size={21}
-              />
+              <ArrowRight size={21} />
             </Link>
 
             <p className="mt-3 text-center text-xs leading-5 text-slate-500">
@@ -166,9 +142,7 @@ export default function HomePage() {
                   className="flex gap-4 rounded-[24px] border border-white/10 bg-white/[0.05] p-5"
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-400/10 text-sky-300">
-                    <Icone
-                      size={21}
-                    />
+                    <Icone size={21} />
                   </div>
 
                   <div>
@@ -190,10 +164,7 @@ export default function HomePage() {
             className="mt-7 flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-white px-5 font-black text-slate-950"
           >
             Começar agora
-
-            <ArrowRight
-              size={19}
-            />
+            <ArrowRight size={19} />
           </Link>
         </div>
       </section>
@@ -207,6 +178,26 @@ export default function HomePage() {
           <p className="mt-2 text-xs text-slate-500">
             Sua loja online, simples e acessível.
           </p>
+
+          <div className="mt-5 flex items-center justify-center gap-4 text-xs font-semibold text-slate-400">
+            <Link
+              href="/termos"
+              className="transition hover:text-sky-300"
+            >
+              Termos de Uso
+            </Link>
+
+            <span className="text-slate-700">
+              |
+            </span>
+
+            <Link
+              href="/privacidade"
+              className="transition hover:text-sky-300"
+            >
+              Política de Privacidade
+            </Link>
+          </div>
         </div>
       </footer>
     </main>
