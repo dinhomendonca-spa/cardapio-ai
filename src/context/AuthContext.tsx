@@ -30,6 +30,10 @@ export type DadosCadastro = {
   senha: string;
 };
 
+export type PlanoCadastro =
+  | "mensal"
+  | "anual";
+
 type ResultadoCadastro = {
   precisaConfirmarEmail: boolean;
 };
@@ -38,13 +42,22 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   carregandoAuth: boolean;
+
   entrar: (
     email: string,
     senha: string
   ) => Promise<void>;
+
   cadastrar: (
-    dados: DadosCadastro
+    dados: DadosCadastro,
+    plano?: PlanoCadastro
   ) => Promise<ResultadoCadastro>;
+
+  reenviarConfirmacao: (
+    email: string,
+    plano?: PlanoCadastro
+  ) => Promise<void>;
+
   sair: () => Promise<void>;
 };
 
@@ -54,6 +67,20 @@ const AuthContext = createContext<
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
+}
+
+function montarUrlConfirmacao(
+  plano: PlanoCadastro
+) {
+  const parametros =
+    new URLSearchParams({
+      confirmado: "1",
+      plano,
+    });
+
+  return `${
+    window.location.origin
+  }/login?${parametros.toString()}`;
 }
 
 export function AuthProvider({
@@ -75,58 +102,66 @@ export function AuthProvider({
   useEffect(() => {
     let ativo = true;
 
-    const carregarSessao = async () => {
-      try {
-        const {
-          data,
-          error,
-        } = await supabase.auth.getSession();
+    const carregarSessao =
+      async () => {
+        try {
+          const {
+            data,
+            error,
+          } =
+            await supabase.auth.getSession();
 
-        if (error) {
-          throw error;
-        }
+          if (error) {
+            throw error;
+          }
 
-        if (!ativo) {
-          return;
-        }
+          if (!ativo) {
+            return;
+          }
 
-        setSession(data.session);
-        setUser(
-          data.session?.user ?? null
-        );
-      } catch (error) {
-        console.error(
-          "Erro ao carregar sessão:",
-          error
-        );
+          setSession(data.session);
+          setUser(
+            data.session?.user ??
+              null
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao carregar sessão:",
+            error
+          );
 
-        if (ativo) {
-          setSession(null);
-          setUser(null);
+          if (ativo) {
+            setSession(null);
+            setUser(null);
+          }
+        } finally {
+          if (ativo) {
+            setCarregandoAuth(false);
+          }
         }
-      } finally {
-        if (ativo) {
-          setCarregandoAuth(false);
-        }
-      }
-    };
+      };
 
     carregarSessao();
 
     const {
       data: listener,
-    } = supabase.auth.onAuthStateChange(
-      (_event, novaSessao) => {
-        setSession(novaSessao);
-        setUser(
-          novaSessao?.user ?? null
-        );
-        setCarregandoAuth(false);
-      }
-    );
+    } =
+      supabase.auth.onAuthStateChange(
+        (_event, novaSessao) => {
+          setSession(novaSessao);
+
+          setUser(
+            novaSessao?.user ??
+              null
+          );
+
+          setCarregandoAuth(false);
+        }
+      );
 
     return () => {
       ativo = false;
+
       listener.subscription.unsubscribe();
     };
   }, []);
@@ -139,12 +174,15 @@ export function AuthProvider({
       data,
       error,
     } =
-      await supabase.auth.signInWithPassword({
-        email: email
-          .trim()
-          .toLowerCase(),
-        password: senha,
-      });
+      await supabase.auth.signInWithPassword(
+        {
+          email: email
+            .trim()
+            .toLowerCase(),
+
+          password: senha,
+        }
+      );
 
     if (error) {
       throw error;
@@ -155,7 +193,8 @@ export function AuthProvider({
   };
 
   const cadastrar = async (
-    dados: DadosCadastro
+    dados: DadosCadastro,
+    plano: PlanoCadastro = "mensal"
   ): Promise<ResultadoCadastro> => {
     const email = dados.email
       .trim()
@@ -165,7 +204,9 @@ export function AuthProvider({
       somenteNumeros(dados.cpf);
 
     const telefone =
-      somenteNumeros(dados.telefone);
+      somenteNumeros(
+        dados.telefone
+      );
 
     const cep =
       somenteNumeros(dados.cep);
@@ -173,34 +214,52 @@ export function AuthProvider({
     const {
       data,
       error,
-    } = await supabase.auth.signUp({
-      email,
-      password: dados.senha,
-      options: {
-        emailRedirectTo:
-          `${window.location.origin}/login?confirmado=1`,
-        data: {
-          nome: dados.nome.trim(),
-          cpf,
-          telefone,
-          cep,
-          endereco:
-            dados.endereco.trim(),
-          numero:
-            dados.numero.trim(),
-          complemento:
-            dados.complemento.trim(),
-          bairro:
-            dados.bairro.trim(),
-          cidade:
-            dados.cidade.trim(),
-          estado:
-            dados.estado
-              .trim()
-              .toUpperCase(),
+    } =
+      await supabase.auth.signUp({
+        email,
+
+        password: dados.senha,
+
+        options: {
+          emailRedirectTo:
+            montarUrlConfirmacao(
+              plano
+            ),
+
+          data: {
+            nome:
+              dados.nome.trim(),
+
+            cpf,
+
+            telefone,
+
+            cep,
+
+            endereco:
+              dados.endereco.trim(),
+
+            numero:
+              dados.numero.trim(),
+
+            complemento:
+              dados.complemento.trim(),
+
+            bairro:
+              dados.bairro.trim(),
+
+            cidade:
+              dados.cidade.trim(),
+
+            estado:
+              dados.estado
+                .trim()
+                .toUpperCase(),
+
+            plano,
+          },
         },
-      },
-    });
+      });
 
     if (error) {
       throw error;
@@ -215,10 +274,49 @@ export function AuthProvider({
     };
   };
 
+  const reenviarConfirmacao =
+    async (
+      email: string,
+      plano: PlanoCadastro = "mensal"
+    ) => {
+      const emailNormalizado =
+        email
+          .trim()
+          .toLowerCase();
+
+      if (
+        !emailNormalizado ||
+        !emailNormalizado.includes(
+          "@"
+        )
+      ) {
+        throw new Error(
+          "Digite um e-mail válido."
+        );
+      }
+
+      const { error } =
+        await supabase.auth.resend({
+          type: "signup",
+
+          email: emailNormalizado,
+
+          options: {
+            emailRedirectTo:
+              montarUrlConfirmacao(
+                plano
+              ),
+          },
+        });
+
+      if (error) {
+        throw error;
+      }
+    };
+
   const sair = async () => {
-    const {
-      error,
-    } = await supabase.auth.signOut();
+    const { error } =
+      await supabase.auth.signOut();
 
     if (error) {
       throw error;
@@ -236,6 +334,7 @@ export function AuthProvider({
         carregandoAuth,
         entrar,
         cadastrar,
+        reenviarConfirmacao,
         sair,
       }}
     >

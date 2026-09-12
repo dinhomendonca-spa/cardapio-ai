@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useRef,
   useState,
@@ -8,9 +9,14 @@ import {
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
+import {
+  ArrowRight,
   Check,
   CheckCircle2,
   Clock3,
@@ -24,6 +30,8 @@ import {
   RefreshCw,
   ShieldCheck,
   Sparkles,
+  WalletCards,
+  Zap,
 } from "lucide-react";
 
 import {
@@ -37,6 +45,11 @@ import {
 type PlanoId =
   | "mensal"
   | "anual";
+
+type FormaPagamento =
+  | "pix"
+  | "cartao"
+  | "indefinido";
 
 type PlanoResposta = {
   id: PlanoId;
@@ -58,8 +71,19 @@ type Pagamento = {
 
 type RespostaCobranca = {
   reutilizada: boolean;
+
+  formaPagamento?:
+    | FormaPagamento
+    | string;
+
+  asaasParcelamentoId?:
+    | string
+    | null;
+
   plano?: PlanoResposta;
+
   pagamento?: Pagamento;
+
   erro?: string;
 };
 
@@ -141,14 +165,24 @@ async function obterToken() {
   return data.session.access_token;
 }
 
-export default function AssinarPage() {
-  const router = useRouter();
+function AssinarConteudo() {
+  const router =
+    useRouter();
+
+  const searchParams =
+    useSearchParams();
 
   const {
     user,
     carregandoAuth,
     sair,
   } = useAuth();
+
+  const planoDaUrl: PlanoId =
+    searchParams.get("plano") ===
+    "anual"
+      ? "anual"
+      : "mensal";
 
   const iniciou =
     useRef(false);
@@ -170,6 +204,14 @@ export default function AssinarPage() {
     );
 
   const [
+    formaSelecionada,
+    setFormaSelecionada,
+  ] =
+    useState<FormaPagamento | null>(
+      null
+    );
+
+  const [
     planoConfirmado,
     setPlanoConfirmado,
   ] =
@@ -187,7 +229,7 @@ export default function AssinarPage() {
     gerandoPagamento,
     setGerandoPagamento,
   ] =
-    useState<PlanoId | null>(
+    useState<string | null>(
       null
     );
 
@@ -291,7 +333,7 @@ export default function AssinarPage() {
 
     if (!user) {
       router.replace(
-        "/login"
+        `/login?plano=${planoDaUrl}`
       );
 
       return;
@@ -327,6 +369,7 @@ export default function AssinarPage() {
     carregandoAuth,
     user,
     router,
+    planoDaUrl,
   ]);
 
   useEffect(() => {
@@ -357,7 +400,9 @@ export default function AssinarPage() {
 
   const contratarPlano =
     async (
-      plano: PlanoId
+      plano: PlanoId,
+      formaPagamento:
+        FormaPagamento
     ) => {
       if (
         gerandoPagamento
@@ -365,12 +410,19 @@ export default function AssinarPage() {
         return;
       }
 
+      const chave =
+        `${plano}:${formaPagamento}`;
+
       setPlanoSelecionado(
         plano
       );
 
+      setFormaSelecionada(
+        formaPagamento
+      );
+
       setGerandoPagamento(
-        plano
+        chave
       );
 
       setErro("");
@@ -401,6 +453,12 @@ export default function AssinarPage() {
               body:
                 JSON.stringify({
                   plano,
+
+                  formaPagamento:
+                    formaPagamento ===
+                    "indefinido"
+                      ? undefined
+                      : formaPagamento,
                 }),
             }
           );
@@ -422,6 +480,23 @@ export default function AssinarPage() {
         setPagamento(
           resultado.pagamento
         );
+
+        if (
+          resultado.formaPagamento
+        ) {
+          const forma =
+            resultado.formaPagamento;
+
+          if (
+            forma === "pix" ||
+            forma === "cartao" ||
+            forma === "indefinido"
+          ) {
+            setFormaSelecionada(
+              forma
+            );
+          }
+        }
 
         if (
           resultado.plano
@@ -476,6 +551,10 @@ export default function AssinarPage() {
         setPlanoSelecionado(
           null
         );
+
+        setFormaSelecionada(
+          null
+        );
       } finally {
         setGerandoPagamento(
           null
@@ -523,7 +602,7 @@ export default function AssinarPage() {
         await sair();
 
         router.replace(
-          "/login"
+          `/login?plano=${planoDaUrl}`
         );
       } catch {
         setErro(
@@ -553,9 +632,24 @@ export default function AssinarPage() {
     );
   }
 
+  const ehAnual =
+    planoSelecionado ===
+    "anual";
+
+  const ehCartaoAnual =
+    ehAnual &&
+    formaSelecionada ===
+      "cartao";
+
+  const ehPixAnual =
+    ehAnual &&
+    formaSelecionada ===
+      "pix";
+
   return (
     <main className="min-h-screen bg-[#020b18] px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-2xl">
+
         <header className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
@@ -563,8 +657,7 @@ export default function AssinarPage() {
             </p>
 
             <h1 className="mt-1 text-2xl font-black sm:text-3xl">
-              Ative sua
-              assinatura
+              Ative sua assinatura
             </h1>
           </div>
 
@@ -584,13 +677,36 @@ export default function AssinarPage() {
 
         {!pagamento && (
           <>
+            {planoDaUrl ===
+              "anual" && (
+              <div className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-5 text-center">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
+                  🎉 Sua oferta foi preservada
+                </p>
+
+                <div className="mt-2 flex items-end justify-center gap-2">
+                  <span className="mb-1 text-sm font-bold text-emerald-200">
+                    12x de
+                  </span>
+
+                  <span className="text-4xl font-black text-white">
+                    R$ 49,75
+                  </span>
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-slate-300">
+                  No cartão de crédito.
+                  Você também pode pagar
+                  R$ 597 à vista no Pix.
+                </p>
+              </div>
+            )}
+
             <div className="mt-7 text-center">
               <p className="text-sm leading-6 text-slate-400">
-                Escolha o plano
-                ideal para sua
-                loja. Todos aceitam
-                Pix ou cartão de
-                crédito.
+                Escolha o plano e a
+                forma de pagamento que
+                preferir.
               </p>
             </div>
 
@@ -604,8 +720,17 @@ export default function AssinarPage() {
             )}
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <section className="overflow-hidden rounded-[30px] border border-white/10 bg-white text-slate-950 shadow-2xl">
+
+              <section
+                className={`overflow-hidden rounded-[30px] bg-white text-slate-950 shadow-2xl ${
+                  planoDaUrl ===
+                  "mensal"
+                    ? "border-2 border-sky-400"
+                    : "border border-white/10"
+                }`}
+              >
                 <div className="p-6">
+
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-600">
@@ -629,14 +754,14 @@ export default function AssinarPage() {
                   </div>
 
                   <div className="mt-6 space-y-3 text-sm font-semibold text-slate-600">
+
                     <div className="flex items-center gap-2">
                       <CheckCircle2
                         size={18}
                         className="shrink-0 text-emerald-500"
                       />
 
-                      1 mês de
-                      acesso
+                      1 mês de acesso
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -646,7 +771,6 @@ export default function AssinarPage() {
                       />
 
                       Pix ou cartão
-                      de crédito
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -655,8 +779,7 @@ export default function AssinarPage() {
                         className="shrink-0 text-sky-600"
                       />
 
-                      Liberação
-                      automática
+                      Liberação automática
                     </div>
                   </div>
 
@@ -664,30 +787,31 @@ export default function AssinarPage() {
                     type="button"
                     onClick={() =>
                       contratarPlano(
-                        "mensal"
+                        "mensal",
+                        "indefinido"
                       )
                     }
                     disabled={
                       gerandoPagamento !==
                       null
                     }
-                    className="mt-7 flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-black text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-7 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-black text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {gerandoPagamento ===
-                    "mensal" ? (
+                    "mensal:indefinido" ? (
                       <>
                         <LoaderCircle
                           size={18}
                           className="animate-spin"
                         />
 
-                        Gerando
-                        cobrança...
+                        Gerando cobrança...
                       </>
                     ) : (
                       <>
                         Escolher mensal
-                        <ExternalLink
+
+                        <ArrowRight
                           size={17}
                         />
                       </>
@@ -696,33 +820,45 @@ export default function AssinarPage() {
                 </div>
               </section>
 
-              <section className="relative overflow-hidden rounded-[30px] border-2 border-emerald-400 bg-white text-slate-950 shadow-2xl shadow-emerald-950/20">
-                <div className="absolute right-4 top-4 rounded-full bg-emerald-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white">
+              <section
+                className={`relative overflow-hidden rounded-[30px] bg-white text-slate-950 shadow-2xl shadow-emerald-950/20 ${
+                  planoDaUrl ===
+                  "anual"
+                    ? "border-4 border-emerald-400"
+                    : "border-2 border-emerald-400"
+                }`}
+              >
+                <div className="absolute right-4 top-4 rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 shadow">
                   Melhor oferta
                 </div>
 
                 <div className="bg-gradient-to-br from-emerald-500 to-teal-700 p-6 text-white">
+
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-50">
-                    🔥 Oferta de
-                    lançamento
+                    🔥 Oferta de lançamento
                   </p>
 
-                  <p className="mt-4 text-4xl font-black">
-                    R$ 597
-                  </p>
+                  <div className="mt-4">
+                    <span className="text-sm font-bold text-emerald-50">
+                      12x de
+                    </span>
 
-                  <p className="mt-1 text-sm font-semibold text-emerald-50">
-                    12 meses de
-                    acesso
+                    <p className="text-4xl font-black">
+                      R$ 49,75
+                    </p>
+                  </div>
+
+                  <p className="mt-2 text-sm font-semibold text-emerald-50">
+                    no cartão de crédito
                   </p>
 
                   <div className="mt-4 inline-flex rounded-full bg-white/15 px-3 py-2 text-xs font-black">
-                    Equivale a R$
-                    49,75/mês
+                    12 meses de acesso
                   </div>
                 </div>
 
                 <div className="p-6">
+
                   <div className="rounded-2xl bg-emerald-50 p-4 text-center">
                     <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
                       Você economiza
@@ -739,14 +875,14 @@ export default function AssinarPage() {
                   </div>
 
                   <div className="mt-5 space-y-3 text-sm font-semibold text-slate-600">
+
                     <div className="flex items-center gap-2">
                       <CheckCircle2
                         size={18}
                         className="shrink-0 text-emerald-500"
                       />
 
-                      12 meses pagos
-                      de uma vez
+                      12 meses de acesso
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -755,57 +891,106 @@ export default function AssinarPage() {
                         className="shrink-0 text-emerald-600"
                       />
 
-                      Pix ou cartão
-                      de crédito
+                      Cartão em 12 parcelas
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <CheckCircle2
+                      <Zap
                         size={18}
-                        className="shrink-0 text-emerald-500"
+                        className="shrink-0 text-emerald-600"
                       />
 
-                      Sem nova
-                      mensalidade
-                      durante 12
-                      meses
+                      Pix de R$ 597 à vista
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck
+                        size={18}
+                        className="shrink-0 text-emerald-600"
+                      />
+
+                      Liberação automática
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      contratarPlano(
-                        "anual"
-                      )
-                    }
-                    disabled={
-                      gerandoPagamento !==
-                      null
-                    }
-                    className="mt-7 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {gerandoPagamento ===
-                    "anual" ? (
-                      <>
-                        <LoaderCircle
-                          size={18}
-                          className="animate-spin"
-                        />
+                  <div className="mt-7 grid gap-3">
 
-                        Gerando
-                        cobrança...
-                      </>
-                    ) : (
-                      <>
-                        Garantir 1 ano
-                        por R$ 597
-                        <Sparkles
-                          size={17}
-                        />
-                      </>
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        contratarPlano(
+                          "anual",
+                          "cartao"
+                        )
+                      }
+                      disabled={
+                        gerandoPagamento !==
+                        null
+                      }
+                      className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {gerandoPagamento ===
+                      "anual:cartao" ? (
+                        <>
+                          <LoaderCircle
+                            size={18}
+                            className="animate-spin"
+                          />
+
+                          Preparando cartão...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard
+                            size={19}
+                          />
+
+                          Pagar 12x de R$ 49,75
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        contratarPlano(
+                          "anual",
+                          "pix"
+                        )
+                      }
+                      disabled={
+                        gerandoPagamento !==
+                        null
+                      }
+                      className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-5 py-3.5 text-sm font-black text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {gerandoPagamento ===
+                      "anual:pix" ? (
+                        <>
+                          <LoaderCircle
+                            size={18}
+                            className="animate-spin"
+                          />
+
+                          Gerando Pix...
+                        </>
+                      ) : (
+                        <>
+                          <QrCode
+                            size={18}
+                          />
+
+                          Pix — R$ 597 à vista
+                        </>
+                      )}
+                    </button>
+
+                  </div>
+
+                  <p className="mt-3 text-center text-[11px] leading-5 text-slate-400">
+                    Total do plano anual:
+                    R$ 597.
+                  </p>
                 </div>
               </section>
             </div>
@@ -814,48 +999,82 @@ export default function AssinarPage() {
 
         {pagamento && (
           <div className="mt-7 overflow-hidden rounded-[32px] bg-white text-slate-950 shadow-2xl">
+
             <div
               className={
-                planoSelecionado ===
-                "anual"
+                ehAnual
                   ? "bg-gradient-to-br from-emerald-500 to-teal-700 p-6 text-white"
                   : "bg-gradient-to-br from-sky-500 to-blue-700 p-6 text-white"
               }
             >
               <div className="flex items-start justify-between gap-4">
+
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/80">
                     {planoConfirmado
                       ?.nome ??
-                      (planoSelecionado ===
-                      "anual"
+                      (ehAnual
                         ? "Anual Promocional"
                         : "Mensal")}
                   </p>
 
-                  <p className="mt-2 text-4xl font-black">
-                    {formatarDinheiro(
-                      pagamento.valor
-                    )}
-                  </p>
+                  {ehCartaoAnual ? (
+                    <>
+                      <p className="mt-2 text-sm font-bold text-white/80">
+                        12x de
+                      </p>
 
-                  <p className="mt-1 text-sm font-semibold text-white/80">
-                    {planoSelecionado ===
-                    "anual"
-                      ? "12 meses de acesso"
-                      : "1 mês de acesso"}
-                  </p>
+                      <p className="text-4xl font-black">
+                        R$ 49,75
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-white/80">
+                        Total R$ 597 ·
+                        12 meses de acesso
+                      </p>
+                    </>
+                  ) : ehPixAnual ? (
+                    <>
+                      <p className="mt-2 text-4xl font-black">
+                        R$ 597,00
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-white/80">
+                        Pix à vista ·
+                        12 meses de acesso
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-4xl font-black">
+                        {formatarDinheiro(
+                          pagamento.valor
+                        )}
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-white/80">
+                        1 mês de acesso
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
-                  <CreditCard
-                    size={27}
-                  />
+                  {ehPixAnual ? (
+                    <QrCode
+                      size={27}
+                    />
+                  ) : (
+                    <CreditCard
+                      size={27}
+                    />
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="p-5 sm:p-6">
+
               {erro && (
                 <div
                   role="alert"
@@ -866,24 +1085,29 @@ export default function AssinarPage() {
               )}
 
               <div className="text-center">
+
                 <div className="mx-auto flex h-11 w-fit items-center gap-2 rounded-full bg-amber-100 px-4 text-xs font-bold text-amber-700">
                   <Clock3
                     size={16}
                   />
 
-                  Aguardando
-                  pagamento
+                  Aguardando pagamento
                 </div>
 
                 <h2 className="mt-4 text-xl font-black">
-                  Escolha como
-                  pagar
+                  {ehCartaoAnual
+                    ? "Finalize no cartão"
+                    : ehPixAnual
+                      ? "Finalize seu Pix"
+                      : "Escolha como pagar"}
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Você pode pagar
-                  com Pix ou cartão
-                  de crédito.
+                  {ehCartaoAnual
+                    ? "Clique no botão abaixo para abrir a página segura do Asaas e concluir o pagamento em 12 parcelas."
+                    : ehPixAnual
+                      ? "Escaneie o QR Code ou copie o código Pix abaixo."
+                      : "Você pode pagar com Pix ou cartão de crédito."}
                 </p>
               </div>
 
@@ -894,14 +1118,37 @@ export default function AssinarPage() {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-sky-600"
+                  className={`mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 text-sm font-black text-white transition ${
+                    ehCartaoAnual
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-slate-950 hover:bg-sky-600"
+                  }`}
                 >
-                  <CreditCard
-                    size={20}
-                  />
+                  {ehCartaoAnual ? (
+                    <>
+                      <CreditCard
+                        size={20}
+                      />
 
-                  Pagar com Pix ou
-                  cartão
+                      Pagar 12x de R$ 49,75
+                    </>
+                  ) : ehPixAnual ? (
+                    <>
+                      <ExternalLink
+                        size={19}
+                      />
+
+                      Abrir pagamento no Asaas
+                    </>
+                  ) : (
+                    <>
+                      <WalletCards
+                        size={20}
+                      />
+
+                      Pagar com Pix ou cartão
+                    </>
+                  )}
 
                   <ExternalLink
                     size={17}
@@ -909,114 +1156,119 @@ export default function AssinarPage() {
                 </Link>
               )}
 
-              <div className="my-6 flex items-center gap-3">
-                <div className="h-px flex-1 bg-slate-200" />
+              {!ehCartaoAnual && (
+                <>
+                  <div className="my-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-slate-200" />
 
-                <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                  ou pague por Pix
-                  aqui
-                </span>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      Pix
+                    </span>
 
-                <div className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              {pagamento.pixImagem ? (
-                <div className="mx-auto w-fit rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-                  <Image
-                    src={
-                      pagamento
-                        .pixImagem
-                        .startsWith(
-                          "data:"
-                        )
-                        ? pagamento
-                            .pixImagem
-                        : `data:image/png;base64,${pagamento.pixImagem}`
-                    }
-                    alt="QR Code Pix da assinatura"
-                    width={240}
-                    height={240}
-                    unoptimized
-                    priority
-                  />
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-slate-100 p-4 text-center text-sm font-semibold text-slate-500">
-                  O QR Code Pix não
-                  está disponível
-                  neste momento.
-                  Você ainda pode
-                  usar o botão acima
-                  para pagar pelo
-                  Asaas.
-                </div>
-              )}
-
-              {pagamento.pixCopiaCola && (
-                <div className="mt-5 rounded-2xl bg-slate-100 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold text-slate-600">
-                      Pix copia e
-                      cola
-                    </p>
-
-                    <QrCode
-                      size={17}
-                      className="text-sky-600"
-                    />
+                    <div className="h-px flex-1 bg-slate-200" />
                   </div>
 
-                  <textarea
-                    readOnly
-                    value={
-                      pagamento
-                        .pixCopiaCola
-                    }
-                    rows={3}
-                    className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600 outline-none"
-                    aria-label="Código Pix copia e cola"
-                  />
+                  {pagamento.pixImagem ? (
+                    <div className="mx-auto w-fit rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <Image
+                        src={
+                          pagamento
+                            .pixImagem
+                            .startsWith(
+                              "data:"
+                            )
+                            ? pagamento
+                                .pixImagem
+                            : `data:image/png;base64,${pagamento.pixImagem}`
+                        }
+                        alt="QR Code Pix da assinatura"
+                        width={240}
+                        height={240}
+                        unoptimized
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl bg-slate-100 p-4 text-center text-sm font-semibold text-slate-500">
+                      O QR Code Pix não
+                      está disponível
+                      neste momento.
 
-                  <button
-                    type="button"
-                    onClick={
-                      copiarPix
-                    }
-                    className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-black text-white transition hover:bg-sky-600"
-                  >
-                    {copiado ? (
-                      <>
-                        <Check
-                          size={18}
+                      {pagamento.link &&
+                        " Você ainda pode abrir a cobrança pelo botão acima."}
+                    </div>
+                  )}
+
+                  {pagamento.pixCopiaCola && (
+                    <div className="mt-5 rounded-2xl bg-slate-100 p-4">
+
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold text-slate-600">
+                          Pix copia e cola
+                        </p>
+
+                        <QrCode
+                          size={17}
+                          className="text-sky-600"
                         />
+                      </div>
 
-                        Código
-                        copiado
-                      </>
-                    ) : (
-                      <>
-                        <Copy
-                          size={18}
-                        />
+                      <textarea
+                        readOnly
+                        value={
+                          pagamento
+                            .pixCopiaCola
+                        }
+                        rows={3}
+                        className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600 outline-none"
+                        aria-label="Código Pix copia e cola"
+                      />
 
-                        Copiar código
-                        Pix
-                      </>
-                    )}
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        onClick={
+                          copiarPix
+                        }
+                        className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-black text-white transition hover:bg-sky-600"
+                      >
+                        {copiado ? (
+                          <>
+                            <Check
+                              size={18}
+                            />
+
+                            Código copiado
+                          </>
+                        ) : (
+                          <>
+                            <Copy
+                              size={18}
+                            />
+
+                            Copiar código Pix
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-6 grid grid-cols-2 gap-3">
+
                 <div className="rounded-2xl border border-slate-200 p-4">
                   <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                    Valor
+                    {ehCartaoAnual
+                      ? "Parcela"
+                      : "Valor"}
                   </p>
 
                   <p className="mt-1 text-sm font-black">
-                    {formatarDinheiro(
-                      pagamento.valor
-                    )}
+                    {ehCartaoAnual
+                      ? "R$ 49,75"
+                      : formatarDinheiro(
+                          pagamento.valor
+                        )}
                   </p>
                 </div>
 
@@ -1033,6 +1285,31 @@ export default function AssinarPage() {
                   </p>
                 </div>
               </div>
+
+              {ehCartaoAnual && (
+                <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <CreditCard
+                      size={19}
+                      className="mt-0.5 shrink-0 text-emerald-600"
+                    />
+
+                    <div>
+                      <p className="text-sm font-black text-emerald-800">
+                        12 parcelas de R$ 49,75
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-emerald-700">
+                        Valor total contratado:
+                        R$ 597,00. Após a
+                        confirmação do pagamento,
+                        sua loja recebe 12 meses
+                        de acesso.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <button
                 type="button"
@@ -1057,12 +1334,11 @@ export default function AssinarPage() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle2
+                    <RefreshCw
                       size={18}
                     />
 
-                    Já paguei,
-                    verificar agora
+                    Já paguei, verificar agora
                   </>
                 )}
               </button>
@@ -1080,8 +1356,7 @@ export default function AssinarPage() {
                     size={17}
                   />
 
-                  Abrir cobrança no
-                  Asaas
+                  Abrir cobrança no Asaas
                 </Link>
               )}
             </div>
@@ -1090,6 +1365,7 @@ export default function AssinarPage() {
 
         <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.05] p-5">
           <div className="flex items-start gap-3">
+
             <LockKeyhole
               size={20}
               className="mt-0.5 shrink-0 text-sky-300"
@@ -1097,38 +1373,61 @@ export default function AssinarPage() {
 
             <div>
               <p className="text-sm font-bold">
-                Liberação
-                automática
+                Liberação automática
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-400">
-                Após a confirmação
-                do pagamento, seu
-                acesso será
-                liberado
-                automaticamente
-                pelo período do
-                plano contratado.
+                Após a confirmação do
+                pagamento, seu acesso
+                será liberado
+                automaticamente pelo
+                período do plano
+                contratado.
               </p>
             </div>
           </div>
         </div>
 
         <div className="mt-3 flex items-start gap-3 rounded-3xl border border-emerald-400/15 bg-emerald-400/[0.06] p-5">
+
           <ShieldCheck
             size={20}
             className="mt-0.5 shrink-0 text-emerald-400"
           />
 
           <p className="text-xs leading-5 text-slate-400">
-            Nas contratações
-            online, o cancelamento
-            pode ser solicitado em
-            até 7 dias, conforme a
-            legislação aplicável.
+            Nas contratações online,
+            o cancelamento pode ser
+            solicitado em até 7 dias,
+            conforme a legislação
+            aplicável.
           </p>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function AssinarPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#020b18] px-4 text-white">
+          <div className="text-center">
+            <LoaderCircle
+              size={38}
+              className="mx-auto animate-spin text-sky-400"
+            />
+
+            <p className="mt-4 text-sm text-slate-400">
+              Preparando sua
+              assinatura...
+            </p>
+          </div>
+        </main>
+      }
+    >
+      <AssinarConteudo />
+    </Suspense>
   );
 }

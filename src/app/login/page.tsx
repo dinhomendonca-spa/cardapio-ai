@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   type FormEvent,
   useEffect,
   useRef,
@@ -8,20 +9,27 @@ import {
 } from "react";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 
 import {
   ArrowRight,
+  CheckCircle2,
   Eye,
   EyeOff,
   Loader2,
   LockKeyhole,
   Mail,
+  MailCheck,
   Store,
   UserPlus,
 } from "lucide-react";
 
 import {
+  type PlanoCadastro,
   useAuth,
 } from "@/context/AuthContext";
 
@@ -31,9 +39,12 @@ type RespostaStatus = {
   erro?: string;
 };
 
-export default function LoginPage() {
+function LoginConteudo() {
   const router =
     useRouter();
+
+  const searchParams =
+    useSearchParams();
 
   const {
     user,
@@ -41,6 +52,17 @@ export default function LoginPage() {
     carregandoAuth,
     entrar,
   } = useAuth();
+
+  const plano: PlanoCadastro =
+    searchParams.get("plano") ===
+    "anual"
+      ? "anual"
+      : "mensal";
+
+  const emailConfirmado =
+    searchParams.get(
+      "confirmado"
+    ) === "1";
 
   const verificacaoIniciada =
     useRef(false);
@@ -90,7 +112,10 @@ export default function LoginPage() {
 
     const verificarDestino =
       async () => {
-        setVerificandoAcesso(true);
+        setVerificandoAcesso(
+          true
+        );
+
         setErro(null);
 
         try {
@@ -99,10 +124,12 @@ export default function LoginPage() {
               "/api/assinatura/status",
               {
                 method: "GET",
+
                 headers: {
                   authorization:
                     `Bearer ${session.access_token}`,
                 },
+
                 cache: "no-store",
               }
             );
@@ -122,10 +149,16 @@ export default function LoginPage() {
             return;
           }
 
+          if (resultado.ativo) {
+            router.replace(
+              "/admin"
+            );
+
+            return;
+          }
+
           router.replace(
-            resultado.ativo
-              ? "/admin"
-              : "/assinar"
+            `/assinar?plano=${plano}`
           );
         } catch (error) {
           if (cancelado) {
@@ -159,6 +192,7 @@ export default function LoginPage() {
     session?.access_token,
     carregandoAuth,
     router,
+    plano,
   ]);
 
   const fazerLogin = async (
@@ -166,6 +200,7 @@ export default function LoginPage() {
       FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
     setErro(null);
 
     if (
@@ -175,11 +210,15 @@ export default function LoginPage() {
       setErro(
         "Informe e-mail e senha."
       );
+
       return;
     }
 
     try {
       setEntrando(true);
+
+      verificacaoIniciada.current =
+        false;
 
       await entrar(
         email,
@@ -191,13 +230,38 @@ export default function LoginPage() {
         error
       );
 
-      setErro(
-        "E-mail ou senha incorretos, ou o e-mail ainda não foi confirmado."
-      );
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "";
+
+      const normalizada =
+        mensagem.toLowerCase();
+
+      const naoConfirmado =
+        normalizada.includes(
+          "email not confirmed"
+        ) ||
+        normalizada.includes(
+          "not confirmed"
+        );
+
+      if (naoConfirmado) {
+        setErro(
+          "Seu cadastro existe, mas o e-mail ainda não foi confirmado. Use a opção de reenviar a confirmação."
+        );
+      } else {
+        setErro(
+          "E-mail ou senha incorretos. Se você ainda não confirmou seu cadastro, reenvie o e-mail de confirmação."
+        );
+      }
 
       setEntrando(false);
     }
   };
+
+  const linkCadastro =
+    `/cadastro?plano=${plano}`;
 
   if (
     carregandoAuth ||
@@ -222,9 +286,12 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-[#020b18] px-4 py-8 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-sm flex-col justify-center">
+
         <div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white shadow-[0_14px_45px_rgba(14,165,233,0.35)]">
-            <Store size={25} />
+            <Store
+              size={25}
+            />
           </div>
 
           <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
@@ -232,19 +299,71 @@ export default function LoginPage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
-            Painel do comerciante
+            Acesse sua conta
           </h1>
 
           <p className="mt-2 max-w-xs text-sm leading-6 text-slate-400">
-            Entre para administrar sua
-            loja, produtos e pedidos.
+            Entre para continuar sua
+            contratação ou administrar
+            sua loja.
           </p>
         </div>
 
+        {emailConfirmado && (
+          <div className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4">
+            <div className="flex items-start gap-3">
+              <MailCheck
+                size={21}
+                className="mt-0.5 shrink-0 text-emerald-400"
+              />
+
+              <div>
+                <p className="text-sm font-black text-emerald-300">
+                  E-mail confirmado!
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-slate-300">
+                  Seu cadastro foi
+                  confirmado. Entre com
+                  seu e-mail e senha
+                  para continuar.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {plano === "anual" && (
+          <div className="mt-4 rounded-3xl border border-sky-400/20 bg-sky-400/[0.08] p-4 text-center">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-sky-300">
+              Oferta anual preservada
+            </p>
+
+            <div className="mt-2 flex items-end justify-center gap-1">
+              <span className="mb-1 text-xs font-bold text-slate-300">
+                12x de
+              </span>
+
+              <span className="text-3xl font-black text-white">
+                R$ 49,75
+              </span>
+            </div>
+
+            <p className="mt-2 text-xs text-slate-400">
+              Depois do login você
+              continuará para a
+              contratação desse plano.
+            </p>
+          </div>
+        )}
+
         <form
-          onSubmit={fazerLogin}
+          onSubmit={
+            fazerLogin
+          }
           className="mt-8 rounded-[28px] bg-white p-4 text-slate-950 shadow-2xl"
         >
+
           <div>
             <label
               htmlFor="email"
@@ -265,13 +384,18 @@ export default function LoginPage() {
                 inputMode="email"
                 autoComplete="email"
                 value={email}
-                onChange={(event) =>
+                onChange={(
+                  event
+                ) =>
                   setEmail(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="voce@empresa.com"
-                disabled={entrando}
+                disabled={
+                  entrando
+                }
                 className="h-14 w-full rounded-2xl bg-slate-100 pl-11 pr-4 text-base outline-none transition focus:ring-2 focus:ring-sky-300 disabled:opacity-60"
               />
             </div>
@@ -300,13 +424,18 @@ export default function LoginPage() {
                 }
                 autoComplete="current-password"
                 value={senha}
-                onChange={(event) =>
+                onChange={(
+                  event
+                ) =>
                   setSenha(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="Sua senha"
-                disabled={entrando}
+                disabled={
+                  entrando
+                }
                 className="h-14 w-full rounded-2xl bg-slate-100 pl-11 pr-12 text-base outline-none transition focus:ring-2 focus:ring-sky-300 disabled:opacity-60"
               />
 
@@ -314,7 +443,9 @@ export default function LoginPage() {
                 type="button"
                 onClick={() =>
                   setMostrarSenha(
-                    (atual) =>
+                    (
+                      atual
+                    ) =>
                       !atual
                   )
                 }
@@ -326,9 +457,13 @@ export default function LoginPage() {
                 }
               >
                 {mostrarSenha ? (
-                  <EyeOff size={18} />
+                  <EyeOff
+                    size={18}
+                  />
                 ) : (
-                  <Eye size={18} />
+                  <Eye
+                    size={18}
+                  />
                 )}
               </button>
             </div>
@@ -337,9 +472,9 @@ export default function LoginPage() {
           {erro && (
             <div
               role="alert"
-              className="mt-3 rounded-2xl bg-red-50 p-3"
+              className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-3"
             >
-              <p className="text-xs font-medium leading-5 text-red-700">
+              <p className="text-xs font-semibold leading-5 text-red-700">
                 {erro}
               </p>
             </div>
@@ -347,13 +482,15 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={entrando}
+            disabled={
+              entrando
+            }
             className="mt-5 flex h-14 w-full items-center justify-between rounded-2xl bg-slate-950 px-5 font-bold text-white transition hover:bg-sky-600 disabled:opacity-60"
           >
             <span>
               {entrando
                 ? "Entrando..."
-                : "Entrar"}
+                : "Entrar e continuar"}
             </span>
 
             {entrando ? (
@@ -367,21 +504,81 @@ export default function LoginPage() {
               />
             )}
           </button>
+
+          <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+            <div className="flex items-start gap-2">
+              <CheckCircle2
+                size={18}
+                className="mt-0.5 shrink-0 text-emerald-500"
+              />
+
+              <p className="text-xs leading-5 text-slate-600">
+                Se sua assinatura já
+                estiver ativa, você será
+                levado diretamente ao
+                painel. Caso contrário,
+                continuará para a
+                contratação.
+              </p>
+            </div>
+          </div>
         </form>
 
-        <Link
-          href="/cadastro"
-          className="mt-4 flex h-14 items-center justify-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-400/10 text-sm font-bold text-sky-200 transition hover:bg-sky-400/15"
-        >
-          <UserPlus size={18} />
-          Criar minha conta
-        </Link>
+        <div className="mt-4 grid gap-3">
+
+          <Link
+            href={linkCadastro}
+            className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-400/10 text-sm font-bold text-sky-200 transition hover:bg-sky-400/15"
+          >
+            <UserPlus
+              size={18}
+            />
+
+            Criar minha conta
+          </Link>
+
+          <Link
+            href={linkCadastro}
+            className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-xs font-bold text-slate-300 transition hover:bg-white/[0.08]"
+          >
+            <Mail
+              size={16}
+            />
+
+            Não recebi a confirmação
+          </Link>
+
+        </div>
 
         <p className="mt-5 text-center text-[11px] leading-5 text-slate-500">
-          Acesso exclusivo para
-          estabelecimentos cadastrados.
+          Se você já iniciou seu
+          cadastro, não precisa criar
+          outra conta.
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#020b18]">
+          <div className="text-center">
+            <Loader2
+              size={34}
+              className="mx-auto animate-spin text-sky-400"
+            />
+
+            <p className="mt-4 text-sm text-slate-400">
+              Carregando...
+            </p>
+          </div>
+        </main>
+      }
+    >
+      <LoginConteudo />
+    </Suspense>
   );
 }

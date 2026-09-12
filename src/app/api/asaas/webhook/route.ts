@@ -12,6 +12,7 @@ import {
 } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
+
 export const dynamic =
   "force-dynamic";
 
@@ -24,17 +25,25 @@ type PagamentoWebhook = {
   clientPaymentDate?: string;
   confirmedDate?: string;
   externalReference?: string;
+  installment?: string;
+  billingType?: string;
+  invoiceUrl?: string;
 };
 
 type EventoWebhook = {
+  id?: string;
   event?: string;
   payment?: PagamentoWebhook;
 };
 
 type PagamentoRegistrado = {
   loja_id: number;
+
   status: string;
-  pago_em: string | null;
+
+  pago_em:
+    | string
+    | null;
 
   plano:
     | "mensal"
@@ -46,10 +55,19 @@ type PagamentoRegistrado = {
   valor_contratado:
     | number
     | string;
+
+  asaas_parcelamento_id:
+    | string
+    | null;
+
+  forma_pagamento:
+    | string
+    | null;
 };
 
 type AssinaturaAtual = {
   status: string;
+
   inicio_periodo:
     | string
     | null;
@@ -273,6 +291,400 @@ async function buscarAssinatura(
     AssinaturaAtual;
 }
 
+async function buscarPagamentoPorId(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  pagamentoId: string
+) {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "pagamentos_assinatura"
+    )
+    .select(
+      `
+        loja_id,
+        status,
+        pago_em,
+        plano,
+        meses_creditados,
+        valor_contratado,
+        asaas_parcelamento_id,
+        forma_pagamento
+      `
+    )
+    .eq(
+      "asaas_pagamento_id",
+      pagamentoId
+    )
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      "Não foi possível localizar o pagamento."
+    );
+  }
+
+  return data as
+    | PagamentoRegistrado
+    | null;
+}
+
+async function registrarParcelaDesconhecida(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  pagamento: PagamentoWebhook
+) {
+  if (
+    !pagamento.id ||
+    !pagamento.installment
+  ) {
+    return null;
+  }
+
+  /*
+   * Caso o Asaas envie um evento de
+   * uma parcela antes de termos essa
+   * parcela específica no banco,
+   * localizamos outra cobrança do
+   * mesmo parcelamento e usamos seus
+   * dados como referência.
+   */
+
+  const {
+    data: referencia,
+    error: erroReferencia,
+  } = await supabase
+    .from(
+      "pagamentos_assinatura"
+    )
+    .select(
+      `
+        loja_id,
+        plano,
+        meses_creditados,
+        valor_contratado,
+        forma_pagamento
+      `
+    )
+    .eq(
+      "asaas_parcelamento_id",
+      pagamento.installment
+    )
+    .limit(1)
+    .maybeSingle();
+
+  if (erroReferencia) {
+    throw new Error(
+      "Não foi possível identificar o parcelamento."
+    );
+  }
+
+  if (!referencia) {
+    return null;
+  }
+
+  const novoRegistro = {
+    loja_id:
+      Number(
+        referencia.loja_id
+      ),
+
+    asaas_pagamento_id:
+      pagamento.id,
+
+    asaas_parcelamento_id:
+      pagamento.installment,
+
+    forma_pagamento:
+      referencia
+        .forma_pagamento ||
+      "cartao",
+
+    status:
+      pagamento.status ||
+      "PENDING",
+
+    valor:
+      Number(
+        pagamento.value ??
+          0
+      ),
+
+    vencimento:
+      pagamento.dueDate ??
+      null,
+
+    link_pagamento:
+      pagamento.invoiceUrl ??
+      null,
+
+    pix_copia_cola:
+      null,
+
+    plano:
+      referencia.plano,
+
+    meses_creditados:
+      Number(
+        referencia
+          .meses_creditados
+      ),
+
+    valor_contratado:
+      Number(
+        referencia
+          .valor_contratado
+      ),
+  };
+
+  const {
+    error: erroInsercao,
+  } = await supabase
+    .from(
+      "pagamentos_assinatura"
+    )
+    .insert(
+      novoRegistro
+    );
+
+  if (erroInsercao) {
+    /*
+     * Pode ocorrer se outro webhook
+     * registrar a mesma parcela quase
+     * simultaneamente.
+     *
+     * Nesse caso tentamos apenas
+     * buscar novamente.
+     */
+
+    const existente =
+      await buscarPagamentoPorId(
+        supabase,
+        pagamento.id
+      );
+
+    if (existente) {
+      return existente;
+    }
+
+    throw new Error(
+      "Não foi possível registrar a parcela recebida."
+    );
+  }
+
+  return await buscarPagamentoPorId(
+    supabase,
+    pagamento.id
+  );
+}
+
+async function buscarOuRegistrarPagamento(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  pagamento: PagamentoWebhook
+) {
+  if (!pagamento.id) {
+    return null;
+  }
+
+  const existente =
+    await buscarPagamentoPorId(
+      supabase,
+      pagamento.id
+    );
+
+  if (existente) {
+    return existente;
+  }
+
+  if (
+    pagamento.installment
+  ) {
+    return await registrarParcelaDesconhecida(
+      supabase,
+      pagamento
+    );
+  }
+
+  return null;
+}
+
+async function parcelamentoJaCreditado(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  parcelamentoId: string
+) {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "pagamentos_assinatura"
+    )
+    .select(
+      `
+        asaas_pagamento_id,
+        pago_em
+      `
+    )
+    .eq(
+      "asaas_parcelamento_id",
+      parcelamentoId
+    )
+    .not(
+      "pago_em",
+      "is",
+      null
+    )
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      "Não foi possível verificar o crédito do parcelamento."
+    );
+  }
+
+  return Boolean(
+    data?.pago_em
+  );
+}
+
+async function marcarPagamentoComoPago(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  pagamentoId: string,
+  pagoEm: string
+) {
+  const {
+    error,
+  } = await supabase
+    .from(
+      "pagamentos_assinatura"
+    )
+    .update({
+      pago_em:
+        pagoEm,
+
+      atualizado_em:
+        new Date()
+          .toISOString(),
+    })
+    .eq(
+      "asaas_pagamento_id",
+      pagamentoId
+    );
+
+  if (error) {
+    throw new Error(
+      "Não foi possível finalizar o pagamento."
+    );
+  }
+}
+
+async function obterParcelamentoDaCobranca(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  pagamentoId:
+    | string
+    | null
+) {
+  if (!pagamentoId) {
+    return null;
+  }
+
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "pagamentos_assinatura"
+    )
+    .select(
+      "asaas_parcelamento_id"
+    )
+    .eq(
+      "asaas_pagamento_id",
+      pagamentoId
+    )
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      "Não foi possível verificar a cobrança atual."
+    );
+  }
+
+  return (
+    data
+      ?.asaas_parcelamento_id ??
+    null
+  ) as
+    | string
+    | null;
+}
+
+async function pertenceACompraAtual(
+  supabase: ReturnType<
+    typeof getSupabaseAdmin
+  >,
+  assinatura: AssinaturaAtual,
+  pagamentoId: string,
+  pagamentoRegistrado:
+    PagamentoRegistrado
+) {
+  /*
+   * Cobrança avulsa atual.
+   */
+
+  if (
+    assinatura
+      .asaas_ultima_cobranca_id ===
+    pagamentoId
+  ) {
+    return true;
+  }
+
+  /*
+   * Em um parcelamento, cada parcela
+   * possui um payment.id diferente.
+   *
+   * Por isso comparamos o ID do
+   * parcelamento da cobrança recebida
+   * com o parcelamento da cobrança
+   * atualmente vinculada à assinatura.
+   */
+
+  const parcelamentoAtual =
+    pagamentoRegistrado
+      .asaas_parcelamento_id;
+
+  if (!parcelamentoAtual) {
+    return false;
+  }
+
+  const parcelamentoDaAssinatura =
+    await obterParcelamentoDaCobranca(
+      supabase,
+      assinatura
+        .asaas_ultima_cobranca_id
+    );
+
+  return (
+    parcelamentoDaAssinatura ===
+    parcelamentoAtual
+  );
+}
+
 export async function POST(
   request: NextRequest
 ) {
@@ -297,6 +709,7 @@ export async function POST(
       return NextResponse.json(
         {
           recebido: false,
+
           erro:
             "Webhook não autorizado.",
         },
@@ -323,6 +736,7 @@ export async function POST(
       return NextResponse.json(
         {
           recebido: false,
+
           erro:
             "Evento inválido.",
         },
@@ -335,40 +749,24 @@ export async function POST(
     const supabase =
       getSupabaseAdmin();
 
-    const {
-      data: registro,
-      error:
-        erroRegistro,
-    } = await supabase
-      .from(
-        "pagamentos_assinatura"
-      )
-      .select(
-        `
-          loja_id,
-          status,
-          pago_em,
-          plano,
-          meses_creditados,
-          valor_contratado
-        `
-      )
-      .eq(
-        "asaas_pagamento_id",
-        pagamento.id
-      )
-      .maybeSingle();
-
-    if (erroRegistro) {
-      throw new Error(
-        "Não foi possível localizar o pagamento."
+    const registro =
+      await buscarOuRegistrarPagamento(
+        supabase,
+        pagamento
       );
-    }
+
+    /*
+     * Se o pagamento não pertence
+     * ao Visite Minha Loja,
+     * ignoramos normalmente.
+     */
 
     if (!registro) {
       return NextResponse.json({
         recebido: true,
+
         ignorado: true,
+
         motivo:
           "Pagamento não pertence a uma assinatura cadastrada.",
       });
@@ -393,7 +791,14 @@ export async function POST(
         "pagamentos_assinatura"
       )
       .update({
-        status: novoStatus,
+        status:
+          novoStatus,
+
+        asaas_parcelamento_id:
+          pagamento.installment ||
+          pagamentoRegistrado
+            .asaas_parcelamento_id ||
+          null,
 
         atualizado_em:
           new Date()
@@ -424,22 +829,94 @@ export async function POST(
       )
     ) {
       /*
+       * Primeiro protegemos contra
+       * repetição do mesmo payment.id.
+       *
        * O Asaas pode enviar
        * PAYMENT_CONFIRMED e depois
-       * PAYMENT_RECEIVED para a
-       * mesma cobrança.
-       *
-       * Não podemos adicionar
-       * meses duas vezes.
+       * PAYMENT_RECEIVED para a mesma
+       * cobrança.
        */
+
       if (
         pagamentoRegistrado
           .pago_em
       ) {
         return NextResponse.json({
           recebido: true,
+
           duplicado: true,
+
+          motivo:
+            "Esta cobrança já havia sido processada.",
         });
+      }
+
+      const agora =
+        dataPagamento(
+          pagamento
+        );
+
+      const agoraIso =
+        agora.toISOString();
+
+      const ehParcelamentoAnual =
+        pagamentoRegistrado
+          .plano ===
+          "anual" &&
+        Boolean(
+          pagamentoRegistrado
+            .asaas_parcelamento_id
+        );
+
+      /*
+       * ========================================
+       * PROTEÇÃO ESPECIAL DO ANUAL PARCELADO
+       * ========================================
+       *
+       * As 12 parcelas têm IDs diferentes.
+       *
+       * A primeira confirmação ativa os
+       * 12 meses.
+       *
+       * As confirmações posteriores atualizam
+       * suas próprias cobranças, mas NÃO
+       * adicionam outros 12 meses.
+       */
+
+      if (
+        ehParcelamentoAnual &&
+        pagamentoRegistrado
+          .asaas_parcelamento_id
+      ) {
+        const jaCreditado =
+          await parcelamentoJaCreditado(
+            supabase,
+            pagamentoRegistrado
+              .asaas_parcelamento_id
+          );
+
+        if (jaCreditado) {
+          await marcarPagamentoComoPago(
+            supabase,
+            pagamento.id,
+            agoraIso
+          );
+
+          return NextResponse.json({
+            recebido: true,
+
+            parcelaProcessada:
+              true,
+
+            assinaturaJaCreditada:
+              true,
+
+            asaasParcelamentoId:
+              pagamentoRegistrado
+                .asaas_parcelamento_id,
+          });
+        }
       }
 
       const assinatura =
@@ -450,14 +927,11 @@ export async function POST(
         );
 
       /*
-       * O plano vem do nosso banco,
-       * não do valor recebido no
-       * webhook.
-       *
-       * Isso evita que alterações
-       * futuras de preço confundam
-       * a regra.
+       * A quantidade de meses vem do
+       * nosso banco, e não do valor
+       * recebido pelo webhook.
        */
+
       const ehAnual =
         pagamentoRegistrado
           .plano ===
@@ -488,13 +962,6 @@ export async function POST(
           ? "Anual Promocional"
           : "Mensal";
 
-      /*
-       * No plano anual este campo
-       * representa o equivalente
-       * mensal:
-       *
-       * 597 / 12 = 49,75
-       */
       const valorMensal =
         ehAnual
           ? Number(
@@ -504,11 +971,6 @@ export async function POST(
               ).toFixed(2)
             )
           : valorContratado;
-
-      const agora =
-        dataPagamento(
-          pagamento
-        );
 
       const fimAtual =
         assinatura.fim_periodo
@@ -525,16 +987,12 @@ export async function POST(
         );
 
       /*
-       * Se o cliente ainda possui
-       * dias pagos, o novo período
-       * começa depois deles.
-       *
-       * Exemplo:
-       * ainda tem 10 dias do mensal
-       * e compra o anual.
-       *
-       * Ele não perde os 10 dias.
+       * Caso futuramente exista
+       * renovação, o cliente não
+       * perde dias que já estavam
+       * pagos.
        */
+
       const possuiPeriodoAtivo =
         assinatura.status ===
           "ACTIVE" &&
@@ -554,15 +1012,14 @@ export async function POST(
         );
 
       /*
-       * MENSAL:
-       * próxima cobrança na data
-       * de término.
+       * No anual não criamos
+       * renovação automática.
        *
-       * ANUAL:
-       * nenhuma nova cobrança
-       * automática durante o
-       * contrato.
+       * No mensal mantemos o
+       * término como referência da
+       * próxima cobrança.
        */
+
       const proximaCobranca =
         ehAnual
           ? null
@@ -570,7 +1027,7 @@ export async function POST(
               fimDoNovoPeriodo
             );
 
-      const agoraIso =
+      const atualizadoEm =
         new Date()
           .toISOString();
 
@@ -580,7 +1037,8 @@ export async function POST(
       } = await supabase
         .from("assinaturas")
         .update({
-          status: "ACTIVE",
+          status:
+            "ACTIVE",
 
           plano:
             nomePlano,
@@ -599,6 +1057,17 @@ export async function POST(
           tolerancia_ate:
             null,
 
+          /*
+           * Mantemos a cobrança que
+           * efetivamente ativou a
+           * assinatura.
+           *
+           * Para parcelas seguintes,
+           * pertenceACompraAtual()
+           * consegue comparar pelo
+           * asaas_parcelamento_id.
+           */
+
           asaas_ultima_cobranca_id:
             pagamento.id,
 
@@ -615,7 +1084,7 @@ export async function POST(
             null,
 
           atualizado_em:
-            agoraIso,
+            atualizadoEm,
         })
         .eq(
           "loja_id",
@@ -631,18 +1100,16 @@ export async function POST(
         );
       }
 
-      /*
-       * Libera a loja.
-       */
       const {
         error: erroLoja,
       } = await supabase
         .from("lojas")
         .update({
-          ativo: true,
+          ativo:
+            true,
 
           atualizado_em:
-            agoraIso,
+            atualizadoEm,
         })
         .eq(
           "id",
@@ -657,39 +1124,24 @@ export async function POST(
       }
 
       /*
-       * Marca a cobrança como
-       * processada.
+       * Esta marcação é a trava
+       * contra crédito duplicado.
        *
-       * Essa informação também
-       * impede crédito duplicado.
+       * No parcelamento anual, depois
+       * dela as demais parcelas verão
+       * que o parcelamento inteiro já
+       * concedeu os 12 meses.
        */
-      const {
-        error:
-          erroPagoEm,
-      } = await supabase
-        .from(
-          "pagamentos_assinatura"
-        )
-        .update({
-          pago_em:
-            agora.toISOString(),
 
-          atualizado_em:
-            agoraIso,
-        })
-        .eq(
-          "asaas_pagamento_id",
-          pagamento.id
-        );
-
-      if (erroPagoEm) {
-        throw new Error(
-          "Não foi possível finalizar o pagamento."
-        );
-      }
+      await marcarPagamentoComoPago(
+        supabase,
+        pagamento.id,
+        agoraIso
+      );
 
       return NextResponse.json({
-        recebido: true,
+        recebido:
+          true,
 
         assinaturaAtivada:
           true,
@@ -701,6 +1153,10 @@ export async function POST(
 
         mesesCreditados:
           mesesCredito,
+
+        asaasParcelamentoId:
+          pagamentoRegistrado
+            .asaas_parcelamento_id,
 
         inicioPeriodo:
           inicioDoNovoPeriodo
@@ -756,38 +1212,42 @@ export async function POST(
         fimPeriodo!.getTime() >
           agora.getTime();
 
-      const ehUltimaCobrancaDaAssinatura =
-        assinatura
-          .asaas_ultima_cobranca_id ===
-        pagamento.id;
+      const pertenceAtual =
+        await pertenceACompraAtual(
+          supabase,
+          assinatura,
+          pagamento.id,
+          pagamentoRegistrado
+        );
 
       /*
-       * IMPORTANTE:
-       *
-       * Se existir um período pago
-       * ativo por outra cobrança,
-       * uma cobrança antiga vencida
-       * não pode bloquear a loja.
-       *
-       * Isso protege principalmente
-       * quem comprou o plano anual.
+       * Uma cobrança histórica não
+       * pode bloquear uma assinatura
+       * posterior.
        */
+
       if (
         possuiAcessoPagoAtivo &&
-        !ehUltimaCobrancaDaAssinatura
+        !pertenceAtual
       ) {
         return NextResponse.json({
-          recebido: true,
+          recebido:
+            true,
 
-          ignorado: true,
+          ignorado:
+            true,
 
           motivo:
-            "Existe um período pago ativo. A cobrança vencida é anterior à assinatura atual.",
+            "Existe um período pago ativo. A cobrança vencida pertence a uma contratação anterior.",
         });
       }
 
+      const atualizadoEm =
+        agora.toISOString();
+
       const {
-        error,
+        error:
+          erroAssinaturaVencida,
       } = await supabase
         .from("assinaturas")
         .update({
@@ -795,8 +1255,7 @@ export async function POST(
             "OVERDUE",
 
           atualizado_em:
-            agora
-              .toISOString(),
+            atualizadoEm,
         })
         .eq(
           "loja_id",
@@ -804,16 +1263,59 @@ export async function POST(
             .loja_id
         );
 
-      if (error) {
+      if (
+        erroAssinaturaVencida
+      ) {
         throw new Error(
           "Não foi possível marcar a assinatura como vencida."
         );
       }
 
+      /*
+       * Também bloqueamos a loja
+       * enquanto a contratação atual
+       * estiver inadimplente.
+       */
+
+      const {
+        error:
+          erroBloqueioLoja,
+      } = await supabase
+        .from("lojas")
+        .update({
+          ativo:
+            false,
+
+          atualizado_em:
+            atualizadoEm,
+        })
+        .eq(
+          "id",
+          pagamentoRegistrado
+            .loja_id
+        );
+
+      if (
+        erroBloqueioLoja
+      ) {
+        throw new Error(
+          "Não foi possível bloquear a loja."
+        );
+      }
+
       return NextResponse.json({
-        recebido: true,
+        recebido:
+          true,
+
         assinaturaVencida:
           true,
+
+        acessoBloqueado:
+          true,
+
+        asaasParcelamentoId:
+          pagamentoRegistrado
+            .asaas_parcelamento_id,
       });
     }
 
@@ -835,33 +1337,36 @@ export async function POST(
             .loja_id
         );
 
+      const pertenceAtual =
+        await pertenceACompraAtual(
+          supabase,
+          assinatura,
+          pagamento.id,
+          pagamentoRegistrado
+        );
+
       /*
-       * Uma cobrança histórica
-       * estornada não deve cancelar
-       * uma assinatura mais recente.
-       *
-       * Exemplo:
-       *
-       * cliente tinha mensal,
-       * depois comprou anual.
-       *
-       * Um evento antigo do mensal
-       * não derruba o anual.
+       * Uma cobrança antiga, mesmo
+       * que seja estornada depois,
+       * não deve derrubar uma
+       * assinatura comprada
+       * posteriormente.
        */
+
       if (
         assinatura
           .asaas_ultima_cobranca_id &&
-        assinatura
-          .asaas_ultima_cobranca_id !==
-          pagamento.id
+        !pertenceAtual
       ) {
         return NextResponse.json({
-          recebido: true,
+          recebido:
+            true,
 
-          ignorado: true,
+          ignorado:
+            true,
 
           motivo:
-            "O evento pertence a uma cobrança anterior e não à assinatura atual.",
+            "O evento pertence a uma contratação anterior e não à assinatura atual.",
         });
       }
 
@@ -907,7 +1412,8 @@ export async function POST(
       } = await supabase
         .from("lojas")
         .update({
-          ativo: false,
+          ativo:
+            false,
 
           atualizado_em:
             agora,
@@ -918,28 +1424,50 @@ export async function POST(
             .loja_id
         );
 
-      if (erroBloqueio) {
+      if (
+        erroBloqueio
+      ) {
         throw new Error(
           "Não foi possível bloquear a loja."
         );
       }
 
       return NextResponse.json({
-        recebido: true,
+        recebido:
+          true,
 
         assinaturaCancelada:
           true,
+
+        acessoBloqueado:
+          true,
+
+        asaasParcelamentoId:
+          pagamentoRegistrado
+            .asaas_parcelamento_id,
       });
     }
 
     /*
-     * Eventos do Asaas que não
-     * alteram o acesso.
+     * PAYMENT_CREATED,
+     * PAYMENT_UPDATED e demais
+     * eventos apenas sincronizam o
+     * status da cobrança.
      */
+
     return NextResponse.json({
-      recebido: true,
+      recebido:
+        true,
+
       eventoProcessado:
         false,
+
+      pagamentoId:
+        pagamento.id,
+
+      asaasParcelamentoId:
+        pagamentoRegistrado
+          .asaas_parcelamento_id,
     });
   } catch (error) {
     console.error(
@@ -951,7 +1479,8 @@ export async function POST(
 
     return NextResponse.json(
       {
-        recebido: false,
+        recebido:
+          false,
 
         erro:
           "Não foi possível processar o webhook.",
