@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
 import {
   ArrowLeft,
   Boxes,
@@ -12,26 +11,20 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
-
 import {
   useParams,
   useRouter,
 } from "next/navigation";
-
 import {
   ChangeEvent,
   useEffect,
   useRef,
   useState,
 } from "react";
-
 import {
   AjusteImagem,
 } from "@/context/ProductContext";
-
-import {
-  supabase,
-} from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 type Produto = {
   id: number;
@@ -57,12 +50,9 @@ function normalizarAjusteImagem(
 function converterPreco(
   valor: string
 ) {
-  const limpo =
-    valor.trim();
+  const limpo = valor.trim();
 
-  if (
-    limpo.includes(",")
-  ) {
+  if (limpo.includes(",")) {
     return Number(
       limpo
         .replace(/\./g, "")
@@ -70,40 +60,24 @@ function converterPreco(
     );
   }
 
-  return Number(
-    limpo
-  );
+  return Number(limpo);
 }
 
 export default function EditarProdutoPage() {
-  const params =
-    useParams();
-
-  const router =
-    useRouter();
-
-  const id =
-    Number(
-      params.id
-    );
+  const params = useParams();
+  const router = useRouter();
+  const id = Number(params.id);
 
   const inputImagemRef =
-    useRef<HTMLInputElement>(
-      null
-    );
+    useRef<HTMLInputElement>(null);
 
   const [
     produto,
     setProduto,
-  ] =
-    useState<Produto | null>(
-      null
-    );
+  ] = useState<Produto | null>(null);
 
-  const [
-    nome,
-    setNome,
-  ] = useState("");
+  const [nome, setNome] =
+    useState("");
 
   const [
     descricao,
@@ -115,25 +89,19 @@ export default function EditarProdutoPage() {
     setCategoria,
   ] = useState("");
 
-  const [
-    preco,
-    setPreco,
-  ] = useState("");
+  const [preco, setPreco] =
+    useState("");
 
-  const [
-    estoque,
-    setEstoque,
-  ] = useState("");
+  const [estoque, setEstoque] =
+    useState("");
 
   const [
     estoqueControlado,
     setEstoqueControlado,
   ] = useState(true);
 
-  const [
-    ativo,
-    setAtivo,
-  ] = useState(true);
+  const [ativo, setAtivo] =
+    useState(true);
 
   const [
     ajusteImagem,
@@ -150,18 +118,12 @@ export default function EditarProdutoPage() {
   const [
     arquivo,
     setArquivo,
-  ] =
-    useState<File | null>(
-      null
-    );
+  ] = useState<File | null>(null);
 
   const [
     preview,
     setPreview,
-  ] =
-    useState<string | null>(
-      null
-    );
+  ] = useState<string | null>(null);
 
   const [
     carregando,
@@ -174,8 +136,7 @@ export default function EditarProdutoPage() {
   ] = useState(false);
 
   useEffect(() => {
-    let cancelado =
-      false;
+    let cancelado = false;
 
     const carregarProduto =
       async () => {
@@ -203,16 +164,10 @@ export default function EditarProdutoPage() {
           } = await supabase
             .from("produtos")
             .select("*")
-            .eq(
-              "id",
-              id
-            )
+            .eq("id", id)
             .single();
 
-          if (
-            error ||
-            !data
-          ) {
+          if (error || !data) {
             throw (
               error ||
               new Error(
@@ -227,34 +182,24 @@ export default function EditarProdutoPage() {
 
           const produtoCarregado: Produto =
             {
-              id:
-                Number(
-                  data.id
-                ),
+              id: Number(data.id),
 
               nome:
-                data.nome ??
-                "",
+                data.nome ?? "",
 
               descricao:
-                data.descricao ??
-                "",
+                data.descricao ?? "",
 
               categoria:
-                data.categoria ??
-                "",
+                data.categoria ?? "",
 
-              preco:
-                Number(
-                  data.preco ??
-                    0
-                ),
+              preco: Number(
+                data.preco ?? 0
+              ),
 
-              estoque:
-                Number(
-                  data.estoque ??
-                    0
-                ),
+              estoque: Number(
+                data.estoque ?? 0
+              ),
 
               estoque_controlado:
                 data.estoque_controlado ??
@@ -270,8 +215,7 @@ export default function EditarProdutoPage() {
                 ),
 
               ativo:
-                data.ativo ??
-                true,
+                data.ativo ?? true,
             };
 
           setProduto(
@@ -293,10 +237,7 @@ export default function EditarProdutoPage() {
           setPreco(
             String(
               produtoCarregado.preco
-            ).replace(
-              ".",
-              ","
-            )
+            ).replace(".", ",")
           );
 
           setEstoque(
@@ -347,10 +288,7 @@ export default function EditarProdutoPage() {
     return () => {
       cancelado = true;
     };
-  }, [
-    id,
-    router,
-  ]);
+  }, [id, router]);
 
   useEffect(() => {
     return () => {
@@ -360,9 +298,7 @@ export default function EditarProdutoPage() {
         );
       }
     };
-  }, [
-    preview,
-  ]);
+  }, [preview]);
 
   const selecionarImagem = (
     event:
@@ -384,9 +320,7 @@ export default function EditarProdutoPage() {
         "Selecione um arquivo de imagem."
       );
 
-      event.target.value =
-        "";
-
+      event.target.value = "";
       return;
     }
 
@@ -401,9 +335,7 @@ export default function EditarProdutoPage() {
         "A imagem deve ter no máximo 15 MB."
       );
 
-      event.target.value =
-        "";
-
+      event.target.value = "";
       return;
     }
 
@@ -413,9 +345,7 @@ export default function EditarProdutoPage() {
       );
     }
 
-    setArquivo(
-      imagem
-    );
+    setArquivo(imagem);
 
     setPreview(
       URL.createObjectURL(
@@ -428,11 +358,8 @@ export default function EditarProdutoPage() {
     async (
       arquivoOriginal: File
     ): Promise<File> => {
-      const tamanhoMaximo =
-        1200;
-
-      const qualidade =
-        0.82;
+      const tamanhoMaximo = 1200;
+      const qualidade = 0.82;
 
       const urlOriginal =
         URL.createObjectURL(
@@ -449,22 +376,17 @@ export default function EditarProdutoPage() {
               const img =
                 new window.Image();
 
-              img.onload =
-                () =>
-                  resolve(
-                    img
-                  );
+              img.onload = () =>
+                resolve(img);
 
-              img.onerror =
-                () =>
-                  reject(
-                    new Error(
-                      "Não foi possível processar a imagem."
-                    )
-                  );
+              img.onerror = () =>
+                reject(
+                  new Error(
+                    "Não foi possível processar a imagem."
+                  )
+                );
 
-              img.src =
-                urlOriginal;
+              img.src = urlOriginal;
             }
           );
 
@@ -493,22 +415,17 @@ export default function EditarProdutoPage() {
             Math.min(
               tamanhoMaximo /
                 largura,
-
               tamanhoMaximo /
                 altura
             );
 
-          largura =
-            Math.round(
-              largura *
-                proporcao
-            );
+          largura = Math.round(
+            largura * proporcao
+          );
 
-          altura =
-            Math.round(
-              altura *
-                proporcao
-            );
+          altura = Math.round(
+            altura * proporcao
+          );
         }
 
         const canvas =
@@ -516,16 +433,11 @@ export default function EditarProdutoPage() {
             "canvas"
           );
 
-        canvas.width =
-          largura;
-
-        canvas.height =
-          altura;
+        canvas.width = largura;
+        canvas.height = altura;
 
         const contexto =
-          canvas.getContext(
-            "2d"
-          );
+          canvas.getContext("2d");
 
         if (!contexto) {
           throw new Error(
@@ -564,9 +476,7 @@ export default function EditarProdutoPage() {
               reject
             ) => {
               canvas.toBlob(
-                (
-                  resultado
-                ) => {
+                (resultado) => {
                   if (!resultado) {
                     reject(
                       new Error(
@@ -577,13 +487,9 @@ export default function EditarProdutoPage() {
                     return;
                   }
 
-                  resolve(
-                    resultado
-                  );
+                  resolve(resultado);
                 },
-
                 "image/webp",
-
                 qualidade
               );
             }
@@ -601,16 +507,13 @@ export default function EditarProdutoPage() {
             );
 
         return new File(
-          [
-            blob,
-          ],
-
-          `${nomeSemExtensao || "produto"}.webp`,
-
+          [blob],
+          `${
+            nomeSemExtensao ||
+            "produto"
+          }.webp`,
           {
-            type:
-              "image/webp",
-
+            type: "image/webp",
             lastModified:
               Date.now(),
           }
@@ -636,9 +539,7 @@ export default function EditarProdutoPage() {
       const nomeArquivo =
         `produtos/${id}/${Date.now()}-${crypto.randomUUID()}.webp`;
 
-      const {
-        error,
-      } =
+      const { error } =
         await supabase.storage
           .from(
             "product-images"
@@ -650,8 +551,7 @@ export default function EditarProdutoPage() {
               cacheControl:
                 "31536000",
 
-              upsert:
-                false,
+              upsert: false,
 
               contentType:
                 "image/webp",
@@ -662,9 +562,7 @@ export default function EditarProdutoPage() {
         throw error;
       }
 
-      const {
-        data,
-      } =
+      const { data } =
         supabase.storage
           .from(
             "product-images"
@@ -679,20 +577,15 @@ export default function EditarProdutoPage() {
   const salvarProduto =
     async () => {
       const precoNumerico =
-        converterPreco(
-          preco
-        );
+        converterPreco(preco);
 
       const estoqueNumerico =
-        Number(
-          estoque
-        );
+        Number(estoque);
 
       if (!nome.trim()) {
         alert(
           "Preencha o nome do produto."
         );
-
         return;
       }
 
@@ -700,7 +593,6 @@ export default function EditarProdutoPage() {
         alert(
           "Preencha a categoria do produto."
         );
-
         return;
       }
 
@@ -713,15 +605,13 @@ export default function EditarProdutoPage() {
         alert(
           "Informe um preço válido."
         );
-
         return;
       }
 
       if (
         estoqueControlado &&
         (
-          estoque.trim() ===
-            "" ||
+          estoque.trim() === "" ||
           !Number.isInteger(
             estoqueNumerico
           ) ||
@@ -731,7 +621,6 @@ export default function EditarProdutoPage() {
         alert(
           "Informe uma quantidade de estoque válida."
         );
-
         return;
       }
 
@@ -741,53 +630,45 @@ export default function EditarProdutoPage() {
         const imagemUrl =
           await fazerUploadNovaImagem();
 
-        const {
-          error,
-        } = await supabase
-          .from("produtos")
-          .update({
-            nome:
-              nome.trim(),
+        const { error } =
+          await supabase
+            .from("produtos")
+            .update({
+              nome: nome.trim(),
 
-            descricao:
-              descricao.trim(),
+              descricao:
+                descricao.trim(),
 
-            categoria:
-              categoria.trim(),
+              categoria:
+                categoria.trim(),
 
-            preco:
-              precoNumerico,
+              preco:
+                precoNumerico,
 
-            estoque:
-              estoqueControlado
-                ? estoqueNumerico
-                : 0,
+              estoque:
+                estoqueControlado
+                  ? estoqueNumerico
+                  : 0,
 
-            estoque_controlado:
-              estoqueControlado,
+              estoque_controlado:
+                estoqueControlado,
 
-            imagem:
-              imagemUrl,
+              imagem: imagemUrl,
 
-            ajuste_imagem:
-              ajusteImagem,
+              ajuste_imagem:
+                ajusteImagem,
 
-            ativo,
-          })
-          .eq(
-            "id",
-            id
-          );
+              ativo,
+            })
+            .eq("id", id);
 
         if (error) {
           throw error;
         }
 
-        router.push(
+        window.location.replace(
           "/admin/produtos"
         );
-
-        router.refresh();
       } catch (error) {
         console.error(
           "Erro ao editar produto:",
@@ -799,7 +680,7 @@ export default function EditarProdutoPage() {
             ? error.message
             : "Não foi possível editar o produto."
         );
-      } finally {
+
         setSalvando(false);
       }
     };
@@ -826,19 +707,20 @@ export default function EditarProdutoPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020b18] pb-12 text-white">
+      {/* FUNDO DECORATIVO */}
       <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-sky-500/20 blur-[120px]" />
 
       <div className="pointer-events-none absolute -right-44 top-72 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]" />
 
+      {/* CABEÇALHO */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#020b18]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
           <Link
             href="/admin/produtos"
+            replace
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
           >
-            <ArrowLeft
-              size={20}
-            />
+            <ArrowLeft size={20} />
           </Link>
 
           <div>
@@ -853,13 +735,13 @@ export default function EditarProdutoPage() {
         </div>
       </header>
 
+      {/* CONTEÚDO */}
       <section className="relative z-10 mx-auto max-w-md space-y-5 px-4 py-5">
+        {/* APRESENTAÇÃO */}
         <section className="rounded-[28px] border border-sky-300/20 bg-gradient-to-br from-sky-500/20 to-blue-600/10 p-5">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600">
-              <Pencil
-                size={22}
-              />
+              <Pencil size={22} />
             </div>
 
             <div className="min-w-0">
@@ -874,6 +756,7 @@ export default function EditarProdutoPage() {
           </div>
         </section>
 
+        {/* FOTO */}
         <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
           <div className="flex items-center gap-3">
             <ImagePlus
@@ -929,9 +812,7 @@ export default function EditarProdutoPage() {
                   : "object-contain p-2"
               }
               unoptimized={
-                Boolean(
-                  preview
-                )
+                Boolean(preview)
               }
             />
 
@@ -946,6 +827,7 @@ export default function EditarProdutoPage() {
             </p>
           )}
 
+          {/* AJUSTE DA IMAGEM */}
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
             <div className="flex items-start gap-3">
               <Maximize2
@@ -1009,6 +891,7 @@ export default function EditarProdutoPage() {
           </div>
         </section>
 
+        {/* INFORMAÇÕES */}
         <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
           <h2 className="font-black">
             Informações
@@ -1125,6 +1008,7 @@ export default function EditarProdutoPage() {
           </div>
         </section>
 
+        {/* ESTOQUE */}
         <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
           <div className="flex items-center gap-3">
             <Boxes
@@ -1150,13 +1034,10 @@ export default function EditarProdutoPage() {
                 !estoqueControlado
               );
 
-              if (
-                estoqueControlado
-              ) {
+              if (estoqueControlado) {
                 setEstoque("");
               } else if (
-                estoque.trim() ===
-                ""
+                estoque.trim() === ""
               ) {
                 setEstoque("0");
               }
@@ -1217,13 +1098,12 @@ export default function EditarProdutoPage() {
           )}
         </section>
 
+        {/* DISPONIBILIDADE */}
         <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
           <button
             type="button"
             onClick={() =>
-              setAtivo(
-                !ativo
-              )
+              setAtivo(!ativo)
             }
             className="flex w-full items-center justify-between"
           >
@@ -1255,14 +1135,13 @@ export default function EditarProdutoPage() {
           </button>
         </section>
 
+        {/* SALVAR */}
         <button
           type="button"
           onClick={
             salvarProduto
           }
-          disabled={
-            salvando
-          }
+          disabled={salvando}
           className="flex min-h-16 w-full items-center justify-center gap-3 rounded-[22px] bg-gradient-to-r from-sky-500 to-blue-600 px-5 font-black shadow-lg transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {salvando ? (
@@ -1276,10 +1155,7 @@ export default function EditarProdutoPage() {
             </>
           ) : (
             <>
-              <Save
-                size={20}
-              />
-
+              <Save size={20} />
               Salvar alterações
             </>
           )}
