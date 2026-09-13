@@ -221,23 +221,23 @@ export default function LojaPublicaPage() {
   return (
     <main className="min-h-screen min-w-0 max-w-full overflow-x-hidden bg-[#f5f6f8] pb-32 text-slate-950">
       {/* BANNER */}
-      <section className="relative h-44 max-w-full overflow-hidden bg-white md:mx-auto md:aspect-[4/1] md:h-auto md:max-w-6xl">
+      <section className="relative h-44 max-w-full overflow-hidden bg-white sm:h-56 lg:mx-auto lg:aspect-[4/1] lg:h-auto lg:max-w-6xl">
         <Image
           src={banner}
           alt={`Banner da ${nomeLoja}`}
           fill
           priority
-          sizes="(max-width: 767px) 100vw, 1152px"
-          className="object-cover object-center md:object-contain"
+          sizes="(max-width: 1023px) 100vw, 1152px"
+          className="object-cover object-center lg:object-contain"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25 md:hidden" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25 lg:hidden" />
       </section>
 
       {/* INFORMAÇÕES DA LOJA */}
-      <section className="relative mx-auto -mt-10 box-border max-w-md px-4 md:-mt-12">
+      <section className="relative mx-auto -mt-10 box-border max-w-md px-4 lg:-mt-12">
         <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.10)]">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w--w-0 items-center gap-3">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px] border-4 border-white shadow-md sm:h-20 sm:w-20">
               <Image
                 src={logo}
@@ -315,7 +315,7 @@ export default function LojaPublicaPage() {
       </section>
 
       {/* BUSCA, CATEGORIAS E PRODUTOS */}
-      <section className="mx-auto box-border max-w-md px-4 pt-5 md:max-w-6xl">
+      <section className="mx-auto box-border max-w-md px-4 pt-5 lg:max-w-6xl">
         {/* BUSCA */}
         <div className="flex min-w-0 items-center gap-3 overflow-hidden rounded-[18px] bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
           <Search
@@ -404,7 +404,7 @@ export default function LojaPublicaPage() {
               </p>
             </div>
           ) : (
-            <div className="min-w-0 max-w-full space-y-4 md:flex md:items-stretch md:gap-5 md:space-y-0 md:overflow-x-auto md:pb-6">
+            <div className="min-w-0 max-w-full space-y-4 lg:grid lg:grid-cols-3 lg:items-stretch lg:gap-5 lg:space-y-0">
               {produtosFiltrados.map(
                 (produto) => {
                   const quantidade =
@@ -430,19 +430,19 @@ export default function LojaPublicaPage() {
                   return (
                     <article
                       key={produto.id}
-                      className={`min-w-0 max-w-full overflow-hidden rounded-[26px] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] md:flex md:w-[360px] md:min-w-[360px] md:shrink-0 md:flex-col ${
+                      className={`min-w-0 max-w-full overflow-hidden rounded-[26px] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] lg:flex lg:flex-col ${
                         esgotado
                           ? "opacity-75"
                           : ""
                       }`}
                     >
                       {/* IMAGEM */}
-                      <div className="relative h-64 min-w-0 max-w-full overflow-hidden bg-white md:h-64 md:shrink-0">
+                      <div className="relative h-64 min-w-0 max-w-full overflow-hidden bg-white lg:h-72 lg:shrink-0">
                         <Image
                           src={produto.imagem}
                           alt={produto.nome}
                           fill
-                          sizes="(max-width: 767px) calc(100vw - 32px), 360px"
+                          sizes="(max-width: 1023px) calc(100vw - 32px), 370px"
                           className={`${
                             produto.ajuste_imagem ===
                             "preencher"
@@ -465,7 +465,7 @@ export default function LojaPublicaPage() {
                       </div>
 
                       {/* INFORMAÇÕES DO PRODUTO */}
-                      <div className="min-w-0 max-w-full overflow-hidden p-5 md:flex md:flex-1 md:flex-col">
+                      <div className="min-w-0 max-w-full overflow-hidden p-5 lg:flex lg:flex-1 lg:flex-col">
                         <h3 className="min-w-0 max-w-full break-words text-lg font-black [overflow-wrap:anywhere]">
                           {produto.nome}
                         </h3>
@@ -517,7 +517,7 @@ export default function LojaPublicaPage() {
                         )}
 
                         {/* PREÇO E CONTROLES */}
-                        <div className="mt-5 grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:mt-auto md:pt-5">
+                        <div className="mt-5 grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 lg:mt-auto lg:pt-5">
                           <span className="min-w-0 break-words text-xl font-black">
                             {formatarPreco(
                               produto.preco
