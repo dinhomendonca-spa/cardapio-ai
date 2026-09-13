@@ -153,6 +153,9 @@ export const viewport: Viewport = {
   initialScale:
     1,
 
+  maximumScale:
+    5,
+
   viewportFit:
     "cover",
 };
@@ -167,20 +170,22 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       spellCheck={true}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full w-full overflow-x-hidden antialiased`}
     >
       <body
         lang="pt-BR"
         spellCheck={true}
         autoCorrect="on"
         autoCapitalize="sentences"
-        className="flex min-h-full flex-col"
+        className="flex min-h-full w-full min-w-0 max-w-full flex-col overflow-x-hidden"
       >
         <AuthProvider>
           <StoreProvider>
             <ProductProvider>
               <CartProvider>
-                {children}
+                <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+                  {children}
+                </div>
               </CartProvider>
             </ProductProvider>
           </StoreProvider>
