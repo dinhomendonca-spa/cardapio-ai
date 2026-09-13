@@ -314,7 +314,8 @@ export default function LojaPublicaPage() {
           alt={`Banner da ${nomeLoja}`}
           fill
           priority
-          className="object-cover"
+          sizes="100vw"
+          className="object-cover object-center"
         />
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25" />
@@ -323,73 +324,72 @@ export default function LojaPublicaPage() {
       {/* CARD DA LOJA */}
       <section className="relative mx-auto -mt-10 max-w-md px-4">
         <div className="rounded-[28px] bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.10)]">
-          <div className="flex items-start gap-4">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[20px] border-4 border-white shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px] border-4 border-white shadow-md sm:h-20 sm:w-20">
               <Image
                 src={logo}
                 alt={`Logo da ${nomeLoja}`}
                 fill
+                sizes="80px"
                 className="object-cover"
               />
             </div>
 
-            <div className="min-w-0 flex-1 pt-1">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h1 className="truncate text-xl font-black">
-                    {nomeLoja}
-                  </h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="break-words text-lg font-black leading-tight sm:text-xl">
+                {nomeLoja}
+              </h1>
 
-                  {descricaoLoja && (
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
-                      {descricaoLoja}
-                    </p>
-                  )}
-                </div>
+              <div
+                className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                  lojaDemonstracao
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                <BadgeCheck
+                  size={14}
+                />
 
-                <div
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
-                    lojaDemonstracao
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-emerald-50 text-emerald-700"
-                  }`}
-                >
-                  <BadgeCheck
-                    size={14}
-                  />
-
-                  {lojaDemonstracao
-                    ? "Demonstração"
-                    : "Loja online"}
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                {tempoEntrega && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 font-semibold text-slate-600">
-                    <Clock3
-                      size={14}
-                    />
-
-                    {tempoEntrega}
-                  </span>
-                )}
-
-                <span className="rounded-full bg-emerald-50 px-3 py-2 font-semibold text-emerald-700">
-                  Aberto agora
-                </span>
+                {lojaDemonstracao
+                  ? "Demonstração"
+                  : "Loja online"}
               </div>
             </div>
+          </div>
+
+          {descricaoLoja && (
+            <p className="mt-4 break-words text-sm leading-6 text-slate-500">
+              {descricaoLoja}
+            </p>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            {tempoEntrega && (
+              <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 font-semibold text-slate-600">
+                <Clock3
+                  size={14}
+                />
+
+                {tempoEntrega}
+              </span>
+            )}
+
+            <span className="rounded-full bg-emerald-50 px-3 py-2 font-semibold text-emerald-700">
+              Aberto agora
+            </span>
           </div>
 
           {localizacao && (
             <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-4 text-sm text-slate-500">
               <MapPin
                 size={16}
-                className="text-blue-600"
+                className="shrink-0 text-blue-600"
               />
 
-              {localizacao}
+              <span className="break-words">
+                {localizacao}
+              </span>
             </div>
           )}
         </div>
@@ -398,7 +398,7 @@ export default function LojaPublicaPage() {
         <div className="flex items-center gap-3 rounded-[18px] bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
           <Search
             size={19}
-            className="text-slate-400"
+            className="shrink-0 text-slate-400"
           />
 
           <input
@@ -410,7 +410,7 @@ export default function LojaPublicaPage() {
               )
             }
             placeholder="O que você está procurando?"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
           />
         </div>
 
@@ -560,18 +560,18 @@ export default function LojaPublicaPage() {
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-lg font-black">
+                            <h3 className="break-words text-lg font-black">
                               {produto.nome}
                             </h3>
 
-                            <span className="mt-2 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
+                            <span className="mt-2 inline-flex max-w-full break-words rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
                               {produto.categoria}
                             </span>
                           </div>
                         </div>
 
                         {produto.descricao && (
-                          <p className="mt-3 text-sm leading-6 text-slate-500">
+                          <p className="mt-3 break-words text-sm leading-6 text-slate-500">
                             {produto.descricao}
                           </p>
                         )}
@@ -582,7 +582,7 @@ export default function LojaPublicaPage() {
                               <div className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2">
                                 <AlertTriangle
                                   size={14}
-                                  className="text-red-500"
+                                  className="shrink-0 text-red-500"
                                 />
 
                                 <span className="text-xs font-bold text-red-600">
@@ -593,7 +593,7 @@ export default function LojaPublicaPage() {
                               <div className="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2">
                                 <AlertTriangle
                                   size={14}
-                                  className="text-amber-500"
+                                  className="shrink-0 text-amber-500"
                                 />
 
                                 <span className="text-xs font-bold text-amber-700">
@@ -608,7 +608,7 @@ export default function LojaPublicaPage() {
                             ) : null}
                           </div>
                         )}                        <div className="mt-5 flex items-center justify-between gap-3">
-                          <span className="text-xl font-black">
+                          <span className="min-w-0 break-words text-xl font-black">
                             {formatarPreco(
                               produto.preco
                             )}
@@ -618,7 +618,7 @@ export default function LojaPublicaPage() {
                             <button
                               type="button"
                               disabled
-                              className="rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-400"
+                              className="shrink-0 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-400"
                             >
                               Esgotado
                             </button>
@@ -632,14 +632,14 @@ export default function LojaPublicaPage() {
                                 )
                               }
                               aria-label={`Adicionar ${produto.nome} ao carrinho`}
-                              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md transition hover:bg-blue-700 active:scale-95"
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md transition hover:bg-blue-700 active:scale-95"
                             >
                               <Plus
                                 size={20}
                               />
                             </button>
                           ) : (
-                            <div className="flex items-center gap-3 rounded-2xl bg-slate-100 p-1">
+                            <div className="flex shrink-0 items-center gap-3 rounded-2xl bg-slate-100 p-1">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -707,10 +707,10 @@ export default function LojaPublicaPage() {
         <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
           <Link
             href={`/loja/${loja.slug}/checkout`}
-            className="mx-auto flex w-full max-w-md items-center justify-between rounded-[22px] bg-slate-950 px-5 py-4 text-white shadow-[0_18px_45px_rgba(15,23,42,0.25)] transition active:scale-[0.99]"
+            className="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-[22px] bg-slate-950 px-5 py-4 text-white shadow-[0_18px_45px_rgba(15,23,42,0.25)] transition active:scale-[0.99]"
           >
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
                 <ShoppingCart
                   size={19}
                 />
@@ -720,18 +720,18 @@ export default function LojaPublicaPage() {
                 </span>
               </div>
 
-              <div className="text-left">
+              <div className="min-w-0 text-left">
                 <p className="text-xs text-slate-400">
                   Seu pedido
                 </p>
 
-                <p className="font-bold">
+                <p className="truncate font-bold">
                   Ver carrinho
                 </p>
               </div>
             </div>
 
-            <span className="font-black">
+            <span className="shrink-0 font-black">
               {formatarPreco(
                 valorTotal
               )}
