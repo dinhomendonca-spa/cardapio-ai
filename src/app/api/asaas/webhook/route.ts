@@ -453,15 +453,6 @@ async function registrarParcelaDesconhecida(
     );
 
   if (erroInsercao) {
-    /*
-     * Pode ocorrer se outro webhook
-     * registrar a mesma parcela quase
-     * simultaneamente.
-     *
-     * Nesse caso tentamos apenas
-     * buscar novamente.
-     */
-
     const existente =
       await buscarPagamentoPorId(
         supabase,
@@ -481,9 +472,7 @@ async function registrarParcelaDesconhecida(
     supabase,
     pagamento.id
   );
-}
-
-async function buscarOuRegistrarPagamento(
+}async function buscarOuRegistrarPagamento(
   supabase: ReturnType<
     typeof getSupabaseAdmin
   >,
@@ -776,6 +765,44 @@ export async function POST(
       registro as
         PagamentoRegistrado;
 
+    /*
+     * A proteção abaixo é exclusiva
+     * da loja que você marcar no
+     * Supabase com acesso_vitalicio.
+     *
+     * Nenhuma outra loja ganha acesso
+     * por causa desta regra.
+     */
+
+    const {
+      data: loja,
+      error: erroLoja,
+    } = await supabase
+      .from("lojas")
+      .select("acesso_vitalicio")
+      .eq(
+        "id",
+        pagamentoRegistrado.loja_id
+      )
+      .single();
+
+    if (erroLoja) {
+      throw new Error(
+        "Não foi possível consultar a loja."
+      );
+    }
+
+    if (loja?.acesso_vitalicio) {
+      return NextResponse.json({
+        recebido: true,
+
+        ignorado: true,
+
+        motivo:
+          "A loja possui acesso vitalício e não pode ser alterada pelo Asaas.",
+      });
+    }
+
     const novoStatus =
       pagamento.status ||
       evento.replace(
@@ -831,11 +858,6 @@ export async function POST(
       /*
        * Primeiro protegemos contra
        * repetição do mesmo payment.id.
-       *
-       * O Asaas pode enviar
-       * PAYMENT_CONFIRMED e depois
-       * PAYMENT_RECEIVED para a mesma
-       * cobrança.
        */
 
       if (
@@ -868,21 +890,6 @@ export async function POST(
           pagamentoRegistrado
             .asaas_parcelamento_id
         );
-
-      /*
-       * ========================================
-       * PROTEÇÃO ESPECIAL DO ANUAL PARCELADO
-       * ========================================
-       *
-       * As 12 parcelas têm IDs diferentes.
-       *
-       * A primeira confirmação ativa os
-       * 12 meses.
-       *
-       * As confirmações posteriores atualizam
-       * suas próprias cobranças, mas NÃO
-       * adicionam outros 12 meses.
-       */
 
       if (
         ehParcelamentoAnual &&
@@ -926,12 +933,6 @@ export async function POST(
             .loja_id
         );
 
-      /*
-       * A quantidade de meses vem do
-       * nosso banco, e não do valor
-       * recebido pelo webhook.
-       */
-
       const ehAnual =
         pagamentoRegistrado
           .plano ===
@@ -971,8 +972,7 @@ export async function POST(
               ).toFixed(2)
             )
           : valorContratado;
-
-      const fimAtual =
+                const fimAtual =
         assinatura.fim_periodo
           ? new Date(
               assinatura
@@ -1061,11 +1061,6 @@ export async function POST(
            * Mantemos a cobrança que
            * efetivamente ativou a
            * assinatura.
-           *
-           * Para parcelas seguintes,
-           * pertenceACompraAtual()
-           * consegue comparar pelo
-           * asaas_parcelamento_id.
            */
 
           asaas_ultima_cobranca_id:
@@ -1126,11 +1121,6 @@ export async function POST(
       /*
        * Esta marcação é a trava
        * contra crédito duplicado.
-       *
-       * No parcelamento anual, depois
-       * dela as demais parcelas verão
-       * que o parcelamento inteiro já
-       * concedeu os 12 meses.
        */
 
       await marcarPagamentoComoPago(
@@ -1318,8 +1308,7 @@ export async function POST(
             .asaas_parcelamento_id,
       });
     }
-
-    /*
+        /*
      * ==========================================
      * ESTORNO / CHARGEBACK / CANCELAMENTO
      * ==========================================
@@ -1451,8 +1440,8 @@ export async function POST(
     /*
      * PAYMENT_CREATED,
      * PAYMENT_UPDATED e demais
-     * eventos apenas sincronizam o
-     * status da cobrança.
+     * eventos apenas sincronizam
+     * o status da cobrança.
      */
 
     return NextResponse.json({

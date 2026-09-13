@@ -8,6 +8,7 @@ import {
 } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
+
 export const dynamic = "force-dynamic";
 
 function respostaNaoAutorizada() {
@@ -63,40 +64,51 @@ export async function GET(
       return respostaNaoAutorizada();
     }
 
-    const usuario =
-      usuarioData.user;
-
     const {
       data: perfil,
       error: erroPerfil,
     } = await supabase
       .from("perfis")
       .select("loja_id")
-      .eq("id", usuario.id)
+      .eq("id", usuarioData.user.id)
       .single();
 
-    if (erroPerfil || !perfil) {
-      return NextResponse.json(
-        {
-          status: "PENDING",
-          ativo: false,
-          lojaId: null,
-          fimPeriodo: null,
-          proximaCobranca: null,
-        }
+    if (
+      erroPerfil ||
+      !perfil?.loja_id
+    ) {
+      return NextResponse.json({
+        status: "PENDING",
+        ativo: false,
+        lojaId: null,
+        fimPeriodo: null,
+        proximaCobranca: null,
+      });
+    }
+
+    const {
+      data: loja,
+      error: erroLoja,
+    } = await supabase
+      .from("lojas")
+      .select("acesso_vitalicio")
+      .eq("id", perfil.loja_id)
+      .single();
+
+    if (erroLoja || !loja) {
+      throw new Error(
+        "Não foi possível consultar a loja."
       );
     }
 
-    if (!perfil.loja_id) {
-      return NextResponse.json(
-        {
-          status: "PENDING",
-          ativo: false,
-          lojaId: null,
-          fimPeriodo: null,
-          proximaCobranca: null,
-        }
-      );
+    if (loja.acesso_vitalicio) {
+      return NextResponse.json({
+        status: "LIFETIME",
+        ativo: true,
+        lojaId: perfil.loja_id,
+        fimPeriodo: null,
+        proximaCobranca: null,
+      });
     }
 
     const {
@@ -107,10 +119,7 @@ export async function GET(
       .select(
         "status, fim_periodo, proxima_cobranca"
       )
-      .eq(
-        "loja_id",
-        perfil.loja_id
-      )
+      .eq("loja_id", perfil.loja_id)
       .maybeSingle();
 
     if (erroAssinatura) {
@@ -120,40 +129,30 @@ export async function GET(
     }
 
     if (!assinatura) {
-      return NextResponse.json(
-        {
-          status: "PENDING",
-          ativo: false,
-          lojaId:
-            perfil.loja_id,
-          fimPeriodo: null,
-          proximaCobranca: null,
-        }
-      );
+      return NextResponse.json({
+        status: "PENDING",
+        ativo: false,
+        lojaId: perfil.loja_id,
+        fimPeriodo: null,
+        proximaCobranca: null,
+      });
     }
 
     const fimPeriodo =
       assinatura.fim_periodo
-        ? new Date(
-            assinatura.fim_periodo
-          )
+        ? new Date(assinatura.fim_periodo)
         : null;
 
     const ativo =
-      assinatura.status ===
-        "ACTIVE" &&
+      assinatura.status === "ACTIVE" &&
       Boolean(fimPeriodo) &&
-      fimPeriodo!.getTime() >
-        Date.now();
+      fimPeriodo!.getTime() > Date.now();
 
     return NextResponse.json({
-      status:
-        assinatura.status,
+      status: assinatura.status,
       ativo,
-      lojaId:
-        perfil.loja_id,
-      fimPeriodo:
-        assinatura.fim_periodo,
+      lojaId: perfil.loja_id,
+      fimPeriodo: assinatura.fim_periodo,
       proximaCobranca:
         assinatura.proxima_cobranca,
     });
@@ -167,7 +166,8 @@ export async function GET(
 
     return NextResponse.json(
       {
-        erro: "Não foi possível consultar sua assinatura.",
+        erro:
+          "Não foi possível consultar sua assinatura.",
       },
       {
         status: 500,
