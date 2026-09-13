@@ -166,28 +166,25 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      spellCheck={true}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
-
+      <body
+        lang="pt-BR"
+        spellCheck={true}
+        autoCorrect="on"
+        autoCapitalize="sentences"
+        className="flex min-h-full flex-col"
+      >
         <AuthProvider>
-
           <StoreProvider>
-
             <ProductProvider>
-
               <CartProvider>
-
                 {children}
-
               </CartProvider>
-
             </ProductProvider>
-
           </StoreProvider>
-
         </AuthProvider>
-
       </body>
     </html>
   );
