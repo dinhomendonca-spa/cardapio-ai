@@ -45,11 +45,7 @@ export default function LojaPublicaPage() {
   ] = useState<string | null>(null);
 
   useEffect(() => {
-    if (loja?.nome) {
-      document.title = loja.nome;
-    } else {
-      document.title = "Lojas AI";
-    }
+    document.title = loja?.nome || "Lojas AI";
 
     return () => {
       document.title = "Lojas AI";
@@ -109,22 +105,16 @@ export default function LojaPublicaPage() {
 
   const obterQuantidade = (
     id: number
-  ) => {
-    return (
-      itens.find(
-        (item) => item.id === id
-      )?.quantidade || 0
-    );
-  };
+  ) =>
+    itens.find(
+      (item) => item.id === id
+    )?.quantidade || 0;
 
   const produtoEsgotado = (
     produto: Produto
-  ) => {
-    return (
-      produto.estoque_controlado &&
-      produto.estoque <= 0
-    );
-  };
+  ) =>
+    produto.estoque_controlado &&
+    produto.estoque <= 0;
 
   const atingiuLimiteEstoque = (
     produto: Produto
@@ -133,10 +123,10 @@ export default function LojaPublicaPage() {
       return false;
     }
 
-    const quantidade =
-      obterQuantidade(produto.id);
-
-    return quantidade >= produto.estoque;
+    return (
+      obterQuantidade(produto.id) >=
+      produto.estoque
+    );
   };
 
   const adicionarAoCarrinho = (
@@ -170,7 +160,7 @@ export default function LojaPublicaPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen w-full items-center justify-center overflow-x-hidden bg-[#f5f6f8]">
+      <main className="flex min-h-screen max-w-full items-center justify-center overflow-x-hidden bg-[#f5f6f8]">
         <div className="text-center">
           <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
 
@@ -184,8 +174,8 @@ export default function LojaPublicaPage() {
 
   if (erroLoja || !loja) {
     return (
-      <main className="flex min-h-screen w-full items-center justify-center overflow-x-hidden bg-[#f5f6f8] px-4">
-        <div className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-sm">
+      <main className="flex min-h-screen max-w-full items-center justify-center overflow-x-hidden bg-[#f5f6f8] px-4">
+        <div className="max-w-sm rounded-3xl bg-white p-7 text-center shadow-sm">
           <h1 className="text-xl font-black text-slate-950">
             Loja não encontrada
           </h1>
@@ -229,9 +219,9 @@ export default function LojaPublicaPage() {
     "sistemas-inteligentes";
 
   return (
-    <main className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-[#f5f6f8] pb-32 text-slate-950">
+    <main className="min-h-screen min-w-0 max-w-full overflow-x-hidden bg-[#f5f6f8] pb-32 text-slate-950">
       {/* BANNER */}
-      <section className="relative h-44 w-full max-w-full overflow-hidden sm:h-56">
+      <section className="relative h-44 max-w-full overflow-hidden sm:h-56">
         <Image
           src={banner}
           alt={`Banner da ${nomeLoja}`}
@@ -244,9 +234,9 @@ export default function LojaPublicaPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25" />
       </section>
 
-      {/* CARD DA LOJA */}
-      <section className="relative mx-auto -mt-10 w-full min-w-0 max-w-md px-4">
-        <div className="w-full min-w-0 rounded-[28px] bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.10)]">
+      {/* INFORMAÇÕES DA LOJA */}
+      <section className="relative mx-auto -mt-10 box-border max-w-md px-4">
+        <div className="min-w-0 overflow-hidden rounded-[28px] bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.10)]">
           <div className="flex min-w-0 items-center gap-3">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px] border-4 border-white shadow-md sm:h-20 sm:w-20">
               <Image
@@ -259,7 +249,7 @@ export default function LojaPublicaPage() {
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="break-words text-lg font-black leading-tight sm:text-xl">
+              <h1 className="break-words text-lg font-black leading-tight [overflow-wrap:anywhere] sm:text-xl">
                 {nomeLoja}
               </h1>
 
@@ -275,7 +265,7 @@ export default function LojaPublicaPage() {
                   className="shrink-0"
                 />
 
-                <span className="break-words">
+                <span className="min-w-0 break-words">
                   {lojaDemonstracao
                     ? "Demonstração"
                     : "Loja online"}
@@ -285,12 +275,12 @@ export default function LojaPublicaPage() {
           </div>
 
           {descricaoLoja && (
-            <p className="mt-4 max-w-full break-words text-sm leading-6 text-slate-500 [overflow-wrap:anywhere]">
+            <p className="mt-4 min-w-0 max-w-full break-words text-sm leading-6 text-slate-500 [overflow-wrap:anywhere]">
               {descricaoLoja}
             </p>
           )}
 
-          <div className="mt-4 flex max-w-full flex-wrap gap-2 text-xs">
+          <div className="mt-4 flex min-w-0 max-w-full flex-wrap gap-2 text-xs">
             {tempoEntrega && (
               <span className="flex max-w-full items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 font-semibold text-slate-600">
                 <Clock3
@@ -298,7 +288,7 @@ export default function LojaPublicaPage() {
                   className="shrink-0"
                 />
 
-                <span className="break-words">
+                <span className="min-w-0 break-words">
                   {tempoEntrega}
                 </span>
               </span>
@@ -324,9 +314,10 @@ export default function LojaPublicaPage() {
         </div>
       </section>
 
-      {/* BUSCA E CATEGORIAS */}
-      <section className="mx-auto w-full min-w-0 max-w-md px-4 pt-5">
-        <div className="flex w-full min-w-0 items-center gap-3 rounded-[18px] bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
+      {/* BUSCA, CATEGORIAS E PRODUTOS */}
+      <section className="mx-auto box-border max-w-md px-4 pt-5">
+        {/* BUSCA */}
+        <div className="flex min-w-0 items-center gap-3 overflow-hidden rounded-[18px] bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
           <Search
             size={19}
             className="shrink-0 text-slate-400"
@@ -343,8 +334,9 @@ export default function LojaPublicaPage() {
           />
         </div>
 
+        {/* CATEGORIAS */}
         {categorias.length > 0 && (
-          <div className="mt-4 flex w-full min-w-0 flex-wrap gap-2 pb-2">
+          <div className="mt-4 flex min-w-0 max-w-full flex-wrap gap-2 pb-2">
             <button
               type="button"
               onClick={() =>
@@ -382,7 +374,7 @@ export default function LojaPublicaPage() {
         )}
 
         {/* PRODUTOS */}
-        <div className="mt-6 w-full min-w-0">
+        <div className="mt-6 min-w-0 max-w-full">
           <div className="mb-4 min-w-0">
             <h2 className="break-words text-2xl font-black">
               Produtos
@@ -397,7 +389,7 @@ export default function LojaPublicaPage() {
           </div>
 
           {produtosFiltrados.length === 0 ? (
-            <div className="w-full min-w-0 rounded-[26px] bg-white p-8 text-center shadow-sm">
+            <div className="min-w-0 max-w-full rounded-[26px] bg-white p-8 text-center shadow-sm">
               <Search
                 size={30}
                 className="mx-auto text-slate-300"
@@ -412,7 +404,7 @@ export default function LojaPublicaPage() {
               </p>
             </div>
           ) : (
-            <div className="w-full min-w-0 space-y-4">
+            <div className="min-w-0 max-w-full space-y-4">
               {produtosFiltrados.map(
                 (produto) => {
                   const quantidade =
@@ -438,14 +430,14 @@ export default function LojaPublicaPage() {
                   return (
                     <article
                       key={produto.id}
-                      className={`w-full min-w-0 max-w-full overflow-hidden rounded-[26px] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] ${
+                      className={`min-w-0 max-w-full overflow-hidden rounded-[26px] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] ${
                         esgotado
                           ? "opacity-75"
                           : ""
                       }`}
                     >
-                      {/* IMAGEM DO PRODUTO */}
-                      <div className="relative h-64 w-full min-w-0 max-w-full overflow-hidden bg-white">
+                      {/* IMAGEM */}
+                      <div className="relative h-64 min-w-0 max-w-full overflow-hidden bg-white">
                         <Image
                           src={produto.imagem}
                           alt={produto.nome}
@@ -472,30 +464,26 @@ export default function LojaPublicaPage() {
                         )}
                       </div>
 
-                      {/* INFORMAÇÕES */}
-                      <div className="w-full min-w-0 max-w-full p-5">
-                        <div className="flex min-w-0 items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="max-w-full break-words text-lg font-black [overflow-wrap:anywhere]">
-                              {produto.nome}
-                            </h3>
+                      {/* INFORMAÇÕES DO PRODUTO */}
+                      <div className="min-w-0 max-w-full overflow-hidden p-5">
+                        <h3 className="min-w-0 max-w-full break-words text-lg font-black [overflow-wrap:anywhere]">
+                          {produto.nome}
+                        </h3>
 
-                            {produto.categoria && (
-                              <span className="mt-2 inline-flex max-w-full break-words rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 [overflow-wrap:anywhere]">
-                                {produto.categoria}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                        {produto.categoria && (
+                          <span className="mt-2 inline-flex max-w-full break-words rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500 [overflow-wrap:anywhere]">
+                            {produto.categoria}
+                          </span>
+                        )}
 
                         {produto.descricao && (
-                          <p className="mt-3 max-w-full break-words text-sm leading-6 text-slate-500 [overflow-wrap:anywhere]">
+                          <p className="mt-3 min-w-0 max-w-full break-words text-sm leading-6 text-slate-500 [overflow-wrap:anywhere]">
                             {produto.descricao}
                           </p>
                         )}
 
                         {produto.estoque_controlado && (
-                          <div className="mt-3 max-w-full">
+                          <div className="mt-3 min-w-0 max-w-full">
                             {esgotado ? (
                               <div className="inline-flex max-w-full items-center gap-2 rounded-xl bg-red-50 px-3 py-2">
                                 <AlertTriangle
@@ -503,7 +491,7 @@ export default function LojaPublicaPage() {
                                   className="shrink-0 text-red-500"
                                 />
 
-                                <span className="break-words text-xs font-bold text-red-600">
+                                <span className="min-w-0 break-words text-xs font-bold text-red-600">
                                   Produto esgotado
                                 </span>
                               </div>
@@ -514,7 +502,7 @@ export default function LojaPublicaPage() {
                                   className="shrink-0 text-amber-500"
                                 />
 
-                                <span className="break-words text-xs font-bold text-amber-700">
+                                <span className="min-w-0 break-words text-xs font-bold text-amber-700">
                                   Últimas{" "}
                                   {produto.estoque}{" "}
                                   {produto.estoque === 1
@@ -526,7 +514,8 @@ export default function LojaPublicaPage() {
                           </div>
                         )}
 
-                        <div className="mt-5 flex w-full min-w-0 flex-wrap items-center justify-between gap-3">
+                        {/* PREÇO E CONTROLES */}
+                        <div className="mt-5 grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                           <span className="min-w-0 break-words text-xl font-black">
                             {formatarPreco(
                               produto.preco
@@ -537,7 +526,7 @@ export default function LojaPublicaPage() {
                             <button
                               type="button"
                               disabled
-                              className="shrink-0 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-400"
+                              className="max-w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-400"
                             >
                               Esgotado
                             </button>
@@ -555,7 +544,7 @@ export default function LojaPublicaPage() {
                               <Plus size={20} />
                             </button>
                           ) : (
-                            <div className="flex max-w-full shrink-0 items-center gap-3 rounded-2xl bg-slate-100 p-1">
+                            <div className="flex max-w-full shrink-0 items-center gap-2 rounded-2xl bg-slate-100 p-1">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -566,9 +555,7 @@ export default function LojaPublicaPage() {
                                 aria-label={`Remover uma unidade de ${produto.nome}`}
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm"
                               >
-                                <Minus
-                                  size={17}
-                                />
+                                <Minus size={17} />
                               </button>
 
                               <span className="min-w-5 text-center font-black">
@@ -592,9 +579,7 @@ export default function LojaPublicaPage() {
                                     : "bg-blue-600 text-white"
                                 }`}
                               >
-                                <Plus
-                                  size={17}
-                                />
+                                <Plus size={17} />
                               </button>
                             </div>
                           )}
@@ -619,10 +604,10 @@ export default function LojaPublicaPage() {
 
       {/* CARRINHO */}
       {quantidadeTotal > 0 && (
-        <div className="fixed inset-x-0 bottom-4 z-50 w-full max-w-full px-4">
+        <div className="fixed inset-x-0 bottom-4 z-50 box-border max-w-full px-4">
           <Link
             href={`/loja/${loja.slug}/checkout`}
-            className="mx-auto flex w-full min-w-0 max-w-md items-center justify-between gap-3 rounded-[22px] bg-slate-950 px-5 py-4 text-white shadow-2xl"
+            className="mx-auto flex min-w-0 max-w-md items-center justify-between gap-3 rounded-[22px] bg-slate-950 px-5 py-4 text-white shadow-2xl"
           >
             <div className="flex min-w-0 items-center gap-3">
               <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
