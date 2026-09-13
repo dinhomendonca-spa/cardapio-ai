@@ -402,8 +402,7 @@ export default function NovoProdutoPage() {
         );
       }
     };
-
-  const fazerUploadImagem =
+      const fazerUploadImagem =
     async () => {
       if (!arquivo) {
         throw new Error(
@@ -622,6 +621,31 @@ export default function NovoProdutoPage() {
       }
     };
 
+  const cadastrarOutroProduto = () => {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
+    setNome("");
+    setDescricao("");
+    setCategoria("");
+    setPreco("");
+    setControlarEstoque(true);
+    setEstoque("");
+    setArquivo(null);
+    setPreview(null);
+    setProdutoSalvo(false);
+
+    if (inputImagemRef.current) {
+      inputImagemRef.current.value = "";
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020b18] pb-12 text-white">
       <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-sky-500/20 blur-[120px]" />
@@ -645,7 +669,7 @@ export default function NovoProdutoPage() {
             </p>
 
             <h1 className="truncate text-lg font-black">
-              Primeiro produto
+              Cadastrar produto
             </h1>
           </div>
 
@@ -666,7 +690,7 @@ export default function NovoProdutoPage() {
 
             <div>
               <h2 className="font-black">
-                Cadastre seu primeiro produto
+                Cadastre um produto
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-300">
@@ -703,23 +727,42 @@ export default function NovoProdutoPage() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Sua loja já possui o primeiro produto. Agora falta revisar e publicar.
+              Você pode cadastrar mais produtos agora ou revisar sua loja quando terminar.
             </p>
 
-            <Link
-              href="/admin/publicar"
-              className="mt-5 flex h-14 items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
+            <button
+              type="button"
+              onClick={cadastrarOutroProduto}
+              className="mt-5 flex h-14 w-full items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
             >
-              Revisar minha loja
+              Cadastrar outro produto
+
+              <PackagePlus
+                size={19}
+              />
+            </button>
+
+            <Link
+              href="/admin/produtos"
+              className="mt-3 flex h-14 items-center justify-between rounded-2xl border border-white/15 bg-white/[0.06] px-5 font-bold"
+            >
+              Ver meus produtos
 
               <ArrowRight
                 size={19}
               />
             </Link>
+
+            <Link
+              href="/admin/publicar"
+              className="mt-3 block text-sm font-bold text-emerald-200 underline underline-offset-4"
+            >
+              Revisar minha loja e publicar
+            </Link>
           </section>
         ) : (
           <>
-            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+                      <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
               <div className="flex items-center gap-3">
                 <ImagePlus
                   size={21}
@@ -998,9 +1041,7 @@ export default function NovoProdutoPage() {
                   </p>
                 ) : null}
               </div>
-            </section>
-
-            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+            </section>            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
               <div className="flex items-center gap-3">
                 <Boxes
                   size={21}
@@ -1130,7 +1171,7 @@ export default function NovoProdutoPage() {
                     size={20}
                   />
 
-                  Salvar primeiro produto
+                  Salvar produto
                 </>
               )}
             </button>
