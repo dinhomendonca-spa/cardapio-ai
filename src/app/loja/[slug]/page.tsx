@@ -321,7 +321,7 @@ export default function LojaPublicaPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25" />
       </section>
 
-      {/* CARD DA LOJA */}
+      {/* INFORMAÇÕES DA LOJA */}
       <section className="relative mx-auto -mt-10 max-w-md px-4">
         <div className="rounded-[28px] bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.10)]">
           <div className="flex items-center gap-3">
@@ -393,7 +393,9 @@ export default function LojaPublicaPage() {
             </div>
           )}
         </div>
-      </section>      {/* BUSCA E CATEGORIAS */}
+      </section>
+
+      {/* BUSCA E CATEGORIAS */}
       <section className="mx-auto max-w-md px-4 pt-5">
         <div className="flex items-center gap-3 rounded-[18px] bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-100">
           <Search
@@ -540,7 +542,12 @@ export default function LojaPublicaPage() {
                           }
                           fill
                           sizes="(max-width: 448px) 100vw, 448px"
-                          className={`object-contain p-2 ${
+                          className={`${
+                            produto.ajuste_imagem ===
+                            "preencher"
+                              ? "object-cover"
+                              : "object-contain p-2"
+                          } ${
                             esgotado
                               ? "grayscale"
                               : ""
@@ -556,7 +563,7 @@ export default function LojaPublicaPage() {
                         )}
                       </div>
 
-                      {/* INFORMAÇÕES */}
+                      {/* INFORMAÇÕES DO PRODUTO */}
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -607,7 +614,9 @@ export default function LojaPublicaPage() {
                               </div>
                             ) : null}
                           </div>
-                        )}                        <div className="mt-5 flex items-center justify-between gap-3">
+                        )}
+
+                        <div className="mt-5 flex items-center justify-between gap-3">
                           <span className="min-w-0 break-words text-xl font-black">
                             {formatarPreco(
                               produto.preco

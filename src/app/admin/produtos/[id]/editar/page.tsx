@@ -1,17 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import {
   ArrowLeft,
   Boxes,
   ImagePlus,
   Loader2,
+  Maximize2,
   Pencil,
   Save,
 } from "lucide-react";
-
-import Link from "next/link";
 
 import {
   useParams,
@@ -26,6 +26,10 @@ import {
 } from "react";
 
 import {
+  AjusteImagem,
+} from "@/context/ProductContext";
+
+import {
   supabase,
 } from "@/lib/supabase";
 
@@ -38,8 +42,38 @@ type Produto = {
   estoque: number;
   estoque_controlado: boolean;
   imagem: string;
+  ajuste_imagem: AjusteImagem;
   ativo: boolean;
 };
+
+function normalizarAjusteImagem(
+  valor: unknown
+): AjusteImagem {
+  return valor === "preencher"
+    ? "preencher"
+    : "conter";
+}
+
+function converterPreco(
+  valor: string
+) {
+  const limpo =
+    valor.trim();
+
+  if (
+    limpo.includes(",")
+  ) {
+    return Number(
+      limpo
+        .replace(/\./g, "")
+        .replace(",", ".")
+    );
+  }
+
+  return Number(
+    limpo
+  );
+}
 
 export default function EditarProdutoPage() {
   const params =
@@ -69,46 +103,49 @@ export default function EditarProdutoPage() {
   const [
     nome,
     setNome,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     descricao,
     setDescricao,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     categoria,
     setCategoria,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     preco,
     setPreco,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     estoque,
     setEstoque,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     estoqueControlado,
     setEstoqueControlado,
-  ] =
-    useState(
-      true
-    );
+  ] = useState(true);
+
+  const [
+    ativo,
+    setAtivo,
+  ] = useState(true);
+
+  const [
+    ajusteImagem,
+    setAjusteImagem,
+  ] = useState<AjusteImagem>(
+    "conter"
+  );
 
   const [
     imagemAtual,
     setImagemAtual,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     arquivo,
@@ -129,49 +166,48 @@ export default function EditarProdutoPage() {
   const [
     carregando,
     setCarregando,
-  ] =
-    useState(
-      true
-    );
+  ] = useState(true);
 
   const [
     salvando,
     setSalvando,
-  ] =
-    useState(
-      false
-    );
-
-  /*
-   * ======================================
-   * CARREGAR PRODUTO
-   * ======================================
-   */
+  ] = useState(false);
 
   useEffect(() => {
+    let cancelado =
+      false;
+
     const carregarProduto =
       async () => {
-        try {
-          setCarregando(
-            true
+        if (
+          !Number.isInteger(id) ||
+          id <= 0
+        ) {
+          alert(
+            "Produto inválido."
           );
+
+          router.replace(
+            "/admin/produtos"
+          );
+
+          return;
+        }
+
+        try {
+          setCarregando(true);
 
           const {
             data,
             error,
-          } =
-            await supabase
-              .from(
-                "produtos"
-              )
-              .select(
-                "*"
-              )
-              .eq(
-                "id",
-                id
-              )
-              .single();
+          } = await supabase
+            .from("produtos")
+            .select("*")
+            .eq(
+              "id",
+              id
+            )
+            .single();
 
           if (
             error ||
@@ -183,6 +219,10 @@ export default function EditarProdutoPage() {
                 "Produto não encontrado."
               )
             );
+          }
+
+          if (cancelado) {
+            return;
           }
 
           const produtoCarregado: Produto =
@@ -224,6 +264,11 @@ export default function EditarProdutoPage() {
                 data.imagem ??
                 "/images/logo.png",
 
+              ajuste_imagem:
+                normalizarAjusteImagem(
+                  data.ajuste_imagem
+                ),
+
               ativo:
                 data.ativo ??
                 true,
@@ -261,15 +306,23 @@ export default function EditarProdutoPage() {
           );
 
           setEstoqueControlado(
-            produtoCarregado.estoque_controlado
+            produtoCarregado
+              .estoque_controlado
           );
 
           setImagemAtual(
             produtoCarregado.imagem
           );
-        } catch (
-          error
-        ) {
+
+          setAjusteImagem(
+            produtoCarregado
+              .ajuste_imagem
+          );
+
+          setAtivo(
+            produtoCarregado.ativo
+          );
+        } catch (error) {
           console.error(
             "Erro ao carregar produto:",
             error
@@ -279,45 +332,41 @@ export default function EditarProdutoPage() {
             "Produto não encontrado."
           );
 
-          router.push(
+          router.replace(
             "/admin/produtos"
           );
         } finally {
-          setCarregando(
-            false
-          );
+          if (!cancelado) {
+            setCarregando(false);
+          }
         }
       };
 
-    if (
-      Number.isInteger(
-        id
-      ) &&
-      id > 0
-    ) {
-      carregarProduto();
-    } else {
-      alert(
-        "Produto inválido."
-      );
+    carregarProduto();
 
-      router.push(
-        "/admin/produtos"
-      );
-    }
+    return () => {
+      cancelado = true;
+    };
   }, [
     id,
     router,
   ]);
 
-  /*
-   * ======================================
-   * SELECIONAR NOVA IMAGEM
-   * ======================================
-   */
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(
+          preview
+        );
+      }
+    };
+  }, [
+    preview,
+  ]);
 
   const selecionarImagem = (
-    event: ChangeEvent<HTMLInputElement>
+    event:
+      ChangeEvent<HTMLInputElement>
   ) => {
     const imagem =
       event.target.files?.[0];
@@ -341,14 +390,12 @@ export default function EditarProdutoPage() {
       return;
     }
 
-    const tamanhoMaximoArquivo =
-      15 *
-      1024 *
-      1024;
+    const tamanhoMaximo =
+      15 * 1024 * 1024;
 
     if (
       imagem.size >
-      tamanhoMaximoArquivo
+      tamanhoMaximo
     ) {
       alert(
         "A imagem deve ter no máximo 15 MB."
@@ -360,70 +407,22 @@ export default function EditarProdutoPage() {
       return;
     }
 
-    if (
-      preview
-    ) {
+    if (preview) {
       URL.revokeObjectURL(
         preview
       );
     }
-
-    const novaPreview =
-      URL.createObjectURL(
-        imagem
-      );
 
     setArquivo(
       imagem
     );
 
     setPreview(
-      novaPreview
+      URL.createObjectURL(
+        imagem
+      )
     );
   };
-
-  /*
-   * ======================================
-   * LIMPAR PREVIEW
-   * ======================================
-   */
-
-  useEffect(() => {
-    return () => {
-      if (
-        preview
-      ) {
-        URL.revokeObjectURL(
-          preview
-        );
-      }
-    };
-  }, [
-    preview,
-  ]);
-
-  /*
-   * ======================================
-   * ABRIR SELETOR
-   * ======================================
-   */
-
-  const abrirSeletorImagem =
-    () => {
-      inputImagemRef.current?.click();
-    };
-
-  /*
-   * ======================================
-   * OTIMIZAR IMAGEM
-   * ======================================
-   *
-   * - máximo 1200 px
-   * - mantém proporção
-   * - converte para WebP
-   * - qualidade 82%
-   * ======================================
-   */
 
   const otimizarImagem =
     async (
@@ -451,20 +450,18 @@ export default function EditarProdutoPage() {
                 new window.Image();
 
               img.onload =
-                () => {
+                () =>
                   resolve(
                     img
                   );
-                };
 
               img.onerror =
-                () => {
+                () =>
                   reject(
                     new Error(
-                      "Não foi possível processar esta imagem."
+                      "Não foi possível processar a imagem."
                     )
                   );
-                };
 
               img.src =
                 urlOriginal;
@@ -530,9 +527,7 @@ export default function EditarProdutoPage() {
             "2d"
           );
 
-        if (
-          !contexto
-        ) {
+        if (!contexto) {
           throw new Error(
             "Não foi possível preparar a imagem."
           );
@@ -572,9 +567,7 @@ export default function EditarProdutoPage() {
                 (
                   resultado
                 ) => {
-                  if (
-                    !resultado
-                  ) {
+                  if (!resultado) {
                     reject(
                       new Error(
                         "Não foi possível comprimir a imagem."
@@ -629,17 +622,9 @@ export default function EditarProdutoPage() {
       }
     };
 
-  /*
-   * ======================================
-   * FAZER UPLOAD DA NOVA IMAGEM
-   * ======================================
-   */
-
   const fazerUploadNovaImagem =
     async () => {
-      if (
-        !arquivo
-      ) {
+      if (!arquivo) {
         return imagemAtual;
       }
 
@@ -649,7 +634,7 @@ export default function EditarProdutoPage() {
         );
 
       const nomeArquivo =
-        `${Date.now()}-${crypto.randomUUID()}.webp`;
+        `produtos/${id}/${Date.now()}-${crypto.randomUUID()}.webp`;
 
       const {
         error,
@@ -673,9 +658,7 @@ export default function EditarProdutoPage() {
             }
           );
 
-      if (
-        error
-      ) {
+      if (error) {
         throw error;
       }
 
@@ -693,20 +676,11 @@ export default function EditarProdutoPage() {
       return data.publicUrl;
     };
 
-  /*
-   * ======================================
-   * SALVAR PRODUTO
-   * ======================================
-   */
-
   const salvarProduto =
     async () => {
       const precoNumerico =
-        Number(
-          preco.replace(
-            ",",
-            "."
-          )
+        converterPreco(
+          preco
         );
 
       const estoqueNumerico =
@@ -714,9 +688,7 @@ export default function EditarProdutoPage() {
           estoque
         );
 
-      if (
-        !nome.trim()
-      ) {
+      if (!nome.trim()) {
         alert(
           "Preencha o nome do produto."
         );
@@ -724,9 +696,7 @@ export default function EditarProdutoPage() {
         return;
       }
 
-      if (
-        !categoria.trim()
-      ) {
+      if (!categoria.trim()) {
         alert(
           "Preencha a categoria do produto."
         );
@@ -735,7 +705,7 @@ export default function EditarProdutoPage() {
       }
 
       if (
-        Number.isNaN(
+        !Number.isFinite(
           precoNumerico
         ) ||
         precoNumerico <= 0
@@ -752,14 +722,10 @@ export default function EditarProdutoPage() {
         (
           estoque.trim() ===
             "" ||
-          Number.isNaN(
-            estoqueNumerico
-          ) ||
           !Number.isInteger(
             estoqueNumerico
           ) ||
-          estoqueNumerico <
-            0
+          estoqueNumerico < 0
         )
       ) {
         alert(
@@ -770,60 +736,50 @@ export default function EditarProdutoPage() {
       }
 
       try {
-        setSalvando(
-          true
-        );
-
-        /*
-         * Se nenhuma nova imagem foi
-         * selecionada, mantém a atual.
-         *
-         * Se houver nova imagem,
-         * otimiza e envia em WebP.
-         */
+        setSalvando(true);
 
         const imagemUrl =
           await fazerUploadNovaImagem();
 
         const {
           error,
-        } =
-          await supabase
-            .from(
-              "produtos"
-            )
-            .update({
-              nome:
-                nome.trim(),
+        } = await supabase
+          .from("produtos")
+          .update({
+            nome:
+              nome.trim(),
 
-              descricao:
-                descricao.trim(),
+            descricao:
+              descricao.trim(),
 
-              categoria:
-                categoria.trim(),
+            categoria:
+              categoria.trim(),
 
-              preco:
-                precoNumerico,
+            preco:
+              precoNumerico,
 
-              estoque:
-                estoqueControlado
-                  ? estoqueNumerico
-                  : 0,
+            estoque:
+              estoqueControlado
+                ? estoqueNumerico
+                : 0,
 
-              estoque_controlado:
-                estoqueControlado,
+            estoque_controlado:
+              estoqueControlado,
 
-              imagem:
-                imagemUrl,
-            })
-            .eq(
-              "id",
-              id
-            );
+            imagem:
+              imagemUrl,
 
-        if (
-          error
-        ) {
+            ajuste_imagem:
+              ajusteImagem,
+
+            ativo,
+          })
+          .eq(
+            "id",
+            id
+          );
+
+        if (error) {
           throw error;
         }
 
@@ -832,175 +788,53 @@ export default function EditarProdutoPage() {
         );
 
         router.refresh();
-      } catch (
-        error
-      ) {
+      } catch (error) {
         console.error(
           "Erro ao editar produto:",
           error
         );
 
         alert(
-          "Não foi possível editar o produto."
+          error instanceof Error
+            ? error.message
+            : "Não foi possível editar o produto."
         );
       } finally {
-        setSalvando(
-          false
-        );
+        setSalvando(false);
       }
     };
-
-  /*
-   * ======================================
-   * CARREGAMENTO
-   * ======================================
-   */
 
   if (
     carregando ||
     !produto
   ) {
     return (
-      <main
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#020b18]
-          text-white
-        "
-      >
+      <main className="flex min-h-screen items-center justify-center bg-[#020b18] text-white">
         <div className="text-center">
-
           <Loader2
-            className="
-              mx-auto
-              animate-spin
-              text-sky-400
-            "
             size={32}
+            className="mx-auto animate-spin text-sky-400"
           />
 
-          <p
-            className="
-              mt-4
-              text-sm
-              text-slate-400
-            "
-          >
+          <p className="mt-3 text-sm text-slate-400">
             Carregando produto...
           </p>
-
         </div>
       </main>
     );
   }
 
   return (
-    <main
-      className="
-        relative
-        min-h-screen
-        overflow-hidden
-        bg-[#020b18]
-        pb-12
-        text-white
-      "
-    >
+    <main className="relative min-h-screen overflow-hidden bg-[#020b18] pb-12 text-white">
+      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-sky-500/20 blur-[120px]" />
 
-      {/* FUNDO DECORATIVO */}
+      <div className="pointer-events-none absolute -right-44 top-72 h-96 w-96 rounded-full bg-blue-600/20 blur-[120px]" />
 
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -left-40
-          -top-40
-          h-96
-          w-96
-          rounded-full
-          bg-sky-500/20
-          blur-[120px]
-        "
-      />
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          -right-44
-          top-72
-          h-96
-          w-96
-          rounded-full
-          bg-blue-600/20
-          blur-[120px]
-        "
-      />
-
-      <div
-        className="
-          pointer-events-none
-          absolute
-          bottom-0
-          left-1/2
-          h-80
-          w-80
-          -translate-x-1/2
-          rounded-full
-          bg-cyan-400/10
-          blur-[110px]
-        "
-      />
-
-      {/* HEADER */}
-
-      <header
-        className="
-          sticky
-          top-0
-          z-40
-          border-b
-          border-sky-300/10
-          bg-[#020b18]/80
-          backdrop-blur-2xl
-        "
-      >
-
-        <div
-          className="
-            mx-auto
-            flex
-            max-w-md
-            items-center
-            gap-4
-            px-4
-            py-4
-          "
-        >
-
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#020b18]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
           <Link
             href="/admin/produtos"
-            className="
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-2xl
-              border
-              border-sky-300/15
-              bg-white/[0.06]
-              text-sky-200
-              shadow-[0_10px_30px_rgba(0,0,0,0.25)]
-              backdrop-blur-xl
-              transition
-              hover:border-sky-300/30
-              hover:bg-sky-400/10
-              active:scale-95
-            "
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
           >
             <ArrowLeft
               size={20}
@@ -1008,202 +842,60 @@ export default function EditarProdutoPage() {
           </Link>
 
           <div>
-
-            <p
-              className="
-                text-xs
-                font-semibold
-                uppercase
-                tracking-[0.18em]
-                text-sky-300
-              "
-            >
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-400">
               Produtos
             </p>
 
-            <h1
-              className="
-                mt-1
-                text-xl
-                font-black
-                text-white
-              "
-            >
+            <h1 className="text-lg font-black">
               Editar produto
             </h1>
-
           </div>
-
         </div>
-
       </header>
 
-      {/* CONTEÚDO */}
-
-      <section
-        className="
-          relative
-          z-10
-          mx-auto
-          max-w-md
-          space-y-4
-          px-4
-          py-5
-        "
-      >
-
-        {/* APRESENTAÇÃO */}
-
-        <section
-          className="
-            rounded-[28px]
-            border
-            border-sky-300/15
-            bg-gradient-to-br
-            from-sky-400/10
-            to-blue-600/5
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.28)]
-            backdrop-blur-2xl
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-center
-              gap-4
-            "
-          >
-
-            <div
-              className="
-                flex
-                h-12
-                w-12
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-sky-300/25
-                bg-gradient-to-br
-                from-sky-400
-                to-blue-600
-                text-white
-                shadow-[0_10px_30px_rgba(14,165,233,0.30)]
-              "
-            >
+      <section className="relative z-10 mx-auto max-w-md space-y-5 px-4 py-5">
+        <section className="rounded-[28px] border border-sky-300/20 bg-gradient-to-br from-sky-500/20 to-blue-600/10 p-5">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600">
               <Pencil
                 size={22}
               />
             </div>
 
-            <div
-              className="
-                min-w-0
-                flex-1
-              "
-            >
-
-              <h2
-                className="
-                  truncate
-                  font-black
-                  text-white
-                "
-              >
+            <div className="min-w-0">
+              <h2 className="truncate font-black">
                 {produto.nome}
               </h2>
 
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  text-slate-400
-                "
-              >
+              <p className="mt-1 text-sm text-slate-400">
                 Atualize as informações do produto.
               </p>
-
             </div>
-
           </div>
-
         </section>
 
-        {/* FOTO */}
-
-        <section
-          className="
-            rounded-[30px]
-            border
-            border-sky-300/15
-            bg-white/[0.055]
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-            backdrop-blur-2xl
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-center
-              gap-3
-            "
-          >
-
-            <div
-              className="
-                flex
-                h-10
-                w-10
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-sky-300/15
-                bg-sky-400/10
-                text-sky-300
-              "
-            >
-              <ImagePlus
-                size={19}
-              />
-            </div>
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <div className="flex items-center gap-3">
+            <ImagePlus
+              size={21}
+              className="text-sky-300"
+            />
 
             <div>
-
-              <h2
-                className="
-                  font-bold
-                  text-white
-                "
-              >
+              <h2 className="font-bold">
                 Foto do produto
               </h2>
 
-              <p
-                className="
-                  mt-0.5
-                  text-xs
-                  text-slate-400
-                "
-              >
+              <p className="text-xs text-slate-400">
                 Toque na imagem para trocar
               </p>
-
             </div>
-
           </div>
 
           <input
-            ref={
-              inputImagemRef
-            }
+            ref={inputImagemRef}
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/webp"
             onChange={
               selecionarImagem
             }
@@ -1212,26 +904,13 @@ export default function EditarProdutoPage() {
 
           <button
             type="button"
-            onClick={
-              abrirSeletorImagem
+            onClick={() =>
+              inputImagemRef
+                .current
+                ?.click()
             }
-            className="
-              group
-              relative
-              mt-4
-              flex
-              min-h-52
-              w-full
-              overflow-hidden
-              rounded-[26px]
-              border
-              border-sky-300/20
-              bg-white/[0.04]
-              shadow-[0_14px_40px_rgba(0,0,0,0.20)]
-              backdrop-blur-xl
-            "
+            className="relative mt-4 flex h-64 w-full overflow-hidden rounded-[24px] border border-white/10 bg-white"
           >
-
             <Image
               src={
                 preview ||
@@ -1242,7 +921,13 @@ export default function EditarProdutoPage() {
                 "Produto"
               }
               fill
-              className="object-cover"
+              sizes="(max-width: 448px) 100vw, 448px"
+              className={
+                ajusteImagem ===
+                "preencher"
+                  ? "object-cover"
+                  : "object-contain p-2"
+              }
               unoptimized={
                 Boolean(
                   preview
@@ -1250,512 +935,266 @@ export default function EditarProdutoPage() {
               }
             />
 
-            <div
-              className="
-                absolute
-                inset-0
-                flex
-                items-end
-                justify-center
-                bg-gradient-to-t
-                from-[#020b18]/90
-                via-transparent
-                to-transparent
-                p-4
-              "
-            >
-
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  rounded-2xl
-                  border
-                  border-white/10
-                  bg-[#020b18]/65
-                  px-4
-                  py-2.5
-                  text-xs
-                  font-bold
-                  text-white
-                  backdrop-blur-xl
-                "
-              >
-                <ImagePlus
-                  size={16}
-                />
-
-                Trocar imagem
-              </div>
-
-            </div>
-
+            <span className="absolute bottom-3 right-3 rounded-full bg-black/75 px-3 py-2 text-xs font-bold">
+              Trocar imagem
+            </span>
           </button>
 
           {arquivo && (
-            <div
-              className="
-                mt-3
-                rounded-2xl
-                border
-                border-emerald-300/10
-                bg-emerald-400/[0.06]
-                p-3
-              "
-            >
-              <p
-                className="
-                  text-xs
-                  leading-5
-                  text-emerald-300
-                "
-              >
-                ✓ A nova foto será redimensionada e comprimida automaticamente.
-              </p>
-            </div>
+            <p className="mt-3 rounded-2xl bg-emerald-400/10 p-3 text-xs leading-5 text-emerald-300">
+              A nova foto será redimensionada e comprimida automaticamente.
+            </p>
           )}
 
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+            <div className="flex items-start gap-3">
+              <Maximize2
+                size={20}
+                className="mt-0.5 shrink-0 text-sky-300"
+              />
+
+              <div>
+                <p className="font-bold">
+                  Ajuste da imagem
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Escolha como a foto aparecerá na vitrine.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setAjusteImagem(
+                    "conter"
+                  )
+                }
+                className={`rounded-2xl border px-3 py-3 text-xs font-bold transition ${
+                  ajusteImagem ===
+                  "conter"
+                    ? "border-sky-400 bg-sky-400/15 text-sky-200"
+                    : "border-white/10 bg-white/[0.04] text-slate-400"
+                }`}
+              >
+                Mostrar inteira
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAjusteImagem(
+                    "preencher"
+                  )
+                }
+                className={`rounded-2xl border px-3 py-3 text-xs font-bold transition ${
+                  ajusteImagem ===
+                  "preencher"
+                    ? "border-sky-400 bg-sky-400/15 text-sky-200"
+                    : "border-white/10 bg-white/[0.04] text-slate-400"
+                }`}
+              >
+                Preencher espaço
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              {ajusteImagem ===
+              "preencher"
+                ? "A foto preencherá o card e poderá ter pequenas partes cortadas."
+                : "A foto aparecerá inteira e poderá deixar espaços nas bordas."}
+            </p>
+          </div>
         </section>
 
-        {/* INFORMAÇÕES */}
-
-        <section
-          className="
-            rounded-[30px]
-            border
-            border-sky-300/15
-            bg-white/[0.055]
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-            backdrop-blur-2xl
-          "
-        >
-
-          <h2
-            className="
-              font-black
-              text-white
-            "
-          >
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <h2 className="font-black">
             Informações
           </h2>
 
-          <p
-            className="
-              mt-1
-              text-sm
-              text-slate-400
-            "
-          >
+          <p className="mt-1 text-sm text-slate-400">
             Dados exibidos para o cliente.
           </p>
 
-          <div
-            className="
-              mt-5
-              space-y-4
-            "
-          >
-
+          <div className="mt-5 space-y-4">
             <div>
-
               <label
                 htmlFor="nome"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
+                className="mb-2 block text-sm font-semibold text-slate-200"
               >
                 Nome do produto
               </label>
 
               <input
                 id="nome"
-                value={
-                  nome
-                }
-                onChange={(
-                  e
-                ) =>
+                value={nome}
+                onChange={(event) =>
                   setNome(
-                    e.target.value
+                    event.target.value
                   )
                 }
                 placeholder="Nome do produto"
-                className="
-                  w-full
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
+                lang="pt-BR"
+                spellCheck={true}
+                autoCorrect="on"
+                autoCapitalize="sentences"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 outline-none transition placeholder:text-slate-500 focus:border-sky-400"
               />
-
             </div>
 
             <div>
-
               <label
                 htmlFor="descricao"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
+                className="mb-2 block text-sm font-semibold text-slate-200"
               >
                 Descrição
               </label>
 
               <textarea
                 id="descricao"
-                value={
-                  descricao
-                }
-                onChange={(
-                  e
-                ) =>
+                value={descricao}
+                onChange={(event) =>
                   setDescricao(
-                    e.target.value
+                    event.target.value
                   )
                 }
                 placeholder="Descrição"
                 rows={4}
-                className="
-                  w-full
-                  resize-none
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
+                lang="pt-BR"
+                spellCheck={true}
+                autoCorrect="on"
+                autoCapitalize="sentences"
+                className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 outline-none transition placeholder:text-slate-500 focus:border-sky-400"
               />
-
             </div>
 
             <div>
-
               <label
                 htmlFor="categoria"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
+                className="mb-2 block text-sm font-semibold text-slate-200"
               >
                 Categoria
               </label>
 
               <input
                 id="categoria"
-                value={
-                  categoria
-                }
-                onChange={(
-                  e
-                ) =>
+                value={categoria}
+                onChange={(event) =>
                   setCategoria(
-                    e.target.value
+                    event.target.value
                   )
                 }
-                placeholder="Ex: Cabos, Capinhas, Fones..."
-                className="
-                  w-full
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
+                placeholder="Ex.: Cabos, capinhas, fones..."
+                lang="pt-BR"
+                spellCheck={true}
+                autoCorrect="on"
+                autoCapitalize="words"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 outline-none transition placeholder:text-slate-500 focus:border-sky-400"
               />
-
             </div>
 
             <div>
-
               <label
                 htmlFor="preco"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
+                className="mb-2 block text-sm font-semibold text-slate-200"
               >
                 Preço
               </label>
 
               <div className="relative">
-
-                <span
-                  className="
-                    pointer-events-none
-                    absolute
-                    left-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-sm
-                    font-bold
-                    text-sky-300
-                  "
-                >
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-sky-300">
                   R$
                 </span>
 
                 <input
                   id="preco"
-                  value={
-                    preco
-                  }
-                  onChange={(
-                    e
-                  ) =>
+                  value={preco}
+                  onChange={(event) =>
                     setPreco(
-                      e.target.value
+                      event.target.value
                     )
                   }
                   placeholder="49,90"
                   inputMode="decimal"
-                  className="
-                    w-full
-                    rounded-2xl
-                    border
-                    border-sky-300/10
-                    bg-white/[0.06]
-                    py-4
-                    pl-12
-                    pr-4
-                    text-white
-                    outline-none
-                    backdrop-blur-xl
-                    transition
-                    placeholder:text-slate-500
-                    focus:border-sky-300/40
-                    focus:bg-sky-400/[0.07]
-                    focus:ring-4
-                    focus:ring-sky-400/5
-                  "
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.06] py-4 pl-12 pr-4 outline-none transition placeholder:text-slate-500 focus:border-sky-400"
                 />
-
               </div>
-
             </div>
-
           </div>
-
         </section>
 
-        {/* ESTOQUE */}
-
-        <section
-          className="
-            rounded-[30px]
-            border
-            border-sky-300/15
-            bg-white/[0.055]
-            p-5
-            shadow-[0_20px_60px_rgba(0,0,0,0.25)]
-            backdrop-blur-2xl
-          "
-        >
-
-          <div
-            className="
-              flex
-              items-start
-              gap-3
-            "
-          >
-
-            <div
-              className="
-                flex
-                h-11
-                w-11
-                shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-sky-300/20
-                bg-sky-400/10
-                text-sky-300
-              "
-            >
-              <Boxes
-                size={20}
-              />
-            </div>
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <div className="flex items-center gap-3">
+            <Boxes
+              size={21}
+              className="text-cyan-300"
+            />
 
             <div>
-
-              <h2
-                className="
-                  font-black
-                  text-white
-                "
-              >
-                Controle de estoque
+              <h2 className="font-bold">
+                Estoque
               </h2>
 
-              <p
-                className="
-                  mt-1
-                  text-sm
-                  leading-5
-                  text-slate-400
-                "
-              >
-                Controle a quantidade disponível deste produto.
+              <p className="text-xs text-slate-400">
+                Controle de disponibilidade
               </p>
-
             </div>
-
           </div>
 
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setEstoqueControlado(
                 !estoqueControlado
-              )
-            }
-            className="
-              mt-5
-              flex
-              w-full
-              items-center
-              justify-between
-              gap-4
-              rounded-[22px]
-              border
-              border-sky-300/10
-              bg-white/[0.05]
-              p-4
-              text-left
-              backdrop-blur-xl
-              transition
-              hover:border-sky-300/25
-              hover:bg-sky-400/[0.06]
-            "
+              );
+
+              if (
+                estoqueControlado
+              ) {
+                setEstoque("");
+              } else if (
+                estoque.trim() ===
+                ""
+              ) {
+                setEstoque("0");
+              }
+            }}
+            className="mt-5 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.06] p-4"
           >
-
-            <div>
-
-              <p
-                className="
-                  text-sm
-                  font-bold
-                  text-white
-                "
-              >
+            <div className="pr-4 text-left">
+              <p className="font-bold">
                 Controlar estoque
               </p>
 
-              <p
-                className="
-                  mt-1
-                  text-xs
-                  leading-5
-                  text-slate-400
-                "
-              >
-                Limita as vendas conforme a quantidade disponível.
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                Indica quando o produto estiver esgotado
               </p>
-
             </div>
 
             <div
-              className={`
-                relative
-                h-7
-                w-12
-                shrink-0
-                rounded-full
-                border
-                transition
-                ${
-                  estoqueControlado
-                    ? "border-sky-300/40 bg-gradient-to-r from-sky-400 to-blue-600 shadow-[0_0_20px_rgba(56,189,248,0.25)]"
-                    : "border-white/10 bg-white/10"
-                }
-              `}
+              className={`relative h-7 w-12 shrink-0 rounded-full ${
+                estoqueControlado
+                  ? "bg-cyan-500"
+                  : "bg-slate-700"
+              }`}
             >
-
               <div
-                className={`
-                  absolute
-                  top-1
-                  h-5
-                  w-5
-                  rounded-full
-                  bg-white
-                  shadow-md
-                  transition-all
-                  ${
-                    estoqueControlado
-                      ? "left-6"
-                      : "left-1"
-                  }
-                `}
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                  estoqueControlado
+                    ? "left-6"
+                    : "left-1"
+                }`}
               />
-
             </div>
-
           </button>
 
-          {estoqueControlado ? (
+          {estoqueControlado && (
             <div className="mt-4">
-
               <label
                 htmlFor="estoque"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                  text-slate-200
-                "
+                className="mb-2 block text-sm font-semibold text-slate-200"
               >
                 Quantidade disponível
               </label>
@@ -1763,117 +1202,58 @@ export default function EditarProdutoPage() {
               <input
                 id="estoque"
                 type="number"
-                value={
-                  estoque
-                }
-                onChange={(
-                  e
-                ) =>
+                value={estoque}
+                onChange={(event) =>
                   setEstoque(
-                    e.target.value
+                    event.target.value
                   )
                 }
                 min="0"
                 step="1"
                 inputMode="numeric"
-                placeholder="Ex: 20"
-                className="
-                  w-full
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-white/[0.06]
-                  px-4
-                  py-4
-                  text-lg
-                  font-bold
-                  text-white
-                  outline-none
-                  backdrop-blur-xl
-                  transition
-                  placeholder:text-slate-500
-                  focus:border-sky-300/40
-                  focus:bg-sky-400/[0.07]
-                  focus:ring-4
-                  focus:ring-sky-400/5
-                "
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 outline-none transition focus:border-cyan-400"
               />
-
-              <div
-                className="
-                  mt-3
-                  flex
-                  gap-2
-                  rounded-2xl
-                  border
-                  border-sky-300/10
-                  bg-sky-400/[0.06]
-                  p-3
-                "
-              >
-
-                <Boxes
-                  size={15}
-                  className="
-                    mt-0.5
-                    shrink-0
-                    text-sky-300
-                  "
-                />
-
-                <p
-                  className="
-                    text-xs
-                    leading-5
-                    text-slate-400
-                  "
-                >
-                  Quando chegar a 0, o produto será exibido como esgotado.
-                </p>
-
-              </div>
-
-            </div>
-          ) : (
-            <div
-              className="
-                mt-4
-                rounded-[22px]
-                border
-                border-amber-300/15
-                bg-amber-400/[0.07]
-                p-4
-                backdrop-blur-xl
-              "
-            >
-
-              <p
-                className="
-                  text-sm
-                  font-bold
-                  text-amber-300
-                "
-              >
-                Estoque não controlado
-              </p>
-
-              <p
-                className="
-                  mt-1
-                  text-xs
-                  leading-5
-                  text-amber-100/60
-                "
-              >
-                O produto poderá ser vendido sem limite de quantidade.
-              </p>
-
             </div>
           )}
-
         </section>
 
-        {/* SALVAR */}
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+          <button
+            type="button"
+            onClick={() =>
+              setAtivo(
+                !ativo
+              )
+            }
+            className="flex w-full items-center justify-between"
+          >
+            <div className="pr-4 text-left">
+              <p className="font-bold">
+                Produto disponível
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                Produtos desativados não aparecem na loja
+              </p>
+            </div>
+
+            <div
+              className={`relative h-7 w-12 shrink-0 rounded-full ${
+                ativo
+                  ? "bg-emerald-500"
+                  : "bg-slate-700"
+              }`}
+            >
+              <div
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                  ativo
+                    ? "left-6"
+                    : "left-1"
+                }`}
+              />
+            </div>
+          </button>
+        </section>
 
         <button
           type="button"
@@ -1883,33 +1263,8 @@ export default function EditarProdutoPage() {
           disabled={
             salvando
           }
-          className="
-            flex
-            min-h-16
-            w-full
-            items-center
-            justify-center
-            gap-3
-            rounded-[22px]
-            border
-            border-sky-300/30
-            bg-gradient-to-r
-            from-sky-500
-            to-blue-600
-            px-5
-            font-black
-            text-white
-            shadow-[0_15px_45px_rgba(14,165,233,0.30)]
-            transition
-            duration-200
-            hover:-translate-y-0.5
-            hover:shadow-[0_18px_55px_rgba(14,165,233,0.40)]
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+          className="flex min-h-16 w-full items-center justify-center gap-3 rounded-[22px] bg-gradient-to-r from-sky-500 to-blue-600 px-5 font-black shadow-lg transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-
           {salvando ? (
             <>
               <Loader2
@@ -1917,9 +1272,7 @@ export default function EditarProdutoPage() {
                 className="animate-spin"
               />
 
-              {arquivo
-                ? "Otimizando e salvando..."
-                : "Salvando..."}
+              Salvando alterações...
             </>
           ) : (
             <>
@@ -1930,11 +1283,8 @@ export default function EditarProdutoPage() {
               Salvar alterações
             </>
           )}
-
         </button>
-
       </section>
-
     </main>
   );
 }

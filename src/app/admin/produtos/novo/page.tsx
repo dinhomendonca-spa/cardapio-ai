@@ -11,6 +11,7 @@ import {
   Circle,
   ImagePlus,
   Loader2,
+  Maximize2,
   PackagePlus,
   Save,
   Sparkles,
@@ -24,6 +25,7 @@ import {
 } from "react";
 
 import {
+  AjusteImagem,
   useProducts,
 } from "@/context/ProductContext";
 
@@ -106,6 +108,13 @@ export default function NovoProdutoPage() {
     estoque,
     setEstoque,
   ] = useState("");
+
+  const [
+    ajusteImagem,
+    setAjusteImagem,
+  ] = useState<AjusteImagem>(
+    "conter"
+  );
 
   const [
     arquivo,
@@ -402,7 +411,8 @@ export default function NovoProdutoPage() {
         );
       }
     };
-      const fazerUploadImagem =
+
+  const fazerUploadImagem =
     async () => {
       if (!arquivo) {
         throw new Error(
@@ -598,6 +608,9 @@ export default function NovoProdutoPage() {
           imagem:
             imagemUrl,
 
+          ajuste_imagem:
+            ajusteImagem,
+
           ativo:
             true,
         });
@@ -605,6 +618,11 @@ export default function NovoProdutoPage() {
         setProdutoSalvo(
           true
         );
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
       } catch (error) {
         console.error(
           "Erro ao salvar produto:",
@@ -621,30 +639,39 @@ export default function NovoProdutoPage() {
       }
     };
 
-  const cadastrarOutroProduto = () => {
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
+  const cadastrarOutroProduto =
+    () => {
+      if (preview) {
+        URL.revokeObjectURL(
+          preview
+        );
+      }
 
-    setNome("");
-    setDescricao("");
-    setCategoria("");
-    setPreco("");
-    setControlarEstoque(true);
-    setEstoque("");
-    setArquivo(null);
-    setPreview(null);
-    setProdutoSalvo(false);
+      setNome("");
+      setDescricao("");
+      setCategoria("");
+      setPreco("");
+      setControlarEstoque(true);
+      setEstoque("");
+      setAjusteImagem(
+        "conter"
+      );
+      setArquivo(null);
+      setPreview(null);
+      setProdutoSalvo(false);
 
-    if (inputImagemRef.current) {
-      inputImagemRef.current.value = "";
-    }
+      if (
+        inputImagemRef.current
+      ) {
+        inputImagemRef.current.value =
+          "";
+      }
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#020b18] pb-12 text-white">
@@ -655,7 +682,7 @@ export default function NovoProdutoPage() {
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#020b18]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-md items-center gap-4 px-4 py-4">
           <Link
-            href="/admin/entrega"
+            href="/admin/produtos"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5"
           >
             <ArrowLeft
@@ -665,16 +692,12 @@ export default function NovoProdutoPage() {
 
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-400">
-              Configuração inicial
+              Produtos
             </p>
 
             <h1 className="truncate text-lg font-black">
               Cadastrar produto
             </h1>
-          </div>
-
-          <div className="ml-auto rounded-full bg-sky-500/15 px-3 py-1.5 text-xs font-bold text-sky-300">
-            3 de 4
           </div>
         </div>
       </header>
@@ -727,12 +750,14 @@ export default function NovoProdutoPage() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Você pode cadastrar mais produtos agora ou revisar sua loja quando terminar.
+              Você pode cadastrar mais produtos ou consultar os itens da sua loja.
             </p>
 
             <button
               type="button"
-              onClick={cadastrarOutroProduto}
+              onClick={
+                cadastrarOutroProduto
+              }
               className="mt-5 flex h-14 w-full items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
             >
               Cadastrar outro produto
@@ -752,17 +777,10 @@ export default function NovoProdutoPage() {
                 size={19}
               />
             </Link>
-
-            <Link
-              href="/admin/publicar"
-              className="mt-3 block text-sm font-bold text-emerald-200 underline underline-offset-4"
-            >
-              Revisar minha loja e publicar
-            </Link>
           </section>
         ) : (
           <>
-                      <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
               <div className="flex items-center gap-3">
                 <ImagePlus
                   size={21}
@@ -809,7 +827,7 @@ export default function NovoProdutoPage() {
                     .current
                     ?.click()
                 }
-                className="relative mt-5 flex min-h-56 w-full overflow-hidden rounded-[24px] border-2 border-dashed border-violet-400/30 bg-violet-400/[0.06]"
+                className="relative mt-5 flex h-64 w-full overflow-hidden rounded-[24px] border-2 border-dashed border-violet-400/30 bg-white"
               >
                 {preview ? (
                   <>
@@ -817,35 +835,98 @@ export default function NovoProdutoPage() {
                       src={preview}
                       alt="Produto selecionado"
                       fill
-                      className="object-contain p-2"
+                      className={
+                        ajusteImagem ===
+                        "preencher"
+                          ? "object-cover"
+                          : "object-contain p-2"
+                      }
                       unoptimized
                     />
 
-                    <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-2 text-xs font-bold">
+                    <span className="absolute bottom-3 right-3 rounded-full bg-black/75 px-3 py-2 text-xs font-bold text-white">
                       Trocar foto
                     </span>
                   </>
                 ) : (
-                  <div className="m-auto flex flex-col items-center px-6 text-center">
+                  <div className="m-auto flex flex-col items-center px-6 text-center text-slate-400">
                     <ImagePlus
                       size={32}
-                      className="text-violet-300"
+                      className="text-violet-400"
                     />
 
-                    <strong className="mt-3">
+                    <strong className="mt-3 text-slate-700">
                       Adicionar foto
                     </strong>
 
-                    <span className="mt-2 text-xs leading-5 text-slate-400">
+                    <span className="mt-2 text-xs leading-5">
                       Prefira uma imagem quadrada, com boa iluminação e fundo limpo
                     </span>
                   </div>
                 )}
               </button>
 
-              <p className="mt-3 text-center text-xs text-slate-500">
-                A imagem será otimizada automaticamente
-              </p>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+                <div className="flex items-start gap-3">
+                  <Maximize2
+                    size={20}
+                    className="mt-0.5 shrink-0 text-sky-300"
+                  />
+
+                  <div>
+                    <p className="font-bold">
+                      Ajuste da imagem
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      Escolha como a foto aparecerá na vitrine.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAjusteImagem(
+                        "conter"
+                      )
+                    }
+                    className={`rounded-2xl border px-3 py-3 text-xs font-bold transition ${
+                      ajusteImagem ===
+                      "conter"
+                        ? "border-sky-400 bg-sky-400/15 text-sky-200"
+                        : "border-white/10 bg-white/[0.04] text-slate-400"
+                    }`}
+                  >
+                    Mostrar inteira
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAjusteImagem(
+                        "preencher"
+                      )
+                    }
+                    className={`rounded-2xl border px-3 py-3 text-xs font-bold transition ${
+                      ajusteImagem ===
+                      "preencher"
+                        ? "border-sky-400 bg-sky-400/15 text-sky-200"
+                        : "border-white/10 bg-white/[0.04] text-slate-400"
+                    }`}
+                  >
+                    Preencher espaço
+                  </button>
+                </div>
+
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  {ajusteImagem ===
+                  "preencher"
+                    ? "A imagem preencherá todo o card e poderá ter pequenas partes cortadas."
+                    : "A imagem aparecerá inteira e poderá deixar espaços nas bordas."}
+                </p>
+              </div>
             </section>
 
             <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
@@ -898,6 +979,10 @@ export default function NovoProdutoPage() {
                     }
                     placeholder="Ex.: Camiseta básica preta"
                     maxLength={80}
+                    lang="pt-BR"
+                    spellCheck={true}
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
                     className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-sky-400"
                   />
                 </div>
@@ -921,6 +1006,10 @@ export default function NovoProdutoPage() {
                     placeholder="Explique tamanho, material, características ou conteúdo."
                     rows={4}
                     maxLength={300}
+                    lang="pt-BR"
+                    spellCheck={true}
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
                     className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-4 outline-none focus:border-sky-400"
                   />
 
@@ -980,6 +1069,10 @@ export default function NovoProdutoPage() {
                   }
                   placeholder="Ex.: Camisetas"
                   maxLength={50}
+                  lang="pt-BR"
+                  spellCheck={true}
+                  autoCorrect="on"
+                  autoCapitalize="words"
                   className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
                 />
 
@@ -1041,7 +1134,9 @@ export default function NovoProdutoPage() {
                   </p>
                 ) : null}
               </div>
-            </section>            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+            </section>
+
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
               <div className="flex items-center gap-3">
                 <Boxes
                   size={21}
@@ -1092,7 +1187,7 @@ export default function NovoProdutoPage() {
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-slate-400">
-                    Marque para o sistema indicar quando o produto esgotar
+                    Marque para indicar quando o produto esgotar
                   </p>
                 </div>
 
@@ -1137,10 +1232,6 @@ export default function NovoProdutoPage() {
                     inputMode="numeric"
                     className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-cyan-400"
                   />
-
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    Quando chegar a zero, o produto será mostrado como esgotado.
-                  </p>
                 </div>
               )}
             </section>

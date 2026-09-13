@@ -9,28 +9,29 @@ import {
   useState,
 } from "react";
 
-import { useStore } from "@/context/StoreContext";
-import { supabase } from "@/lib/supabase";
+import {
+  useStore,
+} from "@/context/StoreContext";
+
+import {
+  supabase,
+} from "@/lib/supabase";
+
+export type AjusteImagem =
+  | "conter"
+  | "preencher";
 
 export type Produto = {
   id: number;
-
   loja_id: number;
-
   nome: string;
-
   descricao: string;
-
   categoria: string;
-
   preco: number;
-
   estoque: number;
-
   estoque_controlado: boolean;
-
   imagem: string;
-
+  ajuste_imagem: AjusteImagem;
   ativo: boolean;
 };
 
@@ -41,7 +42,6 @@ type NovoProduto = Omit<
 
 type ProductContextType = {
   produtos: Produto[];
-
   carregando: boolean;
 
   adicionarProduto: (
@@ -56,13 +56,22 @@ type ProductContextType = {
     id: number
   ) => Promise<void>;
 
-  recarregarProdutos: () => Promise<void>;
+  recarregarProdutos:
+    () => Promise<void>;
 };
 
 const ProductContext =
   createContext<
     ProductContextType | undefined
   >(undefined);
+
+function normalizarAjusteImagem(
+  valor: unknown
+): AjusteImagem {
+  return valor === "preencher"
+    ? "preencher"
+    : "conter";
+}
 
 export function ProductProvider({
   children,
@@ -87,47 +96,36 @@ export function ProductProvider({
   const recarregarProdutos =
     useCallback(
       async () => {
-        if (
-          carregandoLoja
-        ) {
+        if (carregandoLoja) {
           return;
         }
 
         if (!loja) {
           setProdutos([]);
-
-          setCarregando(
-            false
-          );
+          setCarregando(false);
 
           return;
         }
 
         try {
-          setCarregando(
-            true
-          );
+          setCarregando(true);
 
           const {
             data,
             error,
-          } =
-            await supabase
-              .from(
-                "produtos"
-              )
-              .select("*")
-              .eq(
-                "loja_id",
-                loja.id
-              )
-              .order(
-                "created_at",
-                {
-                  ascending:
-                    true,
-                }
-              );
+          } = await supabase
+            .from("produtos")
+            .select("*")
+            .eq(
+              "loja_id",
+              loja.id
+            )
+            .order(
+              "created_at",
+              {
+                ascending: true,
+              }
+            );
 
           if (error) {
             throw error;
@@ -137,7 +135,7 @@ export function ProductProvider({
             (data ?? []).map(
               (
                 produto
-              ) => ({
+              ): Produto => ({
                 id:
                   Number(
                     produto.id
@@ -149,7 +147,8 @@ export function ProductProvider({
                   ),
 
                 nome:
-                  produto.nome,
+                  produto.nome ??
+                  "",
 
                 descricao:
                   produto.descricao ??
@@ -161,13 +160,14 @@ export function ProductProvider({
 
                 preco:
                   Number(
-                    produto.preco
+                    produto.preco ??
+                    0
                   ),
 
                 estoque:
                   Number(
                     produto.estoque ??
-                      0
+                    0
                   ),
 
                 estoque_controlado:
@@ -178,27 +178,26 @@ export function ProductProvider({
                   produto.imagem ??
                   "/images/logo.png",
 
+                ajuste_imagem:
+                  normalizarAjusteImagem(
+                    produto.ajuste_imagem
+                  ),
+
                 ativo:
                   produto.ativo ??
                   true,
               })
             )
           );
-        } catch (
-          error
-        ) {
+        } catch (error) {
           console.error(
             "Erro ao carregar produtos:",
             error
           );
 
-          setProdutos(
-            []
-          );
+          setProdutos([]);
         } finally {
-          setCarregando(
-            false
-          );
+          setCarregando(false);
         }
       },
       [
@@ -225,39 +224,41 @@ export function ProductProvider({
 
       const {
         error,
-      } =
-        await supabase
-          .from(
-            "produtos"
-          )
-          .insert({
-            loja_id:
-              loja.id,
+      } = await supabase
+        .from("produtos")
+        .insert({
+          loja_id:
+            loja.id,
 
-            nome:
-              produto.nome,
+          nome:
+            produto.nome,
 
-            descricao:
-              produto.descricao,
+          descricao:
+            produto.descricao,
 
-            categoria:
-              produto.categoria,
+          categoria:
+            produto.categoria,
 
-            preco:
-              produto.preco,
+          preco:
+            produto.preco,
 
-            estoque:
-              produto.estoque,
+          estoque:
+            produto.estoque,
 
-            estoque_controlado:
-              produto.estoque_controlado,
+          estoque_controlado:
+            produto.estoque_controlado,
 
-            imagem:
-              produto.imagem,
+          imagem:
+            produto.imagem,
 
-            ativo:
-              produto.ativo,
-          });
+          ajuste_imagem:
+            normalizarAjusteImagem(
+              produto.ajuste_imagem
+            ),
+
+          ativo:
+            produto.ativo,
+        });
 
       if (error) {
         console.error(
@@ -283,20 +284,17 @@ export function ProductProvider({
 
       const {
         error,
-      } =
-        await supabase
-          .from(
-            "produtos"
-          )
-          .delete()
-          .eq(
-            "id",
-            id
-          )
-          .eq(
-            "loja_id",
-            loja.id
-          );
+      } = await supabase
+        .from("produtos")
+        .delete()
+        .eq(
+          "id",
+          id
+        )
+        .eq(
+          "loja_id",
+          loja.id
+        );
 
       if (error) {
         console.error(
@@ -334,23 +332,20 @@ export function ProductProvider({
 
       const {
         error,
-      } =
-        await supabase
-          .from(
-            "produtos"
-          )
-          .update({
-            ativo:
-              !produto.ativo,
-          })
-          .eq(
-            "id",
-            id
-          )
-          .eq(
-            "loja_id",
-            loja.id
-          );
+      } = await supabase
+        .from("produtos")
+        .update({
+          ativo:
+            !produto.ativo,
+        })
+        .eq(
+          "id",
+          id
+        )
+        .eq(
+          "loja_id",
+          loja.id
+        );
 
       if (error) {
         console.error(
