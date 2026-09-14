@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Suspense,
@@ -23,6 +23,7 @@ import {
   Copy,
   CreditCard,
   ExternalLink,
+  Gift,
   LoaderCircle,
   LockKeyhole,
   LogOut,
@@ -93,6 +94,23 @@ type RespostaStatus = {
   lojaId: number | null;
   fimPeriodo: string | null;
   proximaCobranca: string | null;
+  tipoAcesso?: string;
+  testeGratis?: boolean;
+  testeDisponivel?: boolean;
+  testeInicio?: string | null;
+  testeFim?: string | null;
+  diasRestantesTeste?: number;
+  erro?: string;
+};
+
+type RespostaTeste = {
+  mensagem?: string;
+  codigo?: string;
+  ativo?: boolean;
+  testeGratis?: boolean;
+  testeInicio?: string | null;
+  testeFim?: string | null;
+  duracaoDias?: number;
   erro?: string;
 };
 
@@ -251,6 +269,21 @@ function AssinarConteudo() {
   ] =
     useState("");
 
+  const [
+    testeDisponivel,
+    setTesteDisponivel,
+  ] = useState(false);
+
+  const [
+    testeJaUtilizado,
+    setTesteJaUtilizado,
+  ] = useState(false);
+
+  const [
+    ativandoTeste,
+    setAtivandoTeste,
+  ] = useState(false);
+
   const verificarStatus =
     async (
       mostrarCarregamento = false
@@ -301,6 +334,19 @@ function AssinarConteudo() {
 
           return true;
         }
+
+        setTesteDisponivel(
+          Boolean(
+            resultado.testeDisponivel
+          )
+        );
+
+        setTesteJaUtilizado(
+          Boolean(
+            !resultado.testeDisponivel &&
+              resultado.testeInicio
+          )
+        );
 
         return false;
       } catch (error) {
@@ -562,6 +608,75 @@ function AssinarConteudo() {
       }
     };
 
+  const iniciarTesteGratis =
+    async () => {
+      if (ativandoTeste) {
+        return;
+      }
+
+      setAtivandoTeste(true);
+      setErro("");
+
+      try {
+        const token =
+          await obterToken();
+
+        const resposta =
+          await fetch(
+            "/api/assinatura/teste",
+            {
+              method: "POST",
+              headers: {
+                authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const resultado =
+          (await resposta.json()) as
+            RespostaTeste;
+
+        if (!resposta.ok) {
+          if (
+            resultado.codigo ===
+              "TESTE_ATIVO" ||
+            resultado.codigo ===
+              "ASSINATURA_ATIVA" ||
+            resultado.codigo ===
+              "ACESSO_VITALICIO"
+          ) {
+            router.replace("/admin");
+            router.refresh();
+            return;
+          }
+
+          if (
+            resultado.codigo ===
+            "TESTE_UTILIZADO"
+          ) {
+            setTesteDisponivel(false);
+            setTesteJaUtilizado(true);
+          }
+
+          throw new Error(
+            resultado.erro ||
+              "Não foi possível ativar o teste grátis."
+          );
+        }
+
+        router.replace("/admin");
+        router.refresh();
+      } catch (error) {
+        setErro(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível ativar o teste grátis."
+        );
+        setAtivandoTeste(false);
+      }
+    };
+
   const copiarPix =
     async () => {
       if (
@@ -677,11 +792,63 @@ function AssinarConteudo() {
 
         {!pagamento && (
           <>
+            <section className="mt-6 overflow-hidden rounded-[30px] border border-sky-300/25 bg-gradient-to-br from-sky-500/20 to-blue-600/10 shadow-2xl">
+              <div className="p-6 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-400/15 text-sky-300">
+                  <Gift size={27} />
+                </div>
+
+                <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-sky-300">
+                  Experimente antes de pagar
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black text-white">
+                  Teste grátis por 30 dias
+                </h2>
+
+                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-300">
+                  Use a loja completa, cadastre seus produtos e receba pedidos pelo WhatsApp. Não precisa informar cartão.
+                </p>
+
+                {testeDisponivel ? (
+                  <button
+                    type="button"
+                    onClick={iniciarTesteGratis}
+                    disabled={
+                      ativandoTeste ||
+                      gerandoPagamento !== null
+                    }
+                    className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-sky-500 px-5 py-4 text-sm font-black text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {ativandoTeste ? (
+                      <>
+                        <LoaderCircle size={19} className="animate-spin" />
+                        Ativando teste...
+                      </>
+                    ) : (
+                      <>
+                        <Zap size={19} />
+                        Começar teste grátis
+                      </>
+                    )}
+                  </button>
+                ) : testeJaUtilizado ? (
+                  <div className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4 text-sm font-semibold text-amber-200">
+                    O teste grátis desta loja já foi utilizado. Escolha um dos planos abaixo para continuar.
+                  </div>
+                ) : (
+                  <div className="mt-5 flex min-h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] px-5 text-sm font-semibold text-slate-400">
+                    Verificando disponibilidade do teste...
+                  </div>
+                )}
+              </div>
+            </section>
+
             {planoDaUrl ===
               "anual" && (
               <div className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-5 text-center">
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-                  🎉 Sua oferta foi preservada
+                  0 Sua oferta foi preservada
                 </p>
 
                 <div className="mt-2 flex items-end justify-center gap-2">
@@ -835,7 +1002,7 @@ function AssinarConteudo() {
                 <div className="bg-gradient-to-br from-emerald-500 to-teal-700 p-6 text-white">
 
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-50">
-                    🔥 Oferta de lançamento
+                     Oferta de lançamento
                   </p>
 
                   <div className="mt-4">
@@ -980,7 +1147,7 @@ function AssinarConteudo() {
                             size={18}
                           />
 
-                          Pix — R$ 597 à vista
+                          Pix — R$ 597 à vista
                         </>
                       )}
                     </button>
@@ -1431,3 +1598,4 @@ export default function AssinarPage() {
     </Suspense>
   );
 }
+

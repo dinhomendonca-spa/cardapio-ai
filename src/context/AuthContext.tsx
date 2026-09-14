@@ -7,12 +7,10 @@ import {
   useEffect,
   useState,
 } from "react";
-
 import type {
   Session,
   User,
 } from "@supabase/supabase-js";
-
 import { supabase } from "@/lib/supabase";
 
 export type DadosCadastro = {
@@ -31,6 +29,7 @@ export type DadosCadastro = {
 };
 
 export type PlanoCadastro =
+  | "teste"
   | "mensal"
   | "anual";
 
@@ -65,7 +64,9 @@ const AuthContext = createContext<
   AuthContextType | undefined
 >(undefined);
 
-function somenteNumeros(valor: string) {
+function somenteNumeros(
+  valor: string
+) {
   return valor.replace(/\D/g, "");
 }
 
@@ -120,6 +121,7 @@ export function AuthProvider({
           }
 
           setSession(data.session);
+
           setUser(
             data.session?.user ??
               null
@@ -136,7 +138,9 @@ export function AuthProvider({
           }
         } finally {
           if (ativo) {
-            setCarregandoAuth(false);
+            setCarregandoAuth(
+              false
+            );
           }
         }
       };
@@ -147,15 +151,22 @@ export function AuthProvider({
       data: listener,
     } =
       supabase.auth.onAuthStateChange(
-        (_event, novaSessao) => {
-          setSession(novaSessao);
+        (
+          _event,
+          novaSessao
+        ) => {
+          setSession(
+            novaSessao
+          );
 
           setUser(
             novaSessao?.user ??
               null
           );
 
-          setCarregandoAuth(false);
+          setCarregandoAuth(
+            false
+          );
         }
       );
 
@@ -194,14 +205,17 @@ export function AuthProvider({
 
   const cadastrar = async (
     dados: DadosCadastro,
-    plano: PlanoCadastro = "mensal"
+    plano: PlanoCadastro =
+      "mensal"
   ): Promise<ResultadoCadastro> => {
     const email = dados.email
       .trim()
       .toLowerCase();
 
     const cpf =
-      somenteNumeros(dados.cpf);
+      somenteNumeros(
+        dados.cpf
+      );
 
     const telefone =
       somenteNumeros(
@@ -209,7 +223,9 @@ export function AuthProvider({
       );
 
     const cep =
-      somenteNumeros(dados.cep);
+      somenteNumeros(
+        dados.cep
+      );
 
     const {
       data,
@@ -217,8 +233,8 @@ export function AuthProvider({
     } =
       await supabase.auth.signUp({
         email,
-
-        password: dados.senha,
+        password:
+          dados.senha,
 
         options: {
           emailRedirectTo:
@@ -277,7 +293,8 @@ export function AuthProvider({
   const reenviarConfirmacao =
     async (
       email: string,
-      plano: PlanoCadastro = "mensal"
+      plano: PlanoCadastro =
+        "mensal"
     ) => {
       const emailNormalizado =
         email
@@ -299,7 +316,8 @@ export function AuthProvider({
         await supabase.auth.resend({
           type: "signup",
 
-          email: emailNormalizado,
+          email:
+            emailNormalizado,
 
           options: {
             emailRedirectTo:

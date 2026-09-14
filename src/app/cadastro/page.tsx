@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Suspense,
@@ -196,11 +196,19 @@ function CadastroConteudo() {
     reenviarConfirmacao,
   } = useAuth();
 
-  const plano: PlanoCadastro =
-    searchParams.get("plano") ===
-    "anual"
+  const planoInicial: PlanoCadastro =
+    searchParams.get("plano") === "anual"
       ? "anual"
-      : "mensal";
+      : searchParams.get("plano") === "mensal"
+        ? "mensal"
+        : "teste";
+
+  const [
+    plano,
+    setPlano,
+  ] = useState<PlanoCadastro>(
+    planoInicial
+  );
 
   const [dados, setDados] =
     useState<DadosCadastro>(
@@ -565,7 +573,7 @@ function CadastroConteudo() {
           </p>
 
           <h1 className="mt-2 text-3xl font-black tracking-tight">
-            Crie sua loja online
+            Teste sua loja por 30 dias
           </h1>
 
           <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400">
@@ -579,8 +587,8 @@ function CadastroConteudo() {
         <div className="mb-5 grid grid-cols-3 gap-2">
           {[
             ["1", "Cadastro"],
-            ["2", "Pagamento"],
-            ["3", "Loja online"],
+            ["2", "Teste gratuito"],
+            ["3", "Decida depois"],
           ].map(
             ([numero, texto]) => (
               <div
@@ -599,27 +607,76 @@ function CadastroConteudo() {
           )}
         </div>
 
-        {plano === "anual" && (
-          <div className="mb-5 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-5 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
-              Oferta anual selecionada
-            </p>
+        <section className="mb-5 rounded-3xl border border-white/10 bg-white/[0.05] p-4">
+          <p className="text-center text-xs font-black uppercase tracking-[0.16em] text-sky-300">
+            Escolha como começar
+          </p>
 
-            <p className="mt-2 text-sm text-slate-300">
-              Plano anual no cartão
-            </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => setPlano("teste")}
+              className={`rounded-2xl border p-4 text-left transition ${
+                plano === "teste"
+                  ? "border-sky-400 bg-sky-400/15 ring-2 ring-sky-400/20"
+                  : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+              }`}
+            >
+              <p className="text-sm font-black text-white">Teste grátis</p>
+              <p className="mt-1 text-xs text-slate-300">30 dias sem cartão</p>
+            </button>
 
-            <div className="mt-1 flex items-end justify-center gap-1">
-              <span className="mb-1 text-sm font-bold text-emerald-300">
-                12x de
-              </span>
+            <button
+              type="button"
+              onClick={() => setPlano("mensal")}
+              className={`rounded-2xl border p-4 text-left transition ${
+                plano === "mensal"
+                  ? "border-sky-400 bg-sky-400/15 ring-2 ring-sky-400/20"
+                  : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+              }`}
+            >
+              <p className="text-sm font-black text-white">Plano mensal</p>
+              <p className="mt-1 text-xs text-slate-300">R$ 59,90 por mês</p>
+            </button>
 
-              <span className="text-3xl font-black text-white">
-                R$ 49,75
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setPlano("anual")}
+              className={`rounded-2xl border p-4 text-left transition ${
+                plano === "anual"
+                  ? "border-emerald-400 bg-emerald-400/15 ring-2 ring-emerald-400/20"
+                  : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+              }`}
+            >
+              <p className="text-sm font-black text-white">Plano anual</p>
+              <p className="mt-1 text-xs text-slate-300">12x de R$ 49,75</p>
+            </button>
           </div>
-        )}
+
+          <div className={`mt-4 rounded-2xl border p-4 text-center ${
+            plano === "anual"
+              ? "border-emerald-400/20 bg-emerald-400/[0.08]"
+              : "border-sky-400/20 bg-sky-400/[0.08]"
+          }`}>
+            <p className={`text-xs font-black uppercase tracking-[0.14em] ${
+              plano === "anual" ? "text-emerald-300" : "text-sky-300"
+            }`}>
+              {plano === "teste"
+                ? "Teste grátis selecionado"
+                : plano === "mensal"
+                  ? "Plano mensal selecionado"
+                  : "Oferta anual selecionada"}
+            </p>
+
+            <p className="mt-2 text-lg font-black text-white">
+              {plano === "teste"
+                ? "30 dias grátis"
+                : plano === "mensal"
+                  ? "R$ 59,90 por mês"
+                  : "12x de R$ 49,75"}
+            </p>
+          </div>
+        </section>
 
         <form
           onSubmit={
@@ -1250,9 +1307,11 @@ function CadastroConteudo() {
 
             <div>
               <p className="text-sm font-bold">
-                {plano === "anual"
-                  ? "Plano anual — 12x de R$ 49,75"
-                  : "Plano mensal — R$ 59,90"}
+                {plano === "teste"
+                  ? "Teste grátis — 30 dias sem cartão"
+                  : plano === "anual"
+                    ? "Plano anual — 12x de R$ 49,75"
+                    : "Plano mensal — R$ 59,90"}
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-400">
@@ -1310,3 +1369,4 @@ export default function CadastroPage() {
     </Suspense>
   );
 }
+

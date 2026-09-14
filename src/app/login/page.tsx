@@ -7,19 +7,17 @@ import {
   useRef,
   useState,
 } from "react";
-
 import Link from "next/link";
-
 import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
-
 import {
   ArrowRight,
   CheckCircle2,
   Eye,
   EyeOff,
+  Gift,
   Loader2,
   LockKeyhole,
   Mail,
@@ -27,7 +25,6 @@ import {
   Store,
   UserPlus,
 } from "lucide-react";
-
 import {
   type PlanoCadastro,
   useAuth,
@@ -36,12 +33,27 @@ import {
 type RespostaStatus = {
   status: string;
   ativo: boolean;
+  tipoAcesso?: string;
+  testeDisponivel?: boolean;
   erro?: string;
 };
 
+function normalizarPlano(
+  valor: string | null
+): PlanoCadastro {
+  if (valor === "anual") {
+    return "anual";
+  }
+
+  if (valor === "mensal") {
+    return "mensal";
+  }
+
+  return "teste";
+}
+
 function LoginConteudo() {
-  const router =
-    useRouter();
+  const router = useRouter();
 
   const searchParams =
     useSearchParams();
@@ -53,11 +65,10 @@ function LoginConteudo() {
     entrar,
   } = useAuth();
 
-  const plano: PlanoCadastro =
-    searchParams.get("plano") ===
-    "anual"
-      ? "anual"
-      : "mensal";
+  const plano =
+    normalizarPlano(
+      searchParams.get("plano")
+    );
 
   const emailConfirmado =
     searchParams.get(
@@ -286,12 +297,9 @@ function LoginConteudo() {
   return (
     <main className="min-h-screen bg-[#020b18] px-4 py-8 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-sm flex-col justify-center">
-
         <div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white shadow-[0_14px_45px_rgba(14,165,233,0.35)]">
-            <Store
-              size={25}
-            />
+            <Store size={25} />
           </div>
 
           <p className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
@@ -303,9 +311,7 @@ function LoginConteudo() {
           </h1>
 
           <p className="mt-2 max-w-xs text-sm leading-6 text-slate-400">
-            Entre para continuar sua
-            contratação ou administrar
-            sua loja.
+            Entre para começar seu teste ou administrar sua loja.
           </p>
         </div>
 
@@ -323,19 +329,53 @@ function LoginConteudo() {
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-slate-300">
-                  Seu cadastro foi
-                  confirmado. Entre com
-                  seu e-mail e senha
-                  para continuar.
+                  Seu cadastro foi confirmado. Entre com seu e-mail e senha para continuar.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {plano === "anual" && (
+        {plano === "teste" && (
+          <div className="mt-4 rounded-3xl border border-sky-400/20 bg-sky-400/[0.08] p-4">
+            <div className="flex items-start gap-3">
+              <Gift
+                size={22}
+                className="mt-0.5 shrink-0 text-sky-300"
+              />
+
+              <div>
+                <p className="text-sm font-black text-sky-200">
+                  Seus 30 dias estão reservados
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-slate-300">
+                  Entre para ativar seu teste. Você não precisa informar cartão e só escolhe um plano se decidir continuar.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {plano === "mensal" && (
           <div className="mt-4 rounded-3xl border border-sky-400/20 bg-sky-400/[0.08] p-4 text-center">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-sky-300">
+              Plano mensal preservado
+            </p>
+
+            <p className="mt-2 text-2xl font-black text-white">
+              R$ 59,90
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">
+              por mês
+            </p>
+          </div>
+        )}
+
+        {plano === "anual" && (
+          <div className="mt-4 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4 text-center">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">
               Oferta anual preservada
             </p>
 
@@ -350,20 +390,15 @@ function LoginConteudo() {
             </div>
 
             <p className="mt-2 text-xs text-slate-400">
-              Depois do login você
-              continuará para a
-              contratação desse plano.
+              Depois do login você continuará para a contratação desse plano.
             </p>
           </div>
         )}
 
         <form
-          onSubmit={
-            fazerLogin
-          }
+          onSubmit={fazerLogin}
           className="mt-8 rounded-[28px] bg-white p-4 text-slate-950 shadow-2xl"
         >
-
           <div>
             <label
               htmlFor="email"
@@ -384,18 +419,13 @@ function LoginConteudo() {
                 inputMode="email"
                 autoComplete="email"
                 value={email}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setEmail(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="voce@empresa.com"
-                disabled={
-                  entrando
-                }
+                disabled={entrando}
                 className="h-14 w-full rounded-2xl bg-slate-100 pl-11 pr-4 text-base outline-none transition focus:ring-2 focus:ring-sky-300 disabled:opacity-60"
               />
             </div>
@@ -424,18 +454,13 @@ function LoginConteudo() {
                 }
                 autoComplete="current-password"
                 value={senha}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setSenha(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="Sua senha"
-                disabled={
-                  entrando
-                }
+                disabled={entrando}
                 className="h-14 w-full rounded-2xl bg-slate-100 pl-11 pr-12 text-base outline-none transition focus:ring-2 focus:ring-sky-300 disabled:opacity-60"
               />
 
@@ -443,10 +468,7 @@ function LoginConteudo() {
                 type="button"
                 onClick={() =>
                   setMostrarSenha(
-                    (
-                      atual
-                    ) =>
-                      !atual
+                    (atual) => !atual
                   )
                 }
                 className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-500"
@@ -457,13 +479,9 @@ function LoginConteudo() {
                 }
               >
                 {mostrarSenha ? (
-                  <EyeOff
-                    size={18}
-                  />
+                  <EyeOff size={18} />
                 ) : (
-                  <Eye
-                    size={18}
-                  />
+                  <Eye size={18} />
                 )}
               </button>
             </div>
@@ -482,15 +500,15 @@ function LoginConteudo() {
 
           <button
             type="submit"
-            disabled={
-              entrando
-            }
+            disabled={entrando}
             className="mt-5 flex h-14 w-full items-center justify-between rounded-2xl bg-slate-950 px-5 font-bold text-white transition hover:bg-sky-600 disabled:opacity-60"
           >
             <span>
               {entrando
                 ? "Entrando..."
-                : "Entrar e continuar"}
+                : plano === "teste"
+                  ? "Entrar e começar meu teste"
+                  : "Entrar e continuar"}
             </span>
 
             {entrando ? (
@@ -499,9 +517,7 @@ function LoginConteudo() {
                 className="animate-spin"
               />
             ) : (
-              <ArrowRight
-                size={19}
-              />
+              <ArrowRight size={19} />
             )}
           </button>
 
@@ -513,27 +529,20 @@ function LoginConteudo() {
               />
 
               <p className="text-xs leading-5 text-slate-600">
-                Se sua assinatura já
-                estiver ativa, você será
-                levado diretamente ao
-                painel. Caso contrário,
-                continuará para a
-                contratação.
+                {plano === "teste"
+                  ? "Depois de entrar, você poderá ativar 30 dias gratuitos. Nenhuma cobrança será criada."
+                  : "Se sua assinatura já estiver ativa, você será levado diretamente ao painel. Caso contrário, continuará para a contratação."}
               </p>
             </div>
           </div>
         </form>
 
         <div className="mt-4 grid gap-3">
-
           <Link
             href={linkCadastro}
             className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-400/10 text-sm font-bold text-sky-200 transition hover:bg-sky-400/15"
           >
-            <UserPlus
-              size={18}
-            />
-
+            <UserPlus size={18} />
             Criar minha conta
           </Link>
 
@@ -541,19 +550,13 @@ function LoginConteudo() {
             href={linkCadastro}
             className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-xs font-bold text-slate-300 transition hover:bg-white/[0.08]"
           >
-            <Mail
-              size={16}
-            />
-
+            <Mail size={16} />
             Não recebi a confirmação
           </Link>
-
         </div>
 
         <p className="mt-5 text-center text-[11px] leading-5 text-slate-500">
-          Se você já iniciou seu
-          cadastro, não precisa criar
-          outra conta.
+          Se você já iniciou seu cadastro, não precisa criar outra conta.
         </p>
       </div>
     </main>

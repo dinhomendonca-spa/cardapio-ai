@@ -4,20 +4,37 @@ import {
   Suspense,
   useState,
 } from "react";
-
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-
+import {
+  useSearchParams,
+} from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
+  Gift,
   LoaderCircle,
   MailCheck,
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
-
+import type {
+  PlanoCadastro,
+} from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+
+function normalizarPlano(
+  valor: string | null
+): PlanoCadastro {
+  if (valor === "anual") {
+    return "anual";
+  }
+
+  if (valor === "mensal") {
+    return "mensal";
+  }
+
+  return "teste";
+}
 
 function ConteudoVerifiqueEmail() {
   const parametros =
@@ -26,60 +43,88 @@ function ConteudoVerifiqueEmail() {
   const email =
     parametros.get("email") ?? "";
 
-  const [reenviando, setReenviando] =
-    useState(false);
+  const plano =
+    normalizarPlano(
+      parametros.get("plano")
+    );
 
-  const [mensagem, setMensagem] =
-    useState("");
+  const [
+    reenviando,
+    setReenviando,
+  ] = useState(false);
 
-  const [erro, setErro] =
-    useState("");
+  const [
+    mensagem,
+    setMensagem,
+  ] = useState("");
 
-  const reenviarEmail = async () => {
-    if (!email) {
-      setErro(
-        "E-mail não identificado. Volte ao cadastro e tente novamente."
-      );
-      return;
-    }
+  const [
+    erro,
+    setErro,
+  ] = useState("");
 
-    setReenviando(true);
-    setMensagem("");
-    setErro("");
+  const linkLogin =
+    `/login?plano=${plano}`;
 
-    try {
-      const {
-        error,
-      } = await supabase.auth.resend({
-        type: "signup",
-        email,
-        options: {
-          emailRedirectTo:
-            `${window.location.origin}/login?confirmado=1`,
-        },
-      });
+  const linkCadastro =
+    `/cadastro?plano=${plano}`;
 
-      if (error) {
-        throw error;
+  const nomeEscolha =
+    plano === "teste"
+      ? "Teste grátis por 30 dias"
+      : plano === "anual"
+        ? "Plano anual — 12x de R$ 49,75"
+        : "Plano mensal — R$ 59,90";
+
+  const reenviarEmail =
+    async () => {
+      if (!email) {
+        setErro(
+          "E-mail não identificado. Volte ao cadastro e tente novamente."
+        );
+
+        return;
       }
 
-      setMensagem(
-        "Um novo e-mail de confirmação foi enviado."
-      );
-    } catch (error) {
-      const texto =
-        error instanceof Error
-          ? error.message
-          : "";
+      setReenviando(true);
+      setMensagem("");
+      setErro("");
 
-      setErro(
-        texto ||
-          "Não foi possível reenviar o e-mail agora."
-      );
-    } finally {
-      setReenviando(false);
-    }
-  };
+      try {
+        const { error } =
+          await supabase.auth.resend({
+            type: "signup",
+            email,
+
+            options: {
+              emailRedirectTo:
+                `${
+                  window.location.origin
+                }/login?confirmado=1&plano=${plano}`,
+            },
+          });
+
+        if (error) {
+          throw error;
+        }
+
+        setMensagem(
+          "Um novo e-mail de confirmação foi enviado."
+        );
+      } catch (error) {
+        const texto =
+          error instanceof Error
+            ? error.message
+            : "";
+
+        setErro(
+          texto ||
+            "Não foi possível reenviar o e-mail agora."
+        );
+      } finally {
+        setReenviando(false);
+      }
+    };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#020b18] px-4 py-10 text-white">
@@ -99,15 +144,38 @@ function ConteudoVerifiqueEmail() {
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              Enviamos um link para
-              confirmar que você tem
-              acesso ao endereço
-              cadastrado.
+              Confirme seu endereço de e-mail para continuar e começar a preparar sua loja.
             </p>
           </div>
 
+          {/* OPÇÃO ESCOLHIDA */}
+          <div className="mt-6 rounded-2xl border border-sky-300/15 bg-sky-400/10 p-4">
+            <div className="flex items-start gap-3">
+              <Gift
+                size={20}
+                className="mt-0.5 shrink-0 text-sky-300"
+              />
+
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Opção escolhida
+                </p>
+
+                <p className="mt-1 break-words text-sm font-black text-white">
+                  {nomeEscolha}
+                </p>
+
+                {plano === "teste" && (
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Você não precisa informar cartão e não haverá cobrança automática.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {email && (
-            <div className="mt-6 rounded-2xl border border-sky-300/15 bg-sky-400/10 p-4 text-center">
+            <div className="mt-4 rounded-2xl border border-sky-300/15 bg-sky-400/10 p-4 text-center">
               <p className="text-xs text-slate-400">
                 E-mail enviado para
               </p>
@@ -123,7 +191,9 @@ function ConteudoVerifiqueEmail() {
               "Abra sua caixa de entrada.",
               "Procure o e-mail do Visite Minha Loja.",
               "Clique no link de confirmação.",
-              "Depois, entre na sua conta.",
+              plano === "teste"
+                ? "Entre e ative seus 30 dias gratuitos."
+                : "Entre para continuar com o plano escolhido.",
             ].map(
               (item, indice) => (
                 <div
@@ -149,10 +219,9 @@ function ConteudoVerifiqueEmail() {
             />
 
             <p className="text-xs leading-5 text-slate-400">
-              Nenhuma cobrança será
-              realizada antes da
-              confirmação do e-mail e
-              da sua autorização.
+              {plano === "teste"
+                ? "Você poderá usar o aplicativo por 30 dias. Depois, só paga se decidir continuar com sua loja."
+                : "Nenhuma cobrança será realizada antes da confirmação do e-mail e da sua autorização."}
             </p>
           </div>
 
@@ -165,6 +234,7 @@ function ConteudoVerifiqueEmail() {
                 size={18}
                 className="mt-0.5 shrink-0"
               />
+
               {mensagem}
             </div>
           )}
@@ -179,7 +249,7 @@ function ConteudoVerifiqueEmail() {
           )}
 
           <Link
-            href="/login"
+            href={linkLogin}
             className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950 transition hover:bg-sky-100"
           >
             Já confirmei meu e-mail
@@ -199,6 +269,7 @@ function ConteudoVerifiqueEmail() {
                   size={17}
                   className="animate-spin"
                 />
+
                 Reenviando...
               </>
             ) : (
@@ -210,13 +281,12 @@ function ConteudoVerifiqueEmail() {
           </button>
 
           <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-            Confira também as pastas de
-            spam e lixo eletrônico.
+            Confira também as pastas de spam e lixo eletrônico.
           </p>
         </div>
 
         <Link
-          href="/cadastro"
+          href={linkCadastro}
           className="mx-auto mt-6 flex w-fit items-center gap-2 text-sm font-semibold text-slate-400 transition hover:text-white"
         >
           <ArrowLeft size={17} />
@@ -241,7 +311,9 @@ function CarregandoPagina() {
 export default function VerifiqueEmailPage() {
   return (
     <Suspense
-      fallback={<CarregandoPagina />}
+      fallback={
+        <CarregandoPagina />
+      }
     >
       <ConteudoVerifiqueEmail />
     </Suspense>
