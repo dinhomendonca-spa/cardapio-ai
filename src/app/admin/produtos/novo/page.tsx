@@ -13,29 +13,25 @@ import {
   Loader2,
   Maximize2,
   PackagePlus,
+  Rocket,
   Save,
   Sparkles,
 } from "lucide-react";
 
 import {
-  ChangeEvent,
+  type ChangeEvent,
   useEffect,
   useRef,
   useState,
 } from "react";
 
 import {
-  AjusteImagem,
+  type AjusteImagem,
   useProducts,
 } from "@/context/ProductContext";
 
-import {
-  useStore,
-} from "@/context/StoreContext";
-
-import {
-  supabase,
-} from "@/lib/supabase";
+import { useStore } from "@/context/StoreContext";
+import { supabase } from "@/lib/supabase";
 
 const CATEGORIAS_SUGERIDAS = [
   "Destaques",
@@ -44,15 +40,10 @@ const CATEGORIAS_SUGERIDAS = [
   "Promoções",
 ];
 
-function converterPreco(
-  valor: string
-) {
-  const limpo =
-    valor.trim();
+function converterPreco(valor: string) {
+  const limpo = valor.trim();
 
-  if (
-    limpo.includes(",")
-  ) {
+  if (limpo.includes(",")) {
     return Number(
       limpo
         .replace(/\./g, "")
@@ -60,54 +51,37 @@ function converterPreco(
     );
   }
 
-  return Number(
-    limpo
-  );
+  return Number(limpo);
 }
 
 export default function NovoProdutoPage() {
-  const {
-    adicionarProduto,
-  } = useProducts();
+  const { adicionarProduto } =
+    useProducts();
 
-  const {
-    loja,
-  } = useStore();
+  const { loja } = useStore();
 
   const inputImagemRef =
-    useRef<HTMLInputElement>(
-      null
-    );
+    useRef<HTMLInputElement>(null);
 
-  const [
-    nome,
-    setNome,
-  ] = useState("");
+  const [nome, setNome] =
+    useState("");
 
-  const [
-    descricao,
-    setDescricao,
-  ] = useState("");
+  const [descricao, setDescricao] =
+    useState("");
 
-  const [
-    categoria,
-    setCategoria,
-  ] = useState("");
+  const [categoria, setCategoria] =
+    useState("");
 
-  const [
-    preco,
-    setPreco,
-  ] = useState("");
+  const [preco, setPreco] =
+    useState("");
 
   const [
     controlarEstoque,
     setControlarEstoque,
   ] = useState(true);
 
-  const [
-    estoque,
-    setEstoque,
-  ] = useState("");
+  const [estoque, setEstoque] =
+    useState("");
 
   const [
     ajusteImagem,
@@ -116,26 +90,14 @@ export default function NovoProdutoPage() {
     "conter"
   );
 
-  const [
-    arquivo,
-    setArquivo,
-  ] =
-    useState<File | null>(
-      null
-    );
+  const [arquivo, setArquivo] =
+    useState<File | null>(null);
 
-  const [
-    preview,
-    setPreview,
-  ] =
-    useState<string | null>(
-      null
-    );
+  const [preview, setPreview] =
+    useState<string | null>(null);
 
-  const [
-    salvando,
-    setSalvando,
-  ] = useState(false);
+  const [salvando, setSalvando] =
+    useState(false);
 
   const [
     produtoSalvo,
@@ -150,9 +112,7 @@ export default function NovoProdutoPage() {
         );
       }
     };
-  }, [
-    preview,
-  ]);
+  }, [preview]);
 
   const selecionarImagem = (
     event:
@@ -174,9 +134,7 @@ export default function NovoProdutoPage() {
         "Selecione um arquivo de imagem."
       );
 
-      event.target.value =
-        "";
-
+      event.target.value = "";
       return;
     }
 
@@ -191,9 +149,7 @@ export default function NovoProdutoPage() {
         "A imagem deve ter no máximo 15 MB."
       );
 
-      event.target.value =
-        "";
-
+      event.target.value = "";
       return;
     }
 
@@ -203,9 +159,7 @@ export default function NovoProdutoPage() {
       );
     }
 
-    setArquivo(
-      imagem
-    );
+    setArquivo(imagem);
 
     setPreview(
       URL.createObjectURL(
@@ -218,11 +172,8 @@ export default function NovoProdutoPage() {
     async (
       arquivoOriginal: File
     ): Promise<File> => {
-      const tamanhoMaximo =
-        1200;
-
-      const qualidade =
-        0.82;
+      const tamanhoMaximo = 1200;
+      const qualidade = 0.82;
 
       const urlOriginal =
         URL.createObjectURL(
@@ -239,22 +190,17 @@ export default function NovoProdutoPage() {
               const img =
                 new window.Image();
 
-              img.onload =
-                () =>
-                  resolve(
-                    img
-                  );
+              img.onload = () =>
+                resolve(img);
 
-              img.onerror =
-                () =>
-                  reject(
-                    new Error(
-                      "Não foi possível processar esta imagem."
-                    )
-                  );
+              img.onerror = () =>
+                reject(
+                  new Error(
+                    "Não foi possível processar esta imagem."
+                  )
+                );
 
-              img.src =
-                urlOriginal;
+              img.src = urlOriginal;
             }
           );
 
@@ -283,22 +229,17 @@ export default function NovoProdutoPage() {
             Math.min(
               tamanhoMaximo /
                 largura,
-
               tamanhoMaximo /
                 altura
             );
 
-          largura =
-            Math.round(
-              largura *
-                proporcao
-            );
+          largura = Math.round(
+            largura * proporcao
+          );
 
-          altura =
-            Math.round(
-              altura *
-                proporcao
-            );
+          altura = Math.round(
+            altura * proporcao
+          );
         }
 
         const canvas =
@@ -306,16 +247,11 @@ export default function NovoProdutoPage() {
             "canvas"
           );
 
-        canvas.width =
-          largura;
-
-        canvas.height =
-          altura;
+        canvas.width = largura;
+        canvas.height = altura;
 
         const contexto =
-          canvas.getContext(
-            "2d"
-          );
+          canvas.getContext("2d");
 
         if (!contexto) {
           throw new Error(
@@ -354,9 +290,7 @@ export default function NovoProdutoPage() {
               reject
             ) => {
               canvas.toBlob(
-                (
-                  resultado
-                ) => {
+                (resultado) => {
                   if (!resultado) {
                     reject(
                       new Error(
@@ -367,13 +301,9 @@ export default function NovoProdutoPage() {
                     return;
                   }
 
-                  resolve(
-                    resultado
-                  );
+                  resolve(resultado);
                 },
-
                 "image/webp",
-
                 qualidade
               );
             }
@@ -391,16 +321,10 @@ export default function NovoProdutoPage() {
             );
 
         return new File(
-          [
-            blob,
-          ],
-
+          [blob],
           `${nomeLimpo || "produto"}.webp`,
-
           {
-            type:
-              "image/webp",
-
+            type: "image/webp",
             lastModified:
               Date.now(),
           }
@@ -428,9 +352,7 @@ export default function NovoProdutoPage() {
       const nomeArquivo =
         `lojas/${loja?.id ?? "sem-loja"}/produtos/${Date.now()}-${crypto.randomUUID()}.webp`;
 
-      const {
-        error,
-      } =
+      const { error } =
         await supabase.storage
           .from(
             "product-images"
@@ -441,10 +363,7 @@ export default function NovoProdutoPage() {
             {
               cacheControl:
                 "31536000",
-
-              upsert:
-                false,
-
+              upsert: false,
               contentType:
                 "image/webp",
             }
@@ -454,9 +373,7 @@ export default function NovoProdutoPage() {
         throw error;
       }
 
-      const {
-        data,
-      } =
+      const { data } =
         supabase.storage
           .from(
             "product-images"
@@ -469,14 +386,10 @@ export default function NovoProdutoPage() {
     };
 
   const precoNumerico =
-    converterPreco(
-      preco
-    );
+    converterPreco(preco);
 
   const estoqueNumerico =
-    Number(
-      estoque
-    );
+    Number(estoque);
 
   const imagemPreenchida =
     arquivo !== null;
@@ -520,23 +433,17 @@ export default function NovoProdutoPage() {
 
   const salvarProduto =
     async () => {
-      if (
-        !imagemPreenchida
-      ) {
+      if (!imagemPreenchida) {
         alert(
           "Adicione uma foto do produto."
         );
-
         return;
       }
 
-      if (
-        !nomePreenchido
-      ) {
+      if (!nomePreenchido) {
         alert(
           "Informe o nome do produto."
         );
-
         return;
       }
 
@@ -546,7 +453,6 @@ export default function NovoProdutoPage() {
         alert(
           "Escreva uma breve descrição do produto."
         );
-
         return;
       }
 
@@ -556,7 +462,6 @@ export default function NovoProdutoPage() {
         alert(
           "Informe uma categoria."
         );
-
         return;
       }
 
@@ -564,17 +469,13 @@ export default function NovoProdutoPage() {
         alert(
           "Informe um preço maior que zero."
         );
-
         return;
       }
 
-      if (
-        !estoqueValido
-      ) {
+      if (!estoqueValido) {
         alert(
           "Informe uma quantidade inteira e igual ou maior que zero."
         );
-
         return;
       }
 
@@ -585,39 +486,27 @@ export default function NovoProdutoPage() {
           await fazerUploadImagem();
 
         await adicionarProduto({
-          nome:
-            nome.trim(),
-
+          nome: nome.trim(),
           descricao:
             descricao.trim(),
-
           categoria:
             categoria.trim(),
-
           preco:
             precoNumerico,
-
           estoque:
             controlarEstoque
               ? estoqueNumerico
               : 0,
-
           estoque_controlado:
             controlarEstoque,
-
           imagem:
             imagemUrl,
-
           ajuste_imagem:
             ajusteImagem,
-
-          ativo:
-            true,
+          ativo: true,
         });
 
-        setProdutoSalvo(
-          true
-        );
+        setProdutoSalvo(true);
 
         window.scrollTo({
           top: 0,
@@ -717,7 +606,9 @@ export default function NovoProdutoPage() {
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-300">
-                Use uma foto nítida e informações simples para facilitar a compra.
+                Use uma foto nítida e
+                informações simples para
+                facilitar a compra.
               </p>
             </div>
           </div>
@@ -733,7 +624,8 @@ export default function NovoProdutoPage() {
           </div>
 
           <p className="mt-2 text-xs font-semibold text-sky-200">
-            {itensConcluidos} de 5 itens concluídos
+            {itensConcluidos} de 5
+            itens concluídos
           </p>
         </section>
 
@@ -750,15 +642,35 @@ export default function NovoProdutoPage() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Você pode cadastrar mais produtos ou consultar os itens da sua loja.
+              Seu produto foi salvo.
+              Agora você pode revisar e
+              publicar sua loja ou
+              cadastrar outros produtos.
             </p>
+
+            <Link
+              href="/admin/publicar"
+              className="mt-5 flex h-14 items-center justify-between rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 px-5 font-black text-white shadow-lg"
+            >
+              <span className="flex items-center gap-2">
+                <Rocket
+                  size={19}
+                />
+
+                Revisar e publicar
+              </span>
+
+              <ArrowRight
+                size={19}
+              />
+            </Link>
 
             <button
               type="button"
               onClick={
                 cadastrarOutroProduto
               }
-              className="mt-5 flex h-14 w-full items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
+              className="mt-3 flex h-14 w-full items-center justify-between rounded-2xl bg-emerald-500 px-5 font-bold"
             >
               Cadastrar outro produto
 
@@ -793,7 +705,8 @@ export default function NovoProdutoPage() {
                   </h2>
 
                   <p className="text-xs text-slate-400">
-                    Obrigatória para publicação
+                    Obrigatória para
+                    publicação
                   </p>
                 </div>
 
@@ -860,7 +773,10 @@ export default function NovoProdutoPage() {
                     </strong>
 
                     <span className="mt-2 text-xs leading-5">
-                      Prefira uma imagem quadrada, com boa iluminação e fundo limpo
+                      Prefira uma imagem
+                      quadrada, com boa
+                      iluminação e fundo
+                      limpo
                     </span>
                   </div>
                 )}
@@ -879,7 +795,8 @@ export default function NovoProdutoPage() {
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-slate-400">
-                      Escolha como a foto aparecerá na vitrine.
+                      Escolha como a foto
+                      aparecerá na vitrine.
                     </p>
                   </div>
                 </div>
@@ -942,7 +859,8 @@ export default function NovoProdutoPage() {
                   </h2>
 
                   <p className="text-xs text-slate-400">
-                    Dados exibidos ao comprador
+                    Dados exibidos ao
+                    comprador
                   </p>
                 </div>
 
@@ -980,7 +898,7 @@ export default function NovoProdutoPage() {
                     placeholder="Ex.: Camiseta básica preta"
                     maxLength={80}
                     lang="pt-BR"
-                    spellCheck={true}
+                    spellCheck
                     autoCorrect="on"
                     autoCapitalize="sentences"
                     className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-sky-400"
@@ -1007,7 +925,7 @@ export default function NovoProdutoPage() {
                     rows={4}
                     maxLength={300}
                     lang="pt-BR"
-                    spellCheck={true}
+                    spellCheck
                     autoCorrect="on"
                     autoCapitalize="sentences"
                     className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-4 outline-none focus:border-sky-400"
@@ -1033,7 +951,8 @@ export default function NovoProdutoPage() {
                   </h2>
 
                   <p className="text-xs text-slate-400">
-                    Organize e defina o valor
+                    Organize e defina o
+                    valor
                   </p>
                 </div>
 
@@ -1070,7 +989,7 @@ export default function NovoProdutoPage() {
                   placeholder="Ex.: Camisetas"
                   maxLength={50}
                   lang="pt-BR"
-                  spellCheck={true}
+                  spellCheck
                   autoCorrect="on"
                   autoCapitalize="words"
                   className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-amber-400"
@@ -1093,7 +1012,9 @@ export default function NovoProdutoPage() {
                         }
                         className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-slate-300"
                       >
-                        {categoriaSugerida}
+                        {
+                          categoriaSugerida
+                        }
                       </button>
                     )
                   )}
@@ -1130,7 +1051,8 @@ export default function NovoProdutoPage() {
                 {preco.trim() &&
                 !precoValido ? (
                   <p className="mt-2 text-xs font-medium text-red-300">
-                    Informe um valor maior que zero.
+                    Informe um valor maior
+                    que zero.
                   </p>
                 ) : null}
               </div>
@@ -1149,7 +1071,8 @@ export default function NovoProdutoPage() {
                   </h2>
 
                   <p className="text-xs text-slate-400">
-                    Controle automático de disponibilidade
+                    Controle automático de
+                    disponibilidade
                   </p>
                 </div>
 
@@ -1187,7 +1110,9 @@ export default function NovoProdutoPage() {
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-slate-400">
-                    Marque para indicar quando o produto esgotar
+                    Marque para indicar
+                    quando o produto
+                    esgotar
                   </p>
                 </div>
 
@@ -1269,7 +1194,8 @@ export default function NovoProdutoPage() {
 
             {!formularioValido && (
               <p className="text-center text-xs leading-5 text-slate-500">
-                Complete os cinco itens para cadastrar o produto.
+                Complete os cinco itens
+                para cadastrar o produto.
               </p>
             )}
           </>
