@@ -2,6 +2,7 @@ import {
   NextRequest,
   NextResponse,
 } from "next/server";
+
 import {
   getSupabaseAdmin,
 } from "@/lib/supabaseAdmin";
@@ -72,6 +73,11 @@ export async function GET(
       erroUsuario ||
       !usuarioData.user
     ) {
+      console.error(
+        "Erro ao validar usuário:",
+        erroUsuario
+      );
+
       return respostaNaoAutorizada();
     }
 
@@ -90,12 +96,31 @@ export async function GET(
         "id",
         usuario.id
       )
-      .single();
+      .maybeSingle();
 
-    if (
-      erroPerfil ||
-      !perfil
-    ) {
+    if (erroPerfil) {
+      console.error(
+        "Erro ao consultar perfil:",
+        {
+          message:
+            erroPerfil.message,
+          details:
+            erroPerfil.details,
+          hint:
+            erroPerfil.hint,
+          code:
+            erroPerfil.code,
+          usuarioId:
+            usuario.id,
+        }
+      );
+
+      throw new Error(
+        `Erro ao consultar perfil: ${erroPerfil.message}`
+      );
+    }
+
+    if (!perfil) {
       return NextResponse.json({
         status:
           "PENDING",
@@ -172,8 +197,24 @@ export async function GET(
         .maybeSingle();
 
       if (erroTesteCpf) {
+        console.error(
+          "Erro ao consultar teste por CPF:",
+          {
+            message:
+              erroTesteCpf.message,
+            details:
+              erroTesteCpf.details,
+            hint:
+              erroTesteCpf.hint,
+            code:
+              erroTesteCpf.code,
+            usuarioId:
+              usuario.id,
+          }
+        );
+
         throw new Error(
-          "Não foi possível verificar a disponibilidade do teste."
+          `Não foi possível verificar a disponibilidade do teste: ${erroTesteCpf.message}`
         );
       }
 
@@ -243,9 +284,22 @@ export async function GET(
     }
 
     const lojaId =
-      Number(
-        perfil.loja_id
+      Number(perfil.loja_id);
+
+    if (
+      !Number.isFinite(lojaId) ||
+      lojaId <= 0
+    ) {
+      return NextResponse.json(
+        {
+          erro:
+            "A loja vinculada ao usuário é inválida.",
+        },
+        {
+          status: 400,
+        }
       );
+    }
 
     const {
       data: loja,
@@ -259,12 +313,32 @@ export async function GET(
         "id",
         lojaId
       )
-      .single();
+      .maybeSingle();
 
-    if (
-      erroLoja ||
-      !loja
-    ) {
+    if (erroLoja) {
+      console.error(
+        "Erro ao consultar loja:",
+        {
+          message:
+            erroLoja.message,
+          details:
+            erroLoja.details,
+          hint:
+            erroLoja.hint,
+          code:
+            erroLoja.code,
+          lojaId,
+          usuarioId:
+            usuario.id,
+        }
+      );
+
+      throw new Error(
+        `Erro ao consultar loja: ${erroLoja.message}`
+      );
+    }
+
+    if (!loja) {
       return NextResponse.json(
         {
           erro:
@@ -288,7 +362,10 @@ export async function GET(
       if (
         loja.bloqueada_por_assinatura
       ) {
-        await supabase
+        const {
+          error:
+            erroDesbloqueio,
+        } = await supabase
           .from("lojas")
           .update({
             bloqueada_por_assinatura:
@@ -298,6 +375,13 @@ export async function GET(
             "id",
             lojaId
           );
+
+        if (erroDesbloqueio) {
+          console.error(
+            "Erro ao desbloquear loja com acesso vitalício:",
+            erroDesbloqueio
+          );
+        }
       }
 
       return NextResponse.json({
@@ -349,10 +433,19 @@ export async function GET(
           )
         : null;
 
+    const dataFinalTesteValida =
+      Boolean(
+        testeFimDate &&
+          !Number.isNaN(
+            testeFimDate.getTime()
+          )
+      );
+
     const testeAtivo =
       Boolean(
         loja.teste_gratis_utilizado &&
           testeFimDate &&
+          dataFinalTesteValida &&
           testeFimDate.getTime() >
             agora.getTime()
       );
@@ -382,7 +475,10 @@ export async function GET(
       if (
         loja.bloqueada_por_assinatura
       ) {
-        await supabase
+        const {
+          error:
+            erroDesbloqueioTeste,
+        } = await supabase
           .from("lojas")
           .update({
             bloqueada_por_assinatura:
@@ -392,6 +488,15 @@ export async function GET(
             "id",
             lojaId
           );
+
+        if (
+          erroDesbloqueioTeste
+        ) {
+          console.error(
+            "Erro ao desbloquear loja em teste:",
+            erroDesbloqueioTeste
+          );
+        }
       }
 
       return NextResponse.json({
@@ -435,10 +540,17 @@ export async function GET(
 
     /*
      * ASSINATURA PAGA
+     *
+     * Uma loja pode possuir mais de
+     * uma cobrança ou assinatura
+     * registrada. Por isso limitamos
+     * a consulta a apenas um registro.
      */
     const {
-      data: assinatura,
-      error: erroAssinatura,
+      data:
+        assinaturasEncontradas,
+      error:
+        erroAssinatura,
     } = await supabase
       .from("assinaturas")
       .select(
@@ -448,13 +560,34 @@ export async function GET(
         "loja_id",
         lojaId
       )
-      .maybeSingle();
+      .limit(1);
 
     if (erroAssinatura) {
+      console.error(
+        "Erro detalhado ao consultar assinatura:",
+        {
+          message:
+            erroAssinatura.message,
+          details:
+            erroAssinatura.details,
+          hint:
+            erroAssinatura.hint,
+          code:
+            erroAssinatura.code,
+          lojaId,
+          usuarioId:
+            usuario.id,
+        }
+      );
+
       throw new Error(
-        "Não foi possível consultar a assinatura."
+        `Não foi possível consultar a assinatura: ${erroAssinatura.message}`
       );
     }
+
+    const assinatura =
+      assinaturasEncontradas?.[0] ??
+      null;
 
     const fimPeriodoDate =
       assinatura?.fim_periodo
@@ -463,18 +596,32 @@ export async function GET(
           )
         : null;
 
+    const fimPeriodoValido =
+      Boolean(
+        fimPeriodoDate &&
+          !Number.isNaN(
+            fimPeriodoDate.getTime()
+          )
+      );
+
     const assinaturaAtiva =
       assinatura?.status ===
         "ACTIVE" &&
-      Boolean(fimPeriodoDate) &&
-      fimPeriodoDate!.getTime() >
-        agora.getTime();
+      Boolean(
+        fimPeriodoDate &&
+          fimPeriodoValido &&
+          fimPeriodoDate.getTime() >
+            agora.getTime()
+      );
 
     if (assinaturaAtiva) {
       if (
         loja.bloqueada_por_assinatura
       ) {
-        await supabase
+        const {
+          error:
+            erroDesbloqueioAssinatura,
+        } = await supabase
           .from("lojas")
           .update({
             bloqueada_por_assinatura:
@@ -484,6 +631,15 @@ export async function GET(
             "id",
             lojaId
           );
+
+        if (
+          erroDesbloqueioAssinatura
+        ) {
+          console.error(
+            "Erro ao desbloquear loja com assinatura:",
+            erroDesbloqueioAssinatura
+          );
+        }
       }
 
       return NextResponse.json({
@@ -535,7 +691,10 @@ export async function GET(
     if (
       !loja.bloqueada_por_assinatura
     ) {
-      await supabase
+      const {
+        error:
+          erroBloqueio,
+      } = await supabase
         .from("lojas")
         .update({
           bloqueada_por_assinatura:
@@ -545,6 +704,13 @@ export async function GET(
           "id",
           lojaId
         );
+
+      if (erroBloqueio) {
+        console.error(
+          "Erro ao bloquear loja sem acesso:",
+          erroBloqueio
+        );
+      }
     }
 
     const testeDisponivel =
@@ -612,9 +778,7 @@ export async function GET(
   } catch (error) {
     console.error(
       "Erro ao consultar assinatura:",
-      error instanceof Error
-        ? error.message
-        : error
+      error
     );
 
     return NextResponse.json(
