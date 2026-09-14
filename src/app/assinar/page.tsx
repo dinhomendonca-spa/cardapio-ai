@@ -202,6 +202,10 @@ function AssinarConteudo() {
       ? "anual"
       : "mensal";
 
+  const desejaContratar =
+    searchParams.get("contratar") ===
+    "1";
+
   const iniciou =
     useRef(false);
 
@@ -280,6 +284,16 @@ function AssinarConteudo() {
   ] = useState(false);
 
   const [
+    testeAtivo,
+    setTesteAtivo,
+  ] = useState(false);
+
+  const [
+    diasRestantesTeste,
+    setDiasRestantesTeste,
+  ] = useState<number | null>(null);
+
+  const [
     ativandoTeste,
     setAtivandoTeste,
   ] = useState(false);
@@ -327,6 +341,28 @@ function AssinarConteudo() {
           );
         }
 
+        const acessoDeTesteAtivo =
+          resultado.ativo &&
+          resultado.tipoAcesso ===
+            "TESTE_GRATIS";
+
+        if (
+          acessoDeTesteAtivo &&
+          desejaContratar
+        ) {
+          setTesteAtivo(true);
+          setDiasRestantesTeste(
+            typeof resultado.diasRestantesTeste ===
+              "number"
+              ? resultado.diasRestantesTeste
+              : null
+          );
+          setTesteDisponivel(false);
+          setTesteJaUtilizado(false);
+
+          return false;
+        }
+
         if (resultado.ativo) {
           router.replace(
             "/admin"
@@ -340,6 +376,9 @@ function AssinarConteudo() {
             resultado.testeDisponivel
           )
         );
+
+        setTesteAtivo(false);
+        setDiasRestantesTeste(null);
 
         setTesteJaUtilizado(
           Boolean(
@@ -416,6 +455,7 @@ function AssinarConteudo() {
     user,
     router,
     planoDaUrl,
+    desejaContratar,
   ]);
 
   useEffect(() => {
@@ -810,7 +850,19 @@ function AssinarConteudo() {
                   Use a loja completa, cadastre seus produtos e receba pedidos pelo WhatsApp. Não precisa informar cartão.
                 </p>
 
-                {testeDisponivel ? (
+                {testeAtivo ? (
+                  <div className="mt-5 rounded-2xl border border-emerald-300/20 bg-emerald-400/10 p-4 text-sm font-semibold leading-6 text-emerald-200">
+                    Seu teste grátis está ativo
+                    {diasRestantesTeste !== null
+                      ? ` e ainda possui ${diasRestantesTeste} ${
+                          diasRestantesTeste === 1
+                            ? "dia"
+                            : "dias"
+                        }.`
+                      : "."}
+                    {" "}Você pode contratar um dos planos abaixo sem perder o acesso atual.
+                  </div>
+                ) : testeDisponivel ? (
                   <button
                     type="button"
                     onClick={iniciarTesteGratis}

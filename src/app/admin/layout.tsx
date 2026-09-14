@@ -6,52 +6,54 @@ import {
   useRef,
   useState,
 } from "react";
-
 import {
   usePathname,
   useRouter,
 } from "next/navigation";
-
 import {
   AlertTriangle,
+  ArrowRight,
+  Clock3,
   Loader2,
   LogOut,
   RefreshCw,
   Store,
 } from "lucide-react";
-
-import {
-  useAuth,
-} from "@/context/AuthContext";
-
-import {
-  useStore,
-} from "@/context/StoreContext";
+import { useAuth } from "@/context/AuthContext";
+import { useStore } from "@/context/StoreContext";
 
 type RespostaStatus = {
   status: string;
   ativo: boolean;
+  tipoAcesso?:
+    | "VITALICIO"
+    | "TESTE_GRATIS"
+    | "ASSINATURA"
+    | "SEM_ACESSO";
+  testeGratis?: boolean;
+  testeDisponivel?: boolean;
+  testeInicio?: string | null;
+  testeFim?: string | null;
+  diasRestantesTeste?: number;
   erro?: string;
 };
 
-const ROTAS_TUTORIAL = new Set([
-  "/admin/loja",
-  "/admin/entrega",
-  "/admin/produtos",
-  "/admin/produtos/novo",
-  "/admin/publicar",
-]);
+const ROTAS_TUTORIAL =
+  new Set([
+    "/admin/loja",
+    "/admin/entrega",
+    "/admin/produtos",
+    "/admin/produtos/novo",
+    "/admin/publicar",
+  ]);
 
 export default function AdminLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const router =
-    useRouter();
-
-  const pathname =
-    usePathname();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const {
     user,
@@ -83,6 +85,27 @@ export default function AdminLayout({
     erroAssinatura,
     setErroAssinatura,
   ] = useState("");
+
+  const [
+    tipoAcesso,
+    setTipoAcesso,
+  ] =
+    useState<
+      RespostaStatus["tipoAcesso"]
+    >("SEM_ACESSO");
+
+  const [
+    diasRestantesTeste,
+    setDiasRestantesTeste,
+  ] = useState(0);
+
+  const [
+    testeFim,
+    setTesteFim,
+  ] =
+    useState<string | null>(
+      null
+    );
 
   useEffect(() => {
     if (carregandoAuth) {
@@ -122,16 +145,14 @@ export default function AdminLayout({
             await fetch(
               "/api/assinatura/status",
               {
-                method:
-                  "GET",
+                method: "GET",
 
                 headers: {
                   authorization:
                     `Bearer ${session.access_token}`,
                 },
 
-                cache:
-                  "no-store",
+                cache: "no-store",
               }
             );
 
@@ -142,7 +163,7 @@ export default function AdminLayout({
           if (!resposta.ok) {
             throw new Error(
               resultado.erro ||
-              "Não foi possível verificar sua assinatura."
+                "Não foi possível verificar sua assinatura."
             );
           }
 
@@ -150,9 +171,7 @@ export default function AdminLayout({
             return;
           }
 
-          if (
-            !resultado.ativo
-          ) {
+          if (!resultado.ativo) {
             router.replace(
               "/assinar"
             );
@@ -160,9 +179,27 @@ export default function AdminLayout({
             return;
           }
 
-          setAcessoAtivo(
-            true
+          setTipoAcesso(
+            resultado.tipoAcesso ??
+              (
+                resultado.testeGratis
+                  ? "TESTE_GRATIS"
+                  : "ASSINATURA"
+              )
           );
+
+          setDiasRestantesTeste(
+            resultado
+              .diasRestantesTeste ??
+              0
+          );
+
+          setTesteFim(
+            resultado.testeFim ??
+              null
+          );
+
+          setAcessoAtivo(true);
 
           setVerificandoAssinatura(
             false
@@ -207,9 +244,9 @@ export default function AdminLayout({
   const precisaIniciarTutorial =
     Boolean(
       acessoAtivo &&
-      loja &&
-      !loja.configuracao_concluida &&
-      !rotaTutorialPermitida
+        loja &&
+        !loja.configuracao_concluida &&
+        !rotaTutorialPermitida
     );
 
   useEffect(() => {
@@ -227,11 +264,11 @@ export default function AdminLayout({
 
   const fazerLogout =
     async () => {
-           try {
+      try {
         await sair();
 
         router.replace(
-                   "/login"
+          "/login"
         );
       } catch (error) {
         console.error(
@@ -245,13 +282,55 @@ export default function AdminLayout({
       }
     };
 
+  const abrirPlanos = () => {
+    router.push(
+      "/assinar?plano=mensal&contratar=1"
+    );
+  };
+
   const carregamentoInicialDaLoja =
     Boolean(
       user &&
-      acessoAtivo &&
-      carregando &&
-      !loja
+        acessoAtivo &&
+        carregando &&
+        !loja
     );
+
+  const mostrarAvisoTeste =
+    tipoAcesso ===
+      "TESTE_GRATIS" &&
+    diasRestantesTeste > 0 &&
+    diasRestantesTeste <= 7;
+
+  const avisoUrgente =
+    diasRestantesTeste <= 1;
+
+  const avisoAtencao =
+    diasRestantesTeste > 1 &&
+    diasRestantesTeste <= 3;
+
+  const formatarDataTeste = (
+    valor: string | null
+  ) => {
+    if (!valor) {
+      return "";
+    }
+
+    const data =
+      new Date(valor);
+
+    if (
+      Number.isNaN(
+        data.getTime()
+      )
+    ) {
+      return "";
+    }
+
+    return new Intl.DateTimeFormat(
+      "pt-BR"
+    ).format(data);
+  };
 
   if (
     carregandoAuth ||
@@ -317,9 +396,7 @@ export default function AdminLayout({
 
           <button
             type="button"
-            onClick={
-              fazerLogout
-            }
+            onClick={fazerLogout}
             className="mt-3 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-4 font-bold text-white"
           >
             <LogOut
@@ -339,10 +416,7 @@ export default function AdminLayout({
     );
   }
 
-  if (
-    !loja ||
-    erroLoja
-  ) {
+  if (!loja || erroLoja) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
         <section className="w-full max-w-sm rounded-[28px] bg-white p-6 text-center shadow-sm">
@@ -363,9 +437,7 @@ export default function AdminLayout({
 
           <div className="mt-5 rounded-2xl bg-zinc-100 p-3 text-left">
             <div className="flex items-center gap-2">
-              <Store
-                size={16}
-              />
+              <Store size={16} />
 
               <p className="text-xs font-bold">
                 Usuário conectado
@@ -379,15 +451,10 @@ export default function AdminLayout({
 
           <button
             type="button"
-            onClick={
-              fazerLogout
-            }
+            onClick={fazerLogout}
             className="mt-4 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 font-bold text-white"
           >
-            <LogOut
-              size={17}
-            />
-
+            <LogOut size={17} />
             Sair
           </button>
         </section>
@@ -397,19 +464,75 @@ export default function AdminLayout({
 
   return (
     <>
+      {mostrarAvisoTeste && (
+        <aside
+          className={`relative z-[190] border-b px-4 py-3 ${
+            avisoUrgente
+              ? "border-red-300/20 bg-red-950 text-red-50"
+              : avisoAtencao
+                ? "border-amber-300/20 bg-amber-950 text-amber-50"
+                : "border-sky-300/20 bg-sky-950 text-sky-50"
+          }`}
+        >
+          <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  avisoUrgente
+                    ? "bg-red-400/15 text-red-300"
+                    : avisoAtencao
+                      ? "bg-amber-400/15 text-amber-300"
+                      : "bg-sky-400/15 text-sky-300"
+                }`}
+              >
+                {avisoUrgente ? (
+                  <AlertTriangle
+                    size={20}
+                  />
+                ) : (
+                  <Clock3 size={20} />
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <p className="font-black">
+                  {diasRestantesTeste ===
+                  1
+                    ? "Último dia do seu teste grátis"
+                    : `Seu teste termina em ${diasRestantesTeste} dias`}
+                </p>
+
+                <p className="mt-1 text-xs leading-5 opacity-75">
+                  {testeFim
+                    ? `Acesso gratuito até ${formatarDataTeste(
+                        testeFim
+                      )}. Escolha um plano para manter sua loja online.`
+                    : "Escolha um plano para manter sua loja online."}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={abrirPlanos}
+              className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
+            >
+              Escolher plano
+              <ArrowRight size={17} />
+            </button>
+          </div>
+        </aside>
+      )}
+
       {children}
 
       <button
         type="button"
-        onClick={
-          fazerLogout
-        }
+        onClick={fazerLogout}
         title="Sair"
         className="fixed bottom-4 right-4 z-[200] flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-zinc-950 shadow-xl ring-1 ring-zinc-200"
       >
-        <LogOut
-          size={18}
-        />
+        <LogOut size={18} />
       </button>
     </>
   );
