@@ -7,11 +7,14 @@ import {
   useRef,
   useState,
 } from "react";
+
 import Link from "next/link";
+
 import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
+
 import {
   ArrowRight,
   CheckCircle2,
@@ -25,6 +28,7 @@ import {
   Store,
   UserPlus,
 } from "lucide-react";
+
 import {
   type PlanoCadastro,
   useAuth,
@@ -53,7 +57,8 @@ function normalizarPlano(
 }
 
 function LoginConteudo() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const searchParams =
     useSearchParams();
@@ -78,11 +83,15 @@ function LoginConteudo() {
   const verificacaoIniciada =
     useRef(false);
 
-  const [email, setEmail] =
-    useState("");
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
-  const [senha, setSenha] =
-    useState("");
+  const [
+    senha,
+    setSenha,
+  ] = useState("");
 
   const [
     mostrarSenha,
@@ -100,13 +109,46 @@ function LoginConteudo() {
   ] = useState(false);
 
   const [
+    loginRealizado,
+    setLoginRealizado,
+  ] = useState(false);
+
+  const [
     erro,
     setErro,
   ] = useState<string | null>(
     null
   );
 
+  /*
+   * Quando a pessoa chega pelo link
+   * de confirmação, não verificamos
+   * o acesso automaticamente.
+   *
+   * O Supabase pode criar uma sessão
+   * temporária ao confirmar o e-mail.
+   * A pessoa deverá informar e-mail
+   * e senha antes de continuar.
+   */
   useEffect(() => {
+    if (emailConfirmado) {
+      verificacaoIniciada.current =
+        false;
+
+      setVerificandoAcesso(false);
+      setEntrando(false);
+      setErro(null);
+    }
+  }, [emailConfirmado]);
+
+  useEffect(() => {
+    if (
+      emailConfirmado &&
+      !loginRealizado
+    ) {
+      return;
+    }
+
     if (
       carregandoAuth ||
       !user ||
@@ -141,7 +183,8 @@ function LoginConteudo() {
                     `Bearer ${session.access_token}`,
                 },
 
-                cache: "no-store",
+                cache:
+                  "no-store",
               }
             );
 
@@ -204,6 +247,8 @@ function LoginConteudo() {
     carregandoAuth,
     router,
     plano,
+    emailConfirmado,
+    loginRealizado,
   ]);
 
   const fazerLogin = async (
@@ -214,12 +259,20 @@ function LoginConteudo() {
 
     setErro(null);
 
-    if (
-      !email.trim() ||
-      !senha
-    ) {
+    const emailNormalizado =
+      email.trim().toLowerCase();
+
+    if (!emailNormalizado) {
       setErro(
-        "Informe e-mail e senha."
+        "Informe seu e-mail."
+      );
+
+      return;
+    }
+
+    if (!senha) {
+      setErro(
+        "Informe sua senha."
       );
 
       return;
@@ -232,9 +285,11 @@ function LoginConteudo() {
         false;
 
       await entrar(
-        email,
+        emailNormalizado,
         senha
       );
+
+      setLoginRealizado(true);
     } catch (error) {
       console.error(
         "Erro ao entrar:",
@@ -257,22 +312,53 @@ function LoginConteudo() {
           "not confirmed"
         );
 
+      const credenciaisInvalidas =
+        normalizada.includes(
+          "invalid login credentials"
+        ) ||
+        normalizada.includes(
+          "invalid credentials"
+        );
+
       if (naoConfirmado) {
         setErro(
           "Seu cadastro existe, mas o e-mail ainda não foi confirmado. Use a opção de reenviar a confirmação."
         );
+      } else if (
+        credenciaisInvalidas
+      ) {
+        setErro(
+          "E-mail ou senha incorretos. Confira os dados digitados e tente novamente."
+        );
       } else {
         setErro(
-          "E-mail ou senha incorretos. Se você ainda não confirmou seu cadastro, reenvie o e-mail de confirmação."
+          mensagem ||
+            "Não foi possível entrar agora. Tente novamente."
         );
       }
 
       setEntrando(false);
+      setLoginRealizado(false);
     }
   };
 
   const linkCadastro =
     `/cadastro?plano=${plano}`;
+
+  const parametrosReenvio =
+    new URLSearchParams({
+      plano,
+    });
+
+  if (email.trim()) {
+    parametrosReenvio.set(
+      "email",
+      email.trim().toLowerCase()
+    );
+  }
+
+  const linkReenvio =
+    `/verifique-email?${parametrosReenvio.toString()}`;
 
   if (
     carregandoAuth ||
@@ -311,7 +397,8 @@ function LoginConteudo() {
           </h1>
 
           <p className="mt-2 max-w-xs text-sm leading-6 text-slate-400">
-            Entre para começar seu teste ou administrar sua loja.
+            Entre para começar seu teste
+            ou administrar sua loja.
           </p>
         </div>
 
@@ -329,7 +416,11 @@ function LoginConteudo() {
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-slate-300">
-                  Seu cadastro foi confirmado. Entre com seu e-mail e senha para continuar.
+                  Seu cadastro foi
+                  confirmado. Digite seu
+                  e-mail e a senha criada
+                  no cadastro para
+                  continuar.
                 </p>
               </div>
             </div>
@@ -346,11 +437,16 @@ function LoginConteudo() {
 
               <div>
                 <p className="text-sm font-black text-sky-200">
-                  Seus 30 dias estão reservados
+                  Seus 30 dias estão
+                  reservados
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-slate-300">
-                  Entre para ativar seu teste. Você não precisa informar cartão e só escolhe um plano se decidir continuar.
+                  Entre para ativar seu
+                  teste. Você não precisa
+                  informar cartão e só
+                  escolhe um plano se
+                  decidir continuar.
                 </p>
               </div>
             </div>
@@ -390,13 +486,16 @@ function LoginConteudo() {
             </div>
 
             <p className="mt-2 text-xs text-slate-400">
-              Depois do login você continuará para a contratação desse plano.
+              Depois do login você
+              continuará para a
+              contratação desse plano.
             </p>
           </div>
         )}
 
         <form
           onSubmit={fazerLogin}
+          noValidate
           className="mt-8 rounded-[28px] bg-white p-4 text-slate-950 shadow-2xl"
         >
           <div>
@@ -415,15 +514,20 @@ function LoginConteudo() {
 
               <input
                 id="email"
+                name="email"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
                 value={email}
-                onChange={(event) =>
+                onChange={(event) => {
                   setEmail(
                     event.target.value
-                  )
-                }
+                  );
+
+                  if (erro) {
+                    setErro(null);
+                  }
+                }}
                 placeholder="voce@empresa.com"
                 disabled={entrando}
                 className="h-14 w-full rounded-2xl bg-slate-100 pl-11 pr-4 text-base outline-none transition focus:ring-2 focus:ring-sky-300 disabled:opacity-60"
@@ -447,6 +551,7 @@ function LoginConteudo() {
 
               <input
                 id="senha"
+                name="senha"
                 type={
                   mostrarSenha
                     ? "text"
@@ -454,11 +559,15 @@ function LoginConteudo() {
                 }
                 autoComplete="current-password"
                 value={senha}
-                onChange={(event) =>
+                onChange={(event) => {
                   setSenha(
                     event.target.value
-                  )
-                }
+                  );
+
+                  if (erro) {
+                    setErro(null);
+                  }
+                }}
                 placeholder="Sua senha"
                 disabled={entrando}
                 className="h-14 w-full rounded-2xl bg-slate-100 pl-11 pr-12 text-base outline-none transition focus:ring-2 focus:ring-sky-300 disabled:opacity-60"
@@ -468,7 +577,8 @@ function LoginConteudo() {
                 type="button"
                 onClick={() =>
                   setMostrarSenha(
-                    (atual) => !atual
+                    (atual) =>
+                      !atual
                   )
                 }
                 className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-500"
@@ -517,7 +627,9 @@ function LoginConteudo() {
                 className="animate-spin"
               />
             ) : (
-              <ArrowRight size={19} />
+              <ArrowRight
+                size={19}
+              />
             )}
           </button>
 
@@ -542,21 +654,27 @@ function LoginConteudo() {
             href={linkCadastro}
             className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-400/10 text-sm font-bold text-sky-200 transition hover:bg-sky-400/15"
           >
-            <UserPlus size={18} />
+            <UserPlus
+              size={18}
+            />
+
             Criar minha conta
           </Link>
 
           <Link
-            href={linkCadastro}
+            href={linkReenvio}
             className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-xs font-bold text-slate-300 transition hover:bg-white/[0.08]"
           >
             <Mail size={16} />
+
             Não recebi a confirmação
           </Link>
         </div>
 
         <p className="mt-5 text-center text-[11px] leading-5 text-slate-500">
-          Se você já iniciou seu cadastro, não precisa criar outra conta.
+          Se você já iniciou seu
+          cadastro, não precisa criar
+          outra conta.
         </p>
       </div>
     </main>
