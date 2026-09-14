@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff,
   Gift,
+  KeyRound,
   Loader2,
   LockKeyhole,
   Mail,
@@ -80,6 +81,11 @@ function LoginConteudo() {
       "confirmado"
     ) === "1";
 
+  const senhaAlterada =
+    searchParams.get(
+      "senha"
+    ) === "alterada";
+
   const verificacaoIniciada =
     useRef(false);
 
@@ -120,16 +126,6 @@ function LoginConteudo() {
     null
   );
 
-  /*
-   * Quando a pessoa chega pelo link
-   * de confirmação, não verificamos
-   * o acesso automaticamente.
-   *
-   * O Supabase pode criar uma sessão
-   * temporária ao confirmar o e-mail.
-   * A pessoa deverá informar e-mail
-   * e senha antes de continuar.
-   */
   useEffect(() => {
     if (emailConfirmado) {
       verificacaoIniciada.current =
@@ -260,7 +256,9 @@ function LoginConteudo() {
     setErro(null);
 
     const emailNormalizado =
-      email.trim().toLowerCase();
+      email
+        .trim()
+        .toLowerCase();
 
     if (!emailNormalizado) {
       setErro(
@@ -328,7 +326,7 @@ function LoginConteudo() {
         credenciaisInvalidas
       ) {
         setErro(
-          "E-mail ou senha incorretos. Confira os dados digitados e tente novamente."
+          "E-mail ou senha incorretos. Confira os dados digitados ou recupere sua senha."
         );
       } else {
         setErro(
@@ -353,12 +351,31 @@ function LoginConteudo() {
   if (email.trim()) {
     parametrosReenvio.set(
       "email",
-      email.trim().toLowerCase()
+      email
+        .trim()
+        .toLowerCase()
     );
   }
 
   const linkReenvio =
     `/verifique-email?${parametrosReenvio.toString()}`;
+
+  const parametrosRecuperacao =
+    new URLSearchParams();
+
+  if (email.trim()) {
+    parametrosRecuperacao.set(
+      "email",
+      email
+        .trim()
+        .toLowerCase()
+    );
+  }
+
+  const linkRecuperacao =
+    parametrosRecuperacao.toString()
+      ? `/recuperar-senha?${parametrosRecuperacao.toString()}`
+      : "/recuperar-senha";
 
   if (
     carregandoAuth ||
@@ -402,6 +419,29 @@ function LoginConteudo() {
           </p>
         </div>
 
+        {senhaAlterada && (
+          <div className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2
+                size={21}
+                className="mt-0.5 shrink-0 text-emerald-400"
+              />
+
+              <div>
+                <p className="text-sm font-black text-emerald-300">
+                  Senha alterada
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-slate-300">
+                  Sua nova senha foi
+                  salva. Você já pode
+                  entrar normalmente.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {emailConfirmado && (
           <div className="mt-6 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4">
             <div className="flex items-start gap-3">
@@ -444,52 +484,10 @@ function LoginConteudo() {
                 <p className="mt-1 text-xs leading-5 text-slate-300">
                   Entre para ativar seu
                   teste. Você não precisa
-                  informar cartão e só
-                  escolhe um plano se
-                  decidir continuar.
+                  informar cartão.
                 </p>
               </div>
             </div>
-          </div>
-        )}
-
-        {plano === "mensal" && (
-          <div className="mt-4 rounded-3xl border border-sky-400/20 bg-sky-400/[0.08] p-4 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-sky-300">
-              Plano mensal preservado
-            </p>
-
-            <p className="mt-2 text-2xl font-black text-white">
-              R$ 59,90
-            </p>
-
-            <p className="mt-1 text-xs text-slate-400">
-              por mês
-            </p>
-          </div>
-        )}
-
-        {plano === "anual" && (
-          <div className="mt-4 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-300">
-              Oferta anual preservada
-            </p>
-
-            <div className="mt-2 flex items-end justify-center gap-1">
-              <span className="mb-1 text-xs font-bold text-slate-300">
-                12x de
-              </span>
-
-              <span className="text-3xl font-black text-white">
-                R$ 49,75
-              </span>
-            </div>
-
-            <p className="mt-2 text-xs text-slate-400">
-              Depois do login você
-              continuará para a
-              contratação desse plano.
-            </p>
           </div>
         )}
 
@@ -536,12 +534,21 @@ function LoginConteudo() {
           </div>
 
           <div className="mt-3">
-            <label
-              htmlFor="senha"
-              className="mb-1.5 block text-xs font-bold text-slate-700"
-            >
-              Senha
-            </label>
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <label
+                htmlFor="senha"
+                className="block text-xs font-bold text-slate-700"
+              >
+                Senha
+              </label>
+
+              <Link
+                href={linkRecuperacao}
+                className="text-xs font-bold text-sky-600 transition hover:text-sky-700"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
 
             <div className="relative">
               <LockKeyhole
@@ -650,6 +657,17 @@ function LoginConteudo() {
         </form>
 
         <div className="mt-4 grid gap-3">
+          <Link
+            href={linkRecuperacao}
+            className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-400/[0.06] text-xs font-bold text-sky-200 transition hover:bg-sky-400/10"
+          >
+            <KeyRound
+              size={16}
+            />
+
+            Recuperar minha senha
+          </Link>
+
           <Link
             href={linkCadastro}
             className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-sky-300/20 bg-sky-400/10 text-sm font-bold text-sky-200 transition hover:bg-sky-400/15"

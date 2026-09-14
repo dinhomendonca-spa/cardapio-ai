@@ -2,21 +2,26 @@ import {
   NextRequest,
   NextResponse,
 } from "next/server";
+
 import {
   getSupabaseAdmin,
 } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const dynamic =
+  "force-dynamic";
 
-const DURACAO_TESTE_DIAS = 30;
+const DURACAO_TESTE_DIAS =
+  30;
 
 type Perfil = {
   id: string;
   nome: string | null;
   loja_id: number | null;
   cpf: string | null;
-  cadastro_completo: boolean | null;
+  cadastro_completo:
+    | boolean
+    | null;
 };
 
 function responderErro(
@@ -46,7 +51,38 @@ function respostaNaoAutorizada() {
 function somenteNumeros(
   valor: string
 ) {
-  return valor.replace(/\D/g, "");
+  return valor.replace(
+    /\D/g,
+    ""
+  );
+}
+
+function obterCpfsTeste() {
+  const valor =
+    process.env.TESTER_CPFS ??
+    "";
+
+  return valor
+    .split(",")
+    .map((cpf) =>
+      somenteNumeros(
+        cpf.trim()
+      )
+    )
+    .filter(
+      (cpf) =>
+        /^\d{11}$/.test(
+          cpf
+        )
+    );
+}
+
+function cpfEhTester(
+  cpf: string
+) {
+  return obterCpfsTeste().includes(
+    cpf
+  );
 }
 
 async function obterUsuario(
@@ -66,7 +102,9 @@ async function obterUsuario(
   }
 
   const token =
-    autorizacao.slice(7).trim();
+    autorizacao
+      .slice(7)
+      .trim();
 
   if (!token) {
     return null;
@@ -102,9 +140,13 @@ async function obterOuCriarLoja(
   if (
     perfil.loja_id &&
     Number.isInteger(
-      Number(perfil.loja_id)
+      Number(
+        perfil.loja_id
+      )
     ) &&
-    Number(perfil.loja_id) > 0
+    Number(
+      perfil.loja_id
+    ) > 0
   ) {
     return Number(
       perfil.loja_id
@@ -184,7 +226,9 @@ async function obterOuCriarLoja(
     }
 
     lojaId =
-      Number(novaLoja.id);
+      Number(
+        novaLoja.id
+      );
   }
 
   if (
@@ -207,7 +251,8 @@ async function obterOuCriarLoja(
         lojaId,
 
       atualizado_em:
-        new Date().toISOString(),
+        new Date()
+          .toISOString(),
     })
     .eq(
       "id",
@@ -235,10 +280,14 @@ export async function POST(
     getSupabaseAdmin();
 
   let cpfRegistrado:
-    string | null = null;
+    | string
+    | null =
+    null;
 
   let usuarioIdRegistrado:
-    string | null = null;
+    | string
+    | null =
+    null;
 
   try {
     const usuario =
@@ -251,7 +300,8 @@ export async function POST(
     }
 
     if (
-      !usuario.email_confirmed_at
+      !usuario
+        .email_confirmed_at
     ) {
       return responderErro(
         "Confirme seu e-mail antes de iniciar o teste.",
@@ -266,7 +316,13 @@ export async function POST(
     } = await supabase
       .from("perfis")
       .select(
-        "id, nome, loja_id, cpf, cadastro_completo"
+        `
+          id,
+          nome,
+          loja_id,
+          cpf,
+          cadastro_completo
+        `
       )
       .eq(
         "id",
@@ -289,7 +345,8 @@ export async function POST(
       perfilData as Perfil;
 
     if (
-      perfil.cadastro_completo ===
+      perfil
+        .cadastro_completo ===
       false
     ) {
       return responderErro(
@@ -305,7 +362,9 @@ export async function POST(
       );
 
     if (
-      !/^\d{11}$/.test(cpf)
+      !/^\d{11}$/.test(
+        cpf
+      )
     ) {
       return responderErro(
         "O perfil não possui um CPF válido.",
@@ -315,9 +374,18 @@ export async function POST(
     }
 
     /*
-     * Cria e vincula a loja quando
-     * o usuário ainda não possui uma.
+     * CPF configurado como
+     * homologação/teste interno.
+     *
+     * Clientes normais continuam
+     * sujeitos à regra de um único
+     * teste grátis por CPF.
      */
+    const modoTester =
+      cpfEhTester(
+        cpf
+      );
+
     const lojaId =
       await obterOuCriarLoja(
         perfil
@@ -329,7 +397,14 @@ export async function POST(
     } = await supabase
       .from("lojas")
       .select(
-        "id, acesso_vitalicio, bloqueada_por_assinatura, teste_gratis_utilizado, teste_gratis_inicio, teste_gratis_fim"
+        `
+          id,
+          acesso_vitalicio,
+          bloqueada_por_assinatura,
+          teste_gratis_utilizado,
+          teste_gratis_inicio,
+          teste_gratis_fim
+        `
       )
       .eq(
         "id",
@@ -348,6 +423,11 @@ export async function POST(
       );
     }
 
+    /*
+     * Acesso vitalício continua
+     * prevalecendo mesmo para
+     * contas tester.
+     */
     if (
       loja.acesso_vitalicio
     ) {
@@ -376,19 +456,33 @@ export async function POST(
     const testeFimAtual =
       loja.teste_gratis_fim
         ? new Date(
-            loja.teste_gratis_fim
+            loja
+              .teste_gratis_fim
           )
         : null;
 
     const testeAtivo =
       Boolean(
-        loja.teste_gratis_utilizado &&
+        loja
+          .teste_gratis_utilizado &&
           testeFimAtual &&
           testeFimAtual.getTime() >
             agora.getTime()
       );
 
-    if (testeAtivo) {
+    /*
+     * CLIENTE NORMAL:
+     * mantém exatamente a regra
+     * existente.
+     *
+     * TESTER:
+     * permite reiniciar o período
+     * chamando novamente esta rota.
+     */
+    if (
+      testeAtivo &&
+      !modoTester
+    ) {
       return NextResponse.json(
         {
           erro:
@@ -406,10 +500,12 @@ export async function POST(
           lojaId,
 
           testeInicio:
-            loja.teste_gratis_inicio,
+            loja
+              .teste_gratis_inicio,
 
           testeFim:
-            loja.teste_gratis_fim,
+            loja
+              .teste_gratis_fim,
         },
         {
           status: 409,
@@ -418,7 +514,9 @@ export async function POST(
     }
 
     if (
-      loja.teste_gratis_utilizado
+      loja
+        .teste_gratis_utilizado &&
+      !modoTester
     ) {
       return NextResponse.json(
         {
@@ -437,10 +535,12 @@ export async function POST(
           lojaId,
 
           testeInicio:
-            loja.teste_gratis_inicio,
+            loja
+              .teste_gratis_inicio,
 
           testeFim:
-            loja.teste_gratis_fim,
+            loja
+              .teste_gratis_fim,
         },
         {
           status: 409,
@@ -449,8 +549,7 @@ export async function POST(
     }
 
     /*
-     * Impede teste quando já existe
-     * uma assinatura paga ativa.
+     * Verifica assinatura paga.
      */
     const {
       data: assinatura,
@@ -458,7 +557,10 @@ export async function POST(
     } = await supabase
       .from("assinaturas")
       .select(
-        "status, fim_periodo"
+        `
+          status,
+          fim_periodo
+        `
       )
       .eq(
         "loja_id",
@@ -466,27 +568,43 @@ export async function POST(
       )
       .maybeSingle();
 
-    if (erroAssinatura) {
+    if (
+      erroAssinatura
+    ) {
       throw new Error(
         "Não foi possível consultar a assinatura da loja."
       );
     }
 
     const fimPeriodo =
-      assinatura?.fim_periodo
+      assinatura
+        ?.fim_periodo
         ? new Date(
-            assinatura.fim_periodo
+            assinatura
+              .fim_periodo
           )
         : null;
 
     const assinaturaAtiva =
       assinatura?.status ===
         "ACTIVE" &&
-      Boolean(fimPeriodo) &&
+      Boolean(
+        fimPeriodo
+      ) &&
       fimPeriodo!.getTime() >
         agora.getTime();
 
-    if (assinaturaAtiva) {
+    /*
+     * Cliente normal com assinatura
+     * ativa não recebe trial.
+     *
+     * Tester pode reiniciar o trial
+     * para fins de homologação.
+     */
+    if (
+      assinaturaAtiva &&
+      !modoTester
+    ) {
       return NextResponse.json(
         {
           erro:
@@ -507,18 +625,26 @@ export async function POST(
     }
 
     /*
-     * Verifica se o CPF já utilizou
-     * o teste em outra conta ou loja.
+     * Consulta histórico do CPF.
      */
     const {
-      data: testeCpfExistente,
-      error: erroBuscaCpf,
+      data:
+        testeCpfExistente,
+
+      error:
+        erroBuscaCpf,
     } = await supabase
       .from(
         "testes_gratis_cpfs"
       )
       .select(
-        "cpf, usuario_id, loja_id, iniciado_em, finalizado_em"
+        `
+          cpf,
+          usuario_id,
+          loja_id,
+          iniciado_em,
+          finalizado_em
+        `
       )
       .eq(
         "cpf",
@@ -532,7 +658,15 @@ export async function POST(
       );
     }
 
-    if (testeCpfExistente) {
+    /*
+     * Para clientes reais,
+     * qualquer registro anterior
+     * continua bloqueando novo teste.
+     */
+    if (
+      testeCpfExistente &&
+      !modoTester
+    ) {
       return NextResponse.json(
         {
           erro:
@@ -570,112 +704,202 @@ export async function POST(
       testeFimDate.toISOString();
 
     /*
-     * Registra primeiro o CPF.
-     * A chave primária impede duas
-     * ativações simultâneas.
+     * Para tester:
+     * atualiza/substitui o registro
+     * existente deste CPF.
+     *
+     * Para cliente normal:
+     * continua utilizando INSERT,
+     * preservando a proteção contra
+     * múltiplos testes.
      */
-    const {
-      error: erroRegistroCpf,
-    } = await supabase
-      .from(
-        "testes_gratis_cpfs"
-      )
-      .insert({
-        cpf,
-
-        usuario_id:
-          usuario.id,
-
-        loja_id:
-          lojaId,
-
-        iniciado_em:
-          testeInicio,
-
-        finalizado_em:
-          testeFim,
-      });
-
-    if (erroRegistroCpf) {
-      if (
-        erroRegistroCpf.code ===
-        "23505"
-      ) {
-        return NextResponse.json(
+    if (modoTester) {
+      const {
+        error:
+          erroRegistroTester,
+      } = await supabase
+        .from(
+          "testes_gratis_cpfs"
+        )
+        .upsert(
           {
-            erro:
-              "Este CPF já utilizou o teste grátis.",
+            cpf,
 
-            codigo:
-              "CPF_JA_UTILIZOU_TESTE",
+            usuario_id:
+              usuario.id,
 
-            ativo:
-              false,
+            loja_id:
+              lojaId,
 
-            testeGratis:
-              false,
+            iniciado_em:
+              testeInicio,
+
+            finalizado_em:
+              testeFim,
           },
           {
-            status: 409,
+            onConflict:
+              "cpf",
           }
+        );
+
+      if (
+        erroRegistroTester
+      ) {
+        console.error(
+          "Erro ao atualizar CPF tester:",
+          erroRegistroTester
+        );
+
+        throw new Error(
+          "Não foi possível preparar o teste interno."
         );
       }
 
-      console.error(
-        "Erro ao registrar CPF do teste:",
-        erroRegistroCpf
-      );
+      cpfRegistrado =
+        cpf;
 
-      throw new Error(
-        "Não foi possível reservar o teste grátis para este CPF."
-      );
+      usuarioIdRegistrado =
+        usuario.id;
+    } else {
+      const {
+        error:
+          erroRegistroCpf,
+      } = await supabase
+        .from(
+          "testes_gratis_cpfs"
+        )
+        .insert({
+          cpf,
+
+          usuario_id:
+            usuario.id,
+
+          loja_id:
+            lojaId,
+
+          iniciado_em:
+            testeInicio,
+
+          finalizado_em:
+            testeFim,
+        });
+
+      if (
+        erroRegistroCpf
+      ) {
+        if (
+          erroRegistroCpf
+            .code ===
+          "23505"
+        ) {
+          return NextResponse.json(
+            {
+              erro:
+                "Este CPF já utilizou o teste grátis.",
+
+              codigo:
+                "CPF_JA_UTILIZOU_TESTE",
+
+              ativo:
+                false,
+
+              testeGratis:
+                false,
+            },
+            {
+              status:
+                409,
+            }
+          );
+        }
+
+        console.error(
+          "Erro ao registrar CPF do teste:",
+          erroRegistroCpf
+        );
+
+        throw new Error(
+          "Não foi possível reservar o teste grátis para este CPF."
+        );
+      }
+
+      cpfRegistrado =
+        cpf;
+
+      usuarioIdRegistrado =
+        usuario.id;
     }
 
-    cpfRegistrado = cpf;
-    usuarioIdRegistrado =
-      usuario.id;
+    /*
+     * Ativa ou reinicia os
+     * 30 dias na loja.
+     */
+    let queryAtualizacao =
+      supabase
+        .from("lojas")
+        .update({
+          teste_gratis_utilizado:
+            true,
+
+          teste_gratis_inicio:
+            testeInicio,
+
+          teste_gratis_fim:
+            testeFim,
+
+          bloqueada_por_assinatura:
+            false,
+        })
+        .eq(
+          "id",
+          lojaId
+        );
 
     /*
-     * Ativa os 30 dias na loja.
+     * Cliente normal só consegue
+     * atualizar uma loja que ainda
+     * nunca utilizou trial.
+     *
+     * Tester pode sobrescrever
+     * datas anteriores.
      */
+    if (!modoTester) {
+      queryAtualizacao =
+        queryAtualizacao.eq(
+          "teste_gratis_utilizado",
+          false
+        );
+    }
+
     const {
-      data: lojaAtualizada,
-      error: erroAtualizacao,
-    } = await supabase
-      .from("lojas")
-      .update({
-        teste_gratis_utilizado:
-          true,
+      data:
+        lojaAtualizada,
 
-        teste_gratis_inicio:
-          testeInicio,
-
-        teste_gratis_fim:
-          testeFim,
-
-        bloqueada_por_assinatura:
-          false,
-      })
-      .eq(
-        "id",
-        lojaId
-      )
-      .eq(
-        "teste_gratis_utilizado",
-        false
-      )
-      .select(
-        "id, teste_gratis_inicio, teste_gratis_fim"
-      )
-      .maybeSingle();
+      error:
+        erroAtualizacao,
+    } =
+      await queryAtualizacao
+        .select(
+          `
+            id,
+            teste_gratis_inicio,
+            teste_gratis_fim
+          `
+        )
+        .maybeSingle();
 
     if (
       erroAtualizacao ||
       !lojaAtualizada
     ) {
       /*
-       * Se a ativação da loja falhar,
-       * libera novamente o CPF.
+       * Em uma ativação normal,
+       * remove a reserva incompleta.
+       *
+       * Para tester também pode
+       * remover porque o próximo
+       * teste fará novo upsert.
        */
       await supabase
         .from(
@@ -691,11 +915,15 @@ export async function POST(
           usuario.id
         );
 
-      cpfRegistrado = null;
+      cpfRegistrado =
+        null;
+
       usuarioIdRegistrado =
         null;
 
-      if (erroAtualizacao) {
+      if (
+        erroAtualizacao
+      ) {
         console.error(
           "Erro ao ativar teste na loja:",
           erroAtualizacao
@@ -709,17 +937,23 @@ export async function POST(
       );
     }
 
-    cpfRegistrado = null;
+    cpfRegistrado =
+      null;
+
     usuarioIdRegistrado =
       null;
 
     return NextResponse.json(
       {
         mensagem:
-          "Seu teste grátis de 30 dias foi ativado com sucesso.",
+          modoTester
+            ? "Teste interno de 30 dias reiniciado com sucesso."
+            : "Seu teste grátis de 30 dias foi ativado com sucesso.",
 
         codigo:
-          "TESTE_ATIVADO",
+          modoTester
+            ? "TESTE_INTERNO_ATIVADO"
+            : "TESTE_ATIVADO",
 
         ativo:
           true,
@@ -727,13 +961,17 @@ export async function POST(
         testeGratis:
           true,
 
+        modoTester,
+
         lojaId,
 
         testeInicio:
-          lojaAtualizada.teste_gratis_inicio,
+          lojaAtualizada
+            .teste_gratis_inicio,
 
         testeFim:
-          lojaAtualizada.teste_gratis_fim,
+          lojaAtualizada
+            .teste_gratis_fim,
 
         duracaoDias:
           DURACAO_TESTE_DIAS,
@@ -743,10 +981,6 @@ export async function POST(
       }
     );
   } catch (error) {
-    /*
-     * Remove uma reserva de CPF
-     * incompleta quando necessário.
-     */
     if (
       cpfRegistrado &&
       usuarioIdRegistrado
