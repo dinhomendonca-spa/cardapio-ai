@@ -3,6 +3,10 @@
 import Link from "next/link";
 
 import {
+  useRouter,
+} from "next/navigation";
+
+import {
   ArrowLeft,
   Check,
   ChevronRight,
@@ -10,6 +14,7 @@ import {
   Copy,
   ExternalLink,
   ImageIcon,
+  LayoutDashboard,
   Loader2,
   MapPin,
   MessageCircle,
@@ -55,6 +60,9 @@ function imagemEhPadrao(
 }
 
 export default function PublicarLojaPage() {
+  const router =
+    useRouter();
+
   const {
     loja,
     carregando,
@@ -74,6 +82,11 @@ export default function PublicarLojaPage() {
   const [
     publicando,
     setPublicando,
+  ] = useState(false);
+
+  const [
+    entrandoPainel,
+    setEntrandoPainel,
   ] = useState(false);
 
   const [
@@ -168,10 +181,13 @@ export default function PublicarLojaPage() {
     if (
       loja?.configuracao_concluida
     ) {
-      setPublicada(true);
+      setPublicada(
+        Boolean(loja.ativo)
+      );
     }
   }, [
     loja?.configuracao_concluida,
+    loja?.ativo,
   ]);
 
   const identidadeConcluida =
@@ -182,7 +198,8 @@ export default function PublicarLojaPage() {
         .trim()
         .toLowerCase() !==
         "minha loja" &&
-      loja.descricao.trim().length >= 10 &&
+      loja.descricao.trim().length >=
+        10 &&
       loja.logo &&
       !imagemEhPadrao(
         loja.logo,
@@ -227,7 +244,8 @@ export default function PublicarLojaPage() {
       loja.numero.trim() &&
       loja.bairro.trim() &&
       loja.cidade.trim() &&
-      loja.estado.trim().length === 2 &&
+      loja.estado.trim().length ===
+        2 &&
       loja.cep
         .replace(/\D/g, "")
         .length === 8
@@ -348,7 +366,7 @@ export default function PublicarLojaPage() {
         loja.bloqueada_por_assinatura
       ) {
         alert(
-          "A assinatura precisa estar ativa para publicar a loja."
+          "Seu acesso precisa estar ativo para publicar a loja."
         );
 
         return;
@@ -377,6 +395,49 @@ export default function PublicarLojaPage() {
         );
       } finally {
         setPublicando(false);
+      }
+    };
+
+  const irParaPainel =
+    async () => {
+      if (
+        !loja ||
+        entrandoPainel ||
+        publicando
+      ) {
+        return;
+      }
+
+      try {
+        setEntrandoPainel(true);
+
+        /*
+         * Encerra somente o tutorial.
+         * A loja continua com o estado
+         * atual e poderá ser concluída
+         * e publicada pelo painel.
+         */
+        await salvarLoja({
+          configuracao_concluida:
+            true,
+        });
+
+        router.replace(
+          "/admin"
+        );
+
+        router.refresh();
+      } catch (error) {
+        console.error(
+          "Erro ao abrir painel:",
+          error
+        );
+
+        alert(
+          "Não foi possível abrir o painel agora."
+        );
+
+        setEntrandoPainel(false);
       }
     };
 
@@ -503,7 +564,9 @@ export default function PublicarLojaPage() {
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Compartilhe o link com seus clientes e comece a receber pedidos.
+              Compartilhe o link com seus
+              clientes e comece a receber
+              pedidos.
             </p>
 
             <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-3">
@@ -541,12 +604,35 @@ export default function PublicarLojaPage() {
               Abrir minha loja
             </Link>
 
-            <Link
-              href="/admin"
-              className="mt-3 flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] font-bold"
+            <button
+              type="button"
+              onClick={
+                irParaPainel
+              }
+              disabled={
+                entrandoPainel
+              }
+              className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] font-bold disabled:opacity-60"
             >
-              Ir para o painel
-            </Link>
+              {entrandoPainel ? (
+                <>
+                  <Loader2
+                    size={18}
+                    className="animate-spin"
+                  />
+
+                  Abrindo painel...
+                </>
+              ) : (
+                <>
+                  <LayoutDashboard
+                    size={18}
+                  />
+
+                  Ir para o painel
+                </>
+              )}
+            </button>
           </section>
         ) : (
           <>
@@ -564,7 +650,9 @@ export default function PublicarLojaPage() {
                   </h2>
 
                   <p className="mt-1 text-sm leading-6 text-slate-300">
-                    Revise os itens abaixo antes de abrir sua loja para os clientes.
+                    Revise os itens abaixo
+                    antes de abrir sua loja
+                    para os clientes.
                   </p>
                 </div>
               </div>
@@ -580,7 +668,8 @@ export default function PublicarLojaPage() {
               </div>
 
               <p className="mt-2 text-xs font-semibold text-sky-200">
-                {itensConcluidos} de 4 etapas concluídas
+                {itensConcluidos} de 4
+                etapas concluídas
               </p>
             </section>
 
@@ -661,7 +750,11 @@ export default function PublicarLojaPage() {
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-slate-400">
-                    Abra a loja depois da publicação e confira imagens, preços, endereço e formas de pagamento.
+                    Abra a loja depois da
+                    publicação e confira
+                    imagens, preços,
+                    endereço e formas de
+                    pagamento.
                   </p>
                 </div>
               </div>
@@ -674,6 +767,7 @@ export default function PublicarLojaPage() {
               }
               disabled={
                 publicando ||
+                entrandoPainel ||
                 !prontaParaPublicar
               }
               className="flex h-16 w-full items-center justify-center gap-3 rounded-[22px] bg-gradient-to-r from-emerald-500 to-cyan-500 px-5 font-black shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
@@ -700,9 +794,49 @@ export default function PublicarLojaPage() {
 
             {!prontaParaPublicar && (
               <p className="text-center text-xs leading-5 text-slate-500">
-                Conclua os itens pendentes para liberar a publicação.
+                Conclua os itens pendentes
+                para liberar a publicação.
               </p>
             )}
+
+            <button
+              type="button"
+              onClick={
+                irParaPainel
+              }
+              disabled={
+                entrandoPainel ||
+                publicando
+              }
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 text-sm font-bold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {entrandoPainel ? (
+                <>
+                  <Loader2
+                    size={18}
+                    className="animate-spin"
+                  />
+
+                  Abrindo painel...
+                </>
+              ) : (
+                <>
+                  <LayoutDashboard
+                    size={18}
+                  />
+
+                  Ir para o painel e
+                  concluir depois
+                </>
+              )}
+            </button>
+
+            <p className="text-center text-[11px] leading-5 text-slate-500">
+              Sua loja continuará privada
+              até que todos os itens sejam
+              concluídos e ela seja
+              publicada.
+            </p>
           </>
         )}
       </section>
