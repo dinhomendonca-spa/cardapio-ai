@@ -642,12 +642,16 @@ function CadastroConteudo() {
             <button
               type="button"
               onClick={() => setPlano("anual")}
-              className={`rounded-2xl border p-4 text-left transition ${
+              className={`relative rounded-2xl border px-4 pb-4 pt-9 text-left transition ${
                 plano === "anual"
                   ? "border-emerald-400 bg-emerald-400/15 ring-2 ring-emerald-400/20"
                   : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
               }`}
             >
+              <span className="absolute right-2 top-2 rounded-full bg-emerald-400 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-emerald-950 shadow-sm sm:text-[9px]">
+                Melhor oferta
+              </span>
+
               <p className="text-sm font-black text-white">Plano anual</p>
               <p className="mt-1 text-xs text-slate-300">12x de R$ 49,75</p>
             </button>
