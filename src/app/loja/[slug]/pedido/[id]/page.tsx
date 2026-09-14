@@ -13,12 +13,27 @@ import {
   Truck,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { supabase } from "@/lib/supabase";
-import { useStore } from "@/context/StoreContext";
+import Link from "next/link";
+
+import {
+  useParams,
+} from "next/navigation";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  supabase,
+} from "@/lib/supabase";
+
+import {
+  useStore,
+} from "@/context/StoreContext";
 
 type StatusPedido =
   | "novo"
@@ -37,175 +52,380 @@ type ItemPedido = {
 
 type Pedido = {
   id: number;
-  status: StatusPedido;
-  tipo_entrega: "entrega" | "retirada";
-  forma_pagamento: string;
-  subtotal: number;
-  taxa_entrega: number;
-  total: number;
-  rua: string;
-  numero: string;
-  bairro: string;
-  complemento: string;
-  criado_em: string;
-  pedido_itens: ItemPedido[];
+
+  status:
+    StatusPedido;
+
+  tipo_entrega:
+    | "entrega"
+    | "retirada";
+
+  forma_pagamento:
+    string;
+
+  subtotal:
+    number;
+
+  taxa_entrega:
+    number;
+
+  total:
+    number;
+
+  rua:
+    string;
+
+  numero:
+    string;
+
+  bairro:
+    string;
+
+  complemento:
+    string;
+
+  criado_em:
+    string;
+
+  pedido_itens:
+    ItemPedido[];
 };
 
 const etapas = [
   {
-    status: "novo" as StatusPedido,
-    titulo: "Pedido recebido",
-    descricao: "A loja recebeu seu pedido.",
-    icone: PackageCheck,
+    status:
+      "novo" as StatusPedido,
+
+    titulo:
+      "Pedido recebido",
+
+    descricao:
+      "A loja recebeu seu pedido.",
+
+    icone:
+      PackageCheck,
   },
+
   {
-    status: "em_preparo" as StatusPedido,
-    titulo: "Em preparo",
-    descricao: "Seu pedido está sendo preparado.",
-    icone: ChefHat,
+    status:
+      "em_preparo" as StatusPedido,
+
+    titulo:
+      "Em preparo",
+
+    descricao:
+      "Seu pedido está sendo preparado.",
+
+    icone:
+      ChefHat,
   },
+
   {
-    status: "saiu_para_entrega" as StatusPedido,
-    titulo: "Saiu para entrega",
-    descricao: "Seu pedido está a caminho.",
-    icone: Truck,
+    status:
+      "saiu_para_entrega" as StatusPedido,
+
+    titulo:
+      "Saiu para entrega",
+
+    descricao:
+      "Seu pedido está a caminho.",
+
+    icone:
+      Truck,
   },
+
   {
-    status: "concluido" as StatusPedido,
-    titulo: "Concluído",
-    descricao: "Pedido finalizado.",
-    icone: CheckCircle2,
+    status:
+      "concluido" as StatusPedido,
+
+    titulo:
+      "Concluído",
+
+    descricao:
+      "Pedido finalizado.",
+
+    icone:
+      CheckCircle2,
   },
 ];
 
 export default function AcompanharPedidoPage() {
-  const params = useParams();
+  const params =
+    useParams();
 
-  const { loja } = useStore();
+  const {
+    loja,
+  } =
+    useStore();
 
-  const pedidoId = Number(params.id);
+  const pedidoId =
+    Number(
+      params.id
+    );
 
-  const [pedido, setPedido] =
-    useState<Pedido | null>(null);
+  /*
+   * O slug vem diretamente da URL:
+   *
+   * /loja/amor-e-luz/pedido/35
+   *
+   * Assim o cliente sempre volta
+   * para a loja correta.
+   */
+  const slug =
+    typeof params.slug ===
+    "string"
+      ? params.slug
+      : Array.isArray(
+            params.slug
+          )
+        ? params.slug[0]
+        : "";
 
-  const [carregando, setCarregando] =
+  const linkLoja =
+    slug
+      ? `/loja/${encodeURIComponent(
+          slug
+        )}`
+      : "/";
+
+  const [
+    pedido,
+    setPedido,
+  ] =
+    useState<
+      Pedido | null
+    >(null);
+
+  const [
+    carregando,
+    setCarregando,
+  ] =
     useState(true);
 
-  const [conectado, setConectado] =
+  const [
+    conectado,
+    setConectado,
+  ] =
     useState(false);
 
-  const formatarPreco = (valor: number) =>
-    Number(valor).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
+  const formatarPreco = (
+    valor: number
+  ) =>
+    Number(
+      valor
+    ).toLocaleString(
+      "pt-BR",
+      {
+        style:
+          "currency",
 
-  const carregarPedido = useCallback(async () => {
-    if (!pedidoId || Number.isNaN(pedidoId)) {
-      setCarregando(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("pedidos")
-        .select(`
-          *,
-          pedido_itens (
-            id,
-            nome,
-            preco,
-            quantidade,
-            subtotal
-          )
-        `)
-        .eq("id", pedidoId)
-        .single();
-
-      if (error) {
-        throw error;
+        currency:
+          "BRL",
       }
+    );
 
-      setPedido(data as Pedido);
-    } catch (error) {
-      console.error(
-        "Erro ao carregar pedido:",
-        error
-      );
-    } finally {
-      setCarregando(false);
-    }
-  }, [pedidoId]);
+  const carregarPedido =
+    useCallback(
+      async () => {
+        if (
+          !pedidoId ||
+          Number.isNaN(
+            pedidoId
+          )
+        ) {
+          setCarregando(
+            false
+          );
+
+          return;
+        }
+
+        try {
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .from(
+                "pedidos"
+              )
+              .select(
+                `
+                  *,
+                  pedido_itens (
+                    id,
+                    nome,
+                    preco,
+                    quantidade,
+                    subtotal
+                  )
+                `
+              )
+              .eq(
+                "id",
+                pedidoId
+              )
+              .single();
+
+          if (error) {
+            throw error;
+          }
+
+          setPedido(
+            data as Pedido
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao carregar pedido:",
+            error
+          );
+
+          setPedido(
+            null
+          );
+        } finally {
+          setCarregando(
+            false
+          );
+        }
+      },
+      [
+        pedidoId,
+      ]
+    );
 
   useEffect(() => {
     carregarPedido();
-  }, [carregarPedido]);
+  }, [
+    carregarPedido,
+  ]);
 
   useEffect(() => {
-    if (!pedidoId || Number.isNaN(pedidoId)) {
+    if (
+      !pedidoId ||
+      Number.isNaN(
+        pedidoId
+      )
+    ) {
       return;
     }
 
-    const canal = supabase
-      .channel(`cliente-pedido-${pedidoId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "pedidos",
-          filter: `id=eq.${pedidoId}`,
-        },
-        async () => {
-          await carregarPedido();
+    const canal =
+      supabase
+        .channel(
+          `cliente-pedido-${pedidoId}`
+        )
+        .on(
+          "postgres_changes",
+          {
+            event:
+              "UPDATE",
 
-          if ("vibrate" in navigator) {
-            navigator.vibrate([150, 80, 150]);
+            schema:
+              "public",
+
+            table:
+              "pedidos",
+
+            filter:
+              `id=eq.${pedidoId}`,
+          },
+          async () => {
+            await carregarPedido();
+
+            if (
+              "vibrate" in
+              navigator
+            ) {
+              navigator.vibrate(
+                [
+                  150,
+                  80,
+                  150,
+                ]
+              );
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        setConectado(
-          status === "SUBSCRIBED"
+        )
+        .subscribe(
+          (
+            status
+          ) => {
+            setConectado(
+              status ===
+                "SUBSCRIBED"
+            );
+          }
         );
-      });
 
     return () => {
-      supabase.removeChannel(canal);
+      supabase.removeChannel(
+        canal
+      );
     };
   }, [
     pedidoId,
     carregarPedido,
   ]);
 
-  const indiceAtual = useMemo(() => {
-    if (!pedido) return -1;
+  const indiceAtual =
+    useMemo(
+      () => {
+        if (!pedido) {
+          return -1;
+        }
 
-    return etapas.findIndex(
-      (etapa) =>
-        etapa.status === pedido.status
+        return etapas.findIndex(
+          (
+            etapa
+          ) =>
+            etapa.status ===
+            pedido.status
+        );
+      },
+      [
+        pedido,
+      ]
     );
-  }, [pedido]);
 
-  const statusAtual = useMemo(() => {
-    if (!pedido) return null;
+  const statusAtual =
+    useMemo(
+      () => {
+        if (!pedido) {
+          return null;
+        }
 
-    if (pedido.status === "cancelado") {
-      return {
-        titulo: "Pedido cancelado",
-        descricao:
-          "Este pedido foi cancelado.",
-        icone: XCircle,
-      };
-    }
+        if (
+          pedido.status ===
+          "cancelado"
+        ) {
+          return {
+            titulo:
+              "Pedido cancelado",
 
-    return (
-      etapas.find(
-        (etapa) =>
-          etapa.status === pedido.status
-      ) ?? etapas[0]
+            descricao:
+              "Este pedido foi cancelado.",
+
+            icone:
+              XCircle,
+          };
+        }
+
+        return (
+          etapas.find(
+            (
+              etapa
+            ) =>
+              etapa.status ===
+              pedido.status
+          ) ??
+          etapas[0]
+        );
+      },
+      [
+        pedido,
+      ]
     );
-  }, [pedido]);
 
   if (carregando) {
     return (
@@ -228,14 +448,18 @@ export default function AcompanharPedidoPage() {
           />
 
           <h1 className="mt-4 text-xl font-extrabold">
-            Pedido não encontrado
+            Pedido não
+            encontrado
           </h1>
 
           <Link
-            href={`/loja/${loja?.slug}`}
+            href={
+              linkLoja
+            }
             className="mt-5 flex h-14 items-center justify-center rounded-2xl bg-zinc-950 font-bold text-white"
           >
-            Voltar ao cardápio
+            Voltar ao
+            cardápio
           </Link>
         </div>
       </main>
@@ -247,12 +471,14 @@ export default function AcompanharPedidoPage() {
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto max-w-md px-4 py-4">
           <p className="text-xs text-zinc-500">
-            {loja?.nome || "Sua loja"}
+            {loja?.nome ||
+              "Sua loja"}
           </p>
 
           <div className="mt-1 flex items-center justify-between gap-3">
             <h1 className="text-xl font-extrabold">
-              Pedido #{pedido.id}
+              Pedido #
+              {pedido.id}
             </h1>
 
             <div className="flex items-center gap-2 text-[11px] text-zinc-500">
@@ -274,9 +500,11 @@ export default function AcompanharPedidoPage() {
 
       <section className="mx-auto max-w-md space-y-3 px-3 py-3">
         {/* STATUS ATUAL */}
+
         <section
           className={`rounded-3xl p-5 shadow-sm ${
-            pedido.status === "cancelado"
+            pedido.status ===
+            "cancelado"
               ? "bg-red-50"
               : "bg-zinc-950 text-white"
           }`}
@@ -285,13 +513,16 @@ export default function AcompanharPedidoPage() {
             <div className="flex items-start gap-4">
               <div
                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                  pedido.status === "cancelado"
+                  pedido.status ===
+                  "cancelado"
                     ? "bg-red-100 text-red-600"
                     : "bg-white/10"
                 }`}
               >
                 <statusAtual.icone
-                  size={22}
+                  size={
+                    22
+                  }
                 />
               </div>
 
@@ -304,11 +535,14 @@ export default function AcompanharPedidoPage() {
                       : "text-zinc-400"
                   }`}
                 >
-                  Status atual
+                  Status
+                  atual
                 </p>
 
                 <h2 className="mt-1 text-xl font-extrabold">
-                  {statusAtual.titulo}
+                  {
+                    statusAtual.titulo
+                  }
                 </h2>
 
                 <p
@@ -319,7 +553,9 @@ export default function AcompanharPedidoPage() {
                       : "text-zinc-300"
                   }`}
                 >
-                  {statusAtual.descricao}
+                  {
+                    statusAtual.descricao
+                  }
                 </p>
               </div>
             </div>
@@ -327,27 +563,37 @@ export default function AcompanharPedidoPage() {
         </section>
 
         {/* LINHA DO TEMPO */}
-        {pedido.status !== "cancelado" && (
+
+        {pedido.status !==
+          "cancelado" && (
           <section className="rounded-3xl bg-white p-5 shadow-sm">
             <h2 className="font-extrabold">
-              Acompanhe seu pedido
+              Acompanhe seu
+              pedido
             </h2>
 
             <div className="mt-5">
               {etapas.map(
-                (etapa, index) => {
+                (
+                  etapa,
+                  index
+                ) => {
                   const Icon =
                     etapa.icone;
 
                   const concluida =
-                    index <= indiceAtual;
+                    index <=
+                    indiceAtual;
 
                   const atual =
-                    index === indiceAtual;
+                    index ===
+                    indiceAtual;
 
                   return (
                     <div
-                      key={etapa.status}
+                      key={
+                        etapa.status
+                      }
                       className="relative flex gap-4 pb-7 last:pb-0"
                     >
                       {index <
@@ -373,11 +619,15 @@ export default function AcompanharPedidoPage() {
                         {index <
                         indiceAtual ? (
                           <Check
-                            size={17}
+                            size={
+                              17
+                            }
                           />
                         ) : (
                           <Icon
-                            size={17}
+                            size={
+                              17
+                            }
                           />
                         )}
                       </div>
@@ -418,6 +668,7 @@ export default function AcompanharPedidoPage() {
         )}
 
         {/* RESUMO */}
+
         <section className="rounded-3xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold">
@@ -425,15 +676,20 @@ export default function AcompanharPedidoPage() {
             </h2>
 
             <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-              <Clock3 size={14} />
+              <Clock3
+                size={14}
+              />
 
               {new Date(
                 pedido.criado_em
               ).toLocaleTimeString(
                 "pt-BR",
                 {
-                  hour: "2-digit",
-                  minute: "2-digit",
+                  hour:
+                    "2-digit",
+
+                  minute:
+                    "2-digit",
                 }
               )}
             </div>
@@ -441,14 +697,23 @@ export default function AcompanharPedidoPage() {
 
           <div className="mt-4 space-y-3">
             {pedido.pedido_itens.map(
-              (item) => (
+              (
+                item
+              ) => (
                 <div
-                  key={item.id}
+                  key={
+                    item.id
+                  }
                   className="flex justify-between gap-3 text-sm"
                 >
                   <span className="text-zinc-600">
-                    {item.quantidade}x{" "}
-                    {item.nome}
+                    {
+                      item.quantidade
+                    }
+                    x{" "}
+                    {
+                      item.nome
+                    }
                   </span>
 
                   <span className="font-semibold">
@@ -462,7 +727,10 @@ export default function AcompanharPedidoPage() {
 
             <div className="border-t border-zinc-100 pt-3">
               <div className="flex justify-between text-sm text-zinc-500">
-                <span>Produtos</span>
+                <span>
+                  Produtos
+                </span>
+
                 <span>
                   {formatarPreco(
                     pedido.subtotal
@@ -504,12 +772,17 @@ export default function AcompanharPedidoPage() {
         </section>
 
         {/* ENTREGA */}
+
         {pedido.tipo_entrega ===
           "entrega" && (
           <section className="rounded-3xl bg-white p-4 shadow-sm">
             <div className="flex gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                <MapPin size={18} />
+                <MapPin
+                  size={
+                    18
+                  }
+                />
               </div>
 
               <div>
@@ -518,10 +791,20 @@ export default function AcompanharPedidoPage() {
                 </h2>
 
                 <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  {pedido.rua},{" "}
-                  {pedido.numero}
+                  {
+                    pedido.rua
+                  }
+                  ,{" "}
+                  {
+                    pedido.numero
+                  }
+
                   <br />
-                  {pedido.bairro}
+
+                  {
+                    pedido.bairro
+                  }
+
                   {pedido.complemento
                     ? ` • ${pedido.complemento}`
                     : ""}
@@ -531,12 +814,20 @@ export default function AcompanharPedidoPage() {
           </section>
         )}
 
+        {/* VOLTAR PARA A LOJA CORRETA */}
+
         <Link
-          href="/menu"
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold shadow-sm"
+          href={
+            linkLoja
+          }
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold shadow-sm transition hover:bg-zinc-50 active:scale-[0.99]"
         >
-          <Home size={17} />
-          Voltar ao cardápio
+          <Home
+            size={17}
+          />
+
+          Voltar ao
+          cardápio
         </Link>
       </section>
     </main>
