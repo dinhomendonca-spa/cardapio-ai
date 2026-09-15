@@ -30,7 +30,6 @@ import {
   useProducts,
 } from "@/context/ProductContext";
 
-import PhotoStudio from "@/components/PhotoStudio";
 import { useStore } from "@/context/StoreContext";
 import { supabase } from "@/lib/supabase";
 
@@ -96,9 +95,6 @@ export default function NovoProdutoPage() {
 
   const [preview, setPreview] =
     useState<string | null>(null);
-
-  const [estudioAberto, setEstudioAberto] =
-    useState(false);
 
   const [salvando, setSalvando] =
     useState(false);
@@ -170,22 +166,6 @@ export default function NovoProdutoPage() {
         imagem
       )
     );
-  };
-
-  const aplicarFotoDoEstudio = (
-    imagemEditada: File
-  ) => {
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-
-    setArquivo(imagemEditada);
-    setPreview(
-      URL.createObjectURL(
-        imagemEditada
-      )
-    );
-    setAjusteImagem("conter");
   };
 
   const otimizarImagem =
@@ -802,19 +782,6 @@ export default function NovoProdutoPage() {
                 )}
               </button>
 
-              {preview ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEstudioAberto(true)
-                  }
-                  className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-rose-500 px-4 font-black text-white shadow-lg shadow-fuchsia-950/30"
-                >
-                  <Sparkles size={19} />
-                  Abrir Estúdio de Fotos
-                </button>
-              ) : null}
-
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
                 <div className="flex items-start gap-3">
                   <Maximize2
@@ -1234,24 +1201,6 @@ export default function NovoProdutoPage() {
           </>
         )}
       </section>
-
-      {preview ? (
-        <PhotoStudio
-          aberto={estudioAberto}
-          imagem={preview}
-          nomeArquivo={
-            arquivo?.name ||
-            nome ||
-            "produto"
-          }
-          aoFechar={() =>
-            setEstudioAberto(false)
-          }
-          aoAplicar={
-            aplicarFotoDoEstudio
-          }
-        />
-      ) : null}
     </main>
   );
 }

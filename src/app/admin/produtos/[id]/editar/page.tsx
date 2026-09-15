@@ -10,7 +10,6 @@ import {
   Maximize2,
   Pencil,
   Save,
-  Sparkles,
 } from "lucide-react";
 import {
   useParams,
@@ -25,7 +24,6 @@ import {
 import {
   AjusteImagem,
 } from "@/context/ProductContext";
-import PhotoStudio from "@/components/PhotoStudio";
 import { supabase } from "@/lib/supabase";
 
 type Produto = {
@@ -126,11 +124,6 @@ export default function EditarProdutoPage() {
     preview,
     setPreview,
   ] = useState<string | null>(null);
-
-  const [
-    estudioAberto,
-    setEstudioAberto,
-  ] = useState(false);
 
   const [
     carregando,
@@ -359,22 +352,6 @@ export default function EditarProdutoPage() {
         imagem
       )
     );
-  };
-
-  const aplicarFotoDoEstudio = (
-    imagemEditada: File
-  ) => {
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-
-    setArquivo(imagemEditada);
-    setPreview(
-      URL.createObjectURL(
-        imagemEditada
-      )
-    );
-    setAjusteImagem("conter");
   };
 
   const otimizarImagem =
@@ -844,17 +821,6 @@ export default function EditarProdutoPage() {
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() =>
-              setEstudioAberto(true)
-            }
-            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-rose-500 px-4 font-black text-white shadow-lg shadow-fuchsia-950/30"
-          >
-            <Sparkles size={19} />
-            Abrir Estúdio de Fotos
-          </button>
-
           {arquivo && (
             <p className="mt-3 rounded-2xl bg-emerald-400/10 p-3 text-xs leading-5 text-emerald-300">
               A nova foto será redimensionada e comprimida automaticamente.
@@ -1195,24 +1161,6 @@ export default function EditarProdutoPage() {
           )}
         </button>
       </section>
-
-      <PhotoStudio
-        aberto={estudioAberto}
-        imagem={
-          preview || imagemAtual
-        }
-        nomeArquivo={
-          arquivo?.name ||
-          nome ||
-          "produto"
-        }
-        aoFechar={() =>
-          setEstudioAberto(false)
-        }
-        aoAplicar={
-          aplicarFotoDoEstudio
-        }
-      />
     </main>
   );
 }
