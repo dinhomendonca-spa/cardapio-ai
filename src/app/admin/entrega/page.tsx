@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import {
+  useRouter,
+} from "next/navigation";
 
 import {
   ArrowLeft,
@@ -21,6 +24,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -71,7 +75,13 @@ function converterValor(
   );
 }
 
+const CHAVE_RASCUNHO_ENTREGA =
+  "lojas_ai_rascunho_entrega";
+
 export default function EntregaPage() {
+  const router = useRouter();
+  const formularioCarregado =
+    useRef(false);
   const {
     loja,
     carregando,
@@ -154,8 +164,29 @@ export default function EntregaPage() {
   ] = useState(false);
 
   useEffect(() => {
-    if (!loja) {
+    if (
+      !loja ||
+      formularioCarregado.current
+    ) {
       return;
+    }
+
+    formularioCarregado.current =
+      true;
+
+    let rascunho: Record<string, unknown> | null = null;
+
+    try {
+      const salvoLocalmente =
+        window.localStorage.getItem(
+          CHAVE_RASCUNHO_ENTREGA
+        );
+
+      rascunho = salvoLocalmente
+        ? JSON.parse(salvoLocalmente)
+        : null;
+    } catch {
+      rascunho = null;
     }
 
     setEntregaAtiva(
@@ -192,36 +223,77 @@ export default function EntregaPage() {
     );
 
     setEndereco(
-      loja.endereco
+      typeof rascunho?.endereco === "string"
+        ? rascunho.endereco
+        : loja.endereco
     );
 
     setNumero(
-      loja.numero
+      typeof rascunho?.numero === "string"
+        ? rascunho.numero
+        : loja.numero
     );
 
     setBairro(
-      loja.bairro
+      typeof rascunho?.bairro === "string"
+        ? rascunho.bairro
+        : loja.bairro
     );
 
     setCidade(
-      loja.cidade
+      typeof rascunho?.cidade === "string"
+        ? rascunho.cidade
+        : loja.cidade
     );
 
     setEstado(
-      loja.estado
+      typeof rascunho?.estado === "string"
+        ? rascunho.estado
+        : loja.estado
     );
 
     setCep(
       formatarCep(
-        loja.cep
+        typeof rascunho?.cep === "string"
+          ? rascunho.cep
+          : loja.cep
       )
     );
 
     setGoogleMapsUrl(
-      loja.google_maps_url
+      typeof rascunho?.googleMapsUrl === "string"
+        ? rascunho.googleMapsUrl
+        : loja.google_maps_url
     );
   }, [
     loja,
+  ]);
+
+  useEffect(() => {
+    if (!formularioCarregado.current) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      CHAVE_RASCUNHO_ENTREGA,
+      JSON.stringify({
+        endereco,
+        numero,
+        bairro,
+        cidade,
+        estado,
+        cep,
+        googleMapsUrl,
+      })
+    );
+  }, [
+    endereco,
+    numero,
+    bairro,
+    cidade,
+    estado,
+    cep,
+    googleMapsUrl,
   ]);
 
   const taxa =
@@ -442,10 +514,21 @@ export default function EntregaPage() {
             ),
 
           google_maps_url:
-            googleMapsUrl.trim(),
+            googleMapsUrl.trim() ||
+            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              enderecoCompleto
+            )}`,
         });
 
         setSalvo(true);
+
+        window.localStorage.removeItem(
+          CHAVE_RASCUNHO_ENTREGA
+        );
+
+        router.push(
+          "/admin/produtos/novo"
+        );
       } catch (error) {
         console.error(
           "Erro ao salvar entrega:",
@@ -968,7 +1051,7 @@ export default function EntregaPage() {
               size={18}
             />
 
-            Conferir no Google Maps
+            Conferir no Google Maps (abre outra aba)
           </button>
 
           <div className="mt-4">
@@ -993,6 +1076,10 @@ export default function EntregaPage() {
               inputMode="url"
               className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-red-400"
             />
+
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              Ao voltar do mapa, seus dados continuarão preenchidos. Clique em Salvar e continuar para confirmar a localização.
+            </p>
           </div>
         </section>
 

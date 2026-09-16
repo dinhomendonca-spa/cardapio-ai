@@ -26,6 +26,8 @@ import {
   StoreProvider,
 } from "@/context/StoreContext";
 
+import ThemeShell from "@/components/ThemeShell";
+
 const geistSans =
   Geist({
     variable:
@@ -183,9 +185,9 @@ export default function RootLayout({
           <StoreProvider>
             <ProductProvider>
               <CartProvider>
-                <div className="w-full min-w-0 max-w-full overflow-x-hidden">
+                <ThemeShell>
                   {children}
-                </div>
+                </ThemeShell>
               </CartProvider>
             </ProductProvider>
           </StoreProvider>

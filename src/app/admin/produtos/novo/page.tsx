@@ -12,6 +12,7 @@ import {
   ImagePlus,
   Loader2,
   Maximize2,
+  Move,
   PackagePlus,
   Rocket,
   Save,
@@ -90,6 +91,12 @@ export default function NovoProdutoPage() {
     "conter"
   );
 
+  const [imagemPosicaoX, setImagemPosicaoX] =
+    useState(50);
+
+  const [imagemPosicaoY, setImagemPosicaoY] =
+    useState(50);
+
   const [arquivo, setArquivo] =
     useState<File | null>(null);
 
@@ -97,6 +104,9 @@ export default function NovoProdutoPage() {
     useState<string | null>(null);
 
   const [salvando, setSalvando] =
+    useState(false);
+
+  const [tentouSalvar, setTentouSalvar] =
     useState(false);
 
   const [
@@ -431,12 +441,35 @@ export default function NovoProdutoPage() {
   const formularioValido =
     itensConcluidos === 5;
 
+  const camposPendentes = [
+    !imagemPreenchida && "foto",
+    !nomePreenchido && "nome",
+    !descricaoPreenchida && "descrição",
+    !categoriaPreenchida && "categoria",
+    !precoValido && "preço",
+    !estoqueValido && "quantidade em estoque",
+  ].filter(Boolean) as string[];
+
+  const irParaCampo = (
+    id: string
+  ) => {
+    document
+      .getElementById(id)
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+  };
+
   const salvarProduto =
     async () => {
+      setTentouSalvar(true);
+
       if (!imagemPreenchida) {
         alert(
           "Adicione uma foto do produto."
         );
+        irParaCampo("foto-produto");
         return;
       }
 
@@ -444,6 +477,7 @@ export default function NovoProdutoPage() {
         alert(
           "Informe o nome do produto."
         );
+        irParaCampo("nome");
         return;
       }
 
@@ -453,6 +487,7 @@ export default function NovoProdutoPage() {
         alert(
           "Escreva uma breve descrição do produto."
         );
+        irParaCampo("descricao");
         return;
       }
 
@@ -462,6 +497,7 @@ export default function NovoProdutoPage() {
         alert(
           "Informe uma categoria."
         );
+        irParaCampo("categoria");
         return;
       }
 
@@ -469,6 +505,7 @@ export default function NovoProdutoPage() {
         alert(
           "Informe um preço maior que zero."
         );
+        irParaCampo("preco");
         return;
       }
 
@@ -476,6 +513,7 @@ export default function NovoProdutoPage() {
         alert(
           "Informe uma quantidade inteira e igual ou maior que zero."
         );
+        irParaCampo("estoque");
         return;
       }
 
@@ -503,6 +541,10 @@ export default function NovoProdutoPage() {
             imagemUrl,
           ajuste_imagem:
             ajusteImagem,
+          imagem_posicao_x:
+            imagemPosicaoX,
+          imagem_posicao_y:
+            imagemPosicaoY,
           ativo: true,
         });
 
@@ -545,9 +587,12 @@ export default function NovoProdutoPage() {
       setAjusteImagem(
         "conter"
       );
+      setImagemPosicaoX(50);
+      setImagemPosicaoY(50);
       setArquivo(null);
       setPreview(null);
       setProdutoSalvo(false);
+      setTentouSalvar(false);
 
       if (
         inputImagemRef.current
@@ -692,7 +737,7 @@ export default function NovoProdutoPage() {
           </section>
         ) : (
           <>
-            <section className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
+            <section id="foto-produto" className="rounded-[28px] border border-white/10 bg-white/[0.06] p-5">
               <div className="flex items-center gap-3">
                 <ImagePlus
                   size={21}
@@ -754,6 +799,9 @@ export default function NovoProdutoPage() {
                           ? "object-cover"
                           : "object-contain p-2"
                       }
+                      style={{
+                        objectPosition: `${imagemPosicaoX}% ${imagemPosicaoY}%`,
+                      }}
                       unoptimized
                     />
 
@@ -843,6 +891,52 @@ export default function NovoProdutoPage() {
                     ? "A imagem preencherá todo o card e poderá ter pequenas partes cortadas."
                     : "A imagem aparecerá inteira e poderá deixar espaços nas bordas."}
                 </p>
+
+                {ajusteImagem === "preencher" && preview && (
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/10 p-4">
+                    <div className="flex items-center gap-2">
+                      <Move size={17} className="text-sky-300" />
+                      <p className="text-xs font-bold">
+                        Posicionar a imagem
+                      </p>
+                    </div>
+
+                    <label className="mt-4 block text-xs text-slate-400">
+                      Horizontal
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={imagemPosicaoX}
+                        onChange={(event) => setImagemPosicaoX(Number(event.target.value))}
+                        className="mt-2 w-full accent-sky-500"
+                      />
+                    </label>
+
+                    <label className="mt-3 block text-xs text-slate-400">
+                      Vertical
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={imagemPosicaoY}
+                        onChange={(event) => setImagemPosicaoY(Number(event.target.value))}
+                        className="mt-2 w-full accent-sky-500"
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagemPosicaoX(50);
+                        setImagemPosicaoY(50);
+                      }}
+                      className="mt-3 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold"
+                    >
+                      Centralizar novamente
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -1048,6 +1142,10 @@ export default function NovoProdutoPage() {
                   />
                 </div>
 
+                <p className="mt-2 text-xs text-slate-400">
+                  Digite o valor. Exemplo: 49,90.
+                </p>
+
                 {preco.trim() &&
                 !precoValido ? (
                   <p className="mt-2 text-xs font-medium text-red-300">
@@ -1157,9 +1255,24 @@ export default function NovoProdutoPage() {
                     inputMode="numeric"
                     className="h-14 w-full rounded-2xl border border-white/10 bg-white/[0.07] px-4 outline-none focus:border-cyan-400"
                   />
+
+                  <p className="mt-2 text-xs text-slate-400">
+                    Digite a quantidade disponível. O número exibido dentro do campo é apenas um exemplo.
+                  </p>
                 </div>
               )}
             </section>
+
+            {tentouSalvar && camposPendentes.length > 0 && (
+              <section className="rounded-2xl border border-amber-300/25 bg-amber-400/10 p-4 text-sm text-amber-100">
+                <p className="font-bold">
+                  Falta preencher:
+                </p>
+                <p className="mt-1 leading-6">
+                  {camposPendentes.join(", ")}.
+                </p>
+              </section>
+            )}
 
             <button
               type="button"
@@ -1167,8 +1280,7 @@ export default function NovoProdutoPage() {
                 salvarProduto
               }
               disabled={
-                salvando ||
-                !formularioValido
+                salvando
               }
               className="flex h-16 w-full items-center justify-center gap-3 rounded-[22px] bg-gradient-to-r from-sky-500 to-blue-600 px-5 font-black shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -1194,8 +1306,7 @@ export default function NovoProdutoPage() {
 
             {!formularioValido && (
               <p className="text-center text-xs leading-5 text-slate-500">
-                Complete os cinco itens
-                para cadastrar o produto.
+                Campos que ainda faltam: {camposPendentes.join(", ")}.
               </p>
             )}
           </>

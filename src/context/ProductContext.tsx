@@ -32,6 +32,8 @@ export type Produto = {
   estoque_controlado: boolean;
   imagem: string;
   ajuste_imagem: AjusteImagem;
+  imagem_posicao_x: number;
+  imagem_posicao_y: number;
   ativo: boolean;
 };
 
@@ -183,6 +185,18 @@ export function ProductProvider({
                     produto.ajuste_imagem
                   ),
 
+                imagem_posicao_x:
+                  Number(
+                    produto.imagem_posicao_x ??
+                      50
+                  ),
+
+                imagem_posicao_y:
+                  Number(
+                    produto.imagem_posicao_y ??
+                      50
+                  ),
+
                 ativo:
                   produto.ativo ??
                   true,
@@ -255,6 +269,12 @@ export function ProductProvider({
             normalizarAjusteImagem(
               produto.ajuste_imagem
             ),
+
+          imagem_posicao_x:
+            produto.imagem_posicao_x,
+
+          imagem_posicao_y:
+            produto.imagem_posicao_y,
 
           ativo:
             produto.ativo,

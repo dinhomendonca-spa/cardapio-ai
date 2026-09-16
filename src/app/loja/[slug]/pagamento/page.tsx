@@ -21,6 +21,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -119,6 +120,12 @@ export default function PagamentoPage() {
     pagamentoCartaoConcluido,
     setPagamentoCartaoConcluido,
   ] = useState(false);
+
+  const [pedidoPixId, setPedidoPixId] =
+    useState<number | null>(null);
+
+  const registroPixEmAndamento =
+    useRef<Promise<number> | null>(null);
 
   /*
    * ==========================================
@@ -655,6 +662,36 @@ ${textoEntrega}
         );
       }
 
+      if (pedidoPixId) {
+        return pedidoPixId;
+      }
+
+      const chaveSessao =
+        `lojas_ai_pedido_pix_${loja.id}_${dadosCheckout.clienteTelefone.replace(/\D/g, "")}_${itens
+          .map((item) => `${item.id}x${item.quantidade}`)
+          .join("-")}_${total.toFixed(2)}`;
+
+      const pedidoSalvo =
+        Number(
+          window.sessionStorage.getItem(
+            chaveSessao
+          )
+        );
+
+      if (
+        Number.isInteger(pedidoSalvo) &&
+        pedidoSalvo > 0
+      ) {
+        setPedidoPixId(pedidoSalvo);
+        return pedidoSalvo;
+      }
+
+      if (registroPixEmAndamento.current) {
+        return registroPixEmAndamento.current;
+      }
+
+      const registrar = async () => {
+
       const {
         data:
           pedido,
@@ -780,10 +817,53 @@ ${textoEntrega}
         throw erroItens;
       }
 
-      return Number(
-        pedido.id
-      );
+        const idCriado = Number(
+          pedido.id
+        );
+
+        setPedidoPixId(idCriado);
+        window.sessionStorage.setItem(
+          chaveSessao,
+          String(idCriado)
+        );
+
+        return idCriado;
+      };
+
+      registroPixEmAndamento.current =
+        registrar();
+
+      try {
+        return await registroPixEmAndamento.current;
+      } finally {
+        registroPixEmAndamento.current = null;
+      }
     };
+
+  useEffect(() => {
+    if (
+      !loja ||
+      !pixDisponivel ||
+      itens.length === 0 ||
+      !dadosCheckout.clienteNome.trim() ||
+      !dadosCheckout.clienteTelefone.trim()
+    ) {
+      return;
+    }
+
+    registrarPedidoPix().catch((error) => {
+      console.error(
+        "Erro ao preparar pedido Pix:",
+        error
+      );
+    });
+  }, [
+    loja?.id,
+    pixDisponivel,
+    itens.length,
+    dadosCheckout.clienteNome,
+    dadosCheckout.clienteTelefone,
+  ]);
 
   /*
    * ==========================================
@@ -1192,6 +1272,12 @@ ${textoEntrega}
               Pagamento por Pix
             </h2>
 
+            <div className="mt-3 rounded-2xl bg-amber-50 p-3 text-left text-xs leading-5 text-amber-800">
+              {pedidoPixId
+                ? `Pedido #${pedidoPixId} registrado. Depois de pagar, volte aqui e toque em “Já paguei — enviar pedido”.`
+                : "Estamos registrando seu pedido antes do pagamento..."}
+            </div>
+
             {pixCopiaECola ? (
               <>
 
@@ -1536,13 +1622,13 @@ ${textoEntrega}
                 <p className="text-[11px] opacity-80">
                   {salvandoPedido
                     ? "Registrando..."
-                    : "Enviar para a loja"}
+                    : "Avisar a loja"}
                 </p>
 
                 <p className="text-[15px] font-extrabold">
                   {salvandoPedido
                     ? "Aguarde"
-                    : "Confirmar pedido"}
+                    : "Já paguei — enviar pedido"}
                 </p>
 
               </div>

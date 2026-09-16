@@ -453,6 +453,9 @@ export default function LojaPublicaPage() {
                               ? "grayscale"
                               : ""
                           }`}
+                          style={{
+                            objectPosition: `${produto.imagem_posicao_x}% ${produto.imagem_posicao_y}%`,
+                          }}
                         />
 
                         {esgotado && (

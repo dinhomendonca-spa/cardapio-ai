@@ -8,6 +8,7 @@ import {
   ImagePlus,
   Loader2,
   Maximize2,
+  Move,
   Pencil,
   Save,
 } from "lucide-react";
@@ -36,6 +37,8 @@ type Produto = {
   estoque_controlado: boolean;
   imagem: string;
   ajuste_imagem: AjusteImagem;
+  imagem_posicao_x: number;
+  imagem_posicao_y: number;
   ativo: boolean;
 };
 
@@ -114,6 +117,12 @@ export default function EditarProdutoPage() {
     imagemAtual,
     setImagemAtual,
   ] = useState("");
+
+  const [imagemPosicaoX, setImagemPosicaoX] =
+    useState(50);
+
+  const [imagemPosicaoY, setImagemPosicaoY] =
+    useState(50);
 
   const [
     arquivo,
@@ -214,6 +223,12 @@ export default function EditarProdutoPage() {
                   data.ajuste_imagem
                 ),
 
+              imagem_posicao_x:
+                Number(data.imagem_posicao_x ?? 50),
+
+              imagem_posicao_y:
+                Number(data.imagem_posicao_y ?? 50),
+
               ativo:
                 data.ativo ?? true,
             };
@@ -258,6 +273,14 @@ export default function EditarProdutoPage() {
           setAjusteImagem(
             produtoCarregado
               .ajuste_imagem
+          );
+
+          setImagemPosicaoX(
+            produtoCarregado.imagem_posicao_x
+          );
+
+          setImagemPosicaoY(
+            produtoCarregado.imagem_posicao_y
           );
 
           setAtivo(
@@ -658,6 +681,12 @@ export default function EditarProdutoPage() {
               ajuste_imagem:
                 ajusteImagem,
 
+              imagem_posicao_x:
+                imagemPosicaoX,
+
+              imagem_posicao_y:
+                imagemPosicaoY,
+
               ativo,
             })
             .eq("id", id);
@@ -811,6 +840,9 @@ export default function EditarProdutoPage() {
                   ? "object-cover"
                   : "object-contain p-2"
               }
+              style={{
+                objectPosition: `${imagemPosicaoX}% ${imagemPosicaoY}%`,
+              }}
               unoptimized={
                 Boolean(preview)
               }
@@ -881,6 +913,39 @@ export default function EditarProdutoPage() {
                 Preencher espaço
               </button>
             </div>
+
+            {ajusteImagem === "preencher" && (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/10 p-4">
+                <div className="flex items-center gap-2">
+                  <Move size={17} className="text-sky-300" />
+                  <p className="text-xs font-bold">Posicionar a imagem</p>
+                </div>
+
+                <label className="mt-4 block text-xs text-slate-400">
+                  Horizontal
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={imagemPosicaoX}
+                    onChange={(event) => setImagemPosicaoX(Number(event.target.value))}
+                    className="mt-2 w-full accent-sky-500"
+                  />
+                </label>
+
+                <label className="mt-3 block text-xs text-slate-400">
+                  Vertical
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={imagemPosicaoY}
+                    onChange={(event) => setImagemPosicaoY(Number(event.target.value))}
+                    className="mt-2 w-full accent-sky-500"
+                  />
+                </label>
+              </div>
+            )}
 
             <p className="mt-3 text-xs leading-5 text-slate-500">
               {ajusteImagem ===

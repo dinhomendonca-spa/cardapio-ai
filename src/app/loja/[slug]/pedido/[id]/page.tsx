@@ -562,6 +562,23 @@ export default function AcompanharPedidoPage() {
           )}
         </section>
 
+        {pedido.forma_pagamento === "pix" &&
+          pedido.status === "novo" && (
+            <section className="rounded-3xl border border-amber-300/30 bg-amber-50 p-4 text-amber-900 shadow-sm">
+              <div className="flex items-start gap-3">
+                <Clock3 size={20} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-extrabold">
+                    Pix aguardando conferência
+                  </p>
+                  <p className="mt-1 text-xs leading-5">
+                    Seu pedido já foi registrado. A loja confirmará o recebimento do Pix e atualizará o andamento aqui.
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
         {/* LINHA DO TEMPO */}
 
         {pedido.status !==

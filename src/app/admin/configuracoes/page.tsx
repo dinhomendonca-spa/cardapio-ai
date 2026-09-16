@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Loader2,
   MessageCircle,
+  Palette,
   Save,
   Settings,
   Store,
@@ -18,8 +19,23 @@ import {
 } from "react";
 
 import {
+  type TemaLoja,
   useStore,
 } from "@/context/StoreContext";
+
+const TEMAS: Array<{
+  id: TemaLoja;
+  nome: string;
+  cor: string;
+}> = [
+  { id: "azul-escuro", nome: "Azul-escuro", cor: "#06111f" },
+  { id: "nude", nome: "Nude", cor: "#e8c6ae" },
+  { id: "rosa-claro", nome: "Rosa-claro", cor: "#f8dbe7" },
+  { id: "branco", nome: "Branco", cor: "#ffffff" },
+  { id: "verde", nome: "Verde", cor: "#0b4638" },
+  { id: "vermelho", nome: "Vermelho", cor: "#7f1d1d" },
+  { id: "preto", nome: "Preto", cor: "#090909" },
+];
 
 export default function ConfiguracoesPage() {
   const {
@@ -53,6 +69,12 @@ export default function ConfiguracoesPage() {
     setSalvo,
   ] = useState(false);
 
+  const [temaAdmin, setTemaAdmin] =
+    useState<TemaLoja>("azul-escuro");
+
+  const [temaLoja, setTemaLoja] =
+    useState<TemaLoja>("azul-escuro");
+
   useEffect(() => {
     if (!loja) {
       return;
@@ -69,6 +91,16 @@ export default function ConfiguracoesPage() {
     setRetiradaPermitida(
       loja.retirada_permitida ??
         true
+    );
+
+    setTemaAdmin(
+      loja.tema_admin ??
+        "azul-escuro"
+    );
+
+    setTemaLoja(
+      loja.tema_loja ??
+        "azul-escuro"
     );
   }, [
     loja,
@@ -141,6 +173,12 @@ export default function ConfiguracoesPage() {
 
           retirada_permitida:
             retiradaPermitida,
+
+          tema_admin:
+            temaAdmin,
+
+          tema_loja:
+            temaLoja,
         });
 
         setSalvo(
@@ -288,6 +326,78 @@ export default function ConfiguracoesPage() {
 
         <section className="rounded-3xl bg-white p-4 shadow-sm">
           <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-500">
+              <Palette size={19} />
+            </div>
+
+            <div>
+              <h2 className="font-extrabold">
+                Cores do sistema
+              </h2>
+
+              <p className="mt-1 text-xs leading-5 text-zinc-500">
+                Escolha uma cor para seu painel e outra para a loja vista pelos clientes.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-xs font-bold">
+              Tema do painel administrativo
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {TEMAS.map((tema) => (
+                <button
+                  key={`admin-${tema.id}`}
+                  type="button"
+                  onClick={() => setTemaAdmin(tema.id)}
+                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left text-xs font-bold transition ${
+                    temaAdmin === tema.id
+                      ? "border-sky-400 ring-2 ring-sky-400/25"
+                      : "border-white/10"
+                  }`}
+                >
+                  <span
+                    className="h-8 w-8 shrink-0 rounded-xl border border-black/10 shadow-sm"
+                    style={{ backgroundColor: tema.cor }}
+                  />
+                  {tema.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <p className="text-xs font-bold">
+              Tema da loja para clientes
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {TEMAS.map((tema) => (
+                <button
+                  key={`loja-${tema.id}`}
+                  type="button"
+                  onClick={() => setTemaLoja(tema.id)}
+                  className={`flex items-center gap-3 rounded-2xl border p-3 text-left text-xs font-bold transition ${
+                    temaLoja === tema.id
+                      ? "border-sky-400 ring-2 ring-sky-400/25"
+                      : "border-white/10"
+                  }`}
+                >
+                  <span
+                    className="h-8 w-8 shrink-0 rounded-xl border border-black/10 shadow-sm"
+                    style={{ backgroundColor: tema.cor }}
+                  />
+                  {tema.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl bg-white p-4 shadow-sm">
+          <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
               <Store
                 size={18}
@@ -390,7 +500,7 @@ export default function ConfiguracoesPage() {
           disabled={
             salvando
           }
-          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 font-bold text-white shadow-lg disabled:bg-zinc-300"
+          className="theme-primary-button flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl px-5 font-bold shadow-lg disabled:opacity-40"
         >
           {salvando ? (
             <>

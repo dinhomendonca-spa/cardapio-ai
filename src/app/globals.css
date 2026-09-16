@@ -154,3 +154,159 @@ button {
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
 }
+
+/* TEMAS ESCOLHIDOS PELO LOJISTA */
+.theme-shell {
+  --theme-bg: #020b18;
+  --theme-bg-soft: #07182c;
+  --theme-card: rgba(15, 40, 70, 0.66);
+  --theme-card-solid: #0d2037;
+  --theme-text: #f8fafc;
+  --theme-muted: #a8b7ca;
+  --theme-border: rgba(125, 211, 252, 0.2);
+  --theme-primary: #0ea5e9;
+  --theme-primary-strong: #2563eb;
+  --theme-on-primary: #ffffff;
+}
+
+.theme-shell[data-app-theme="nude"] {
+  --theme-bg: #e8c6ae;
+  --theme-bg-soft: #f2d8c5;
+  --theme-card: rgba(255, 247, 240, 0.7);
+  --theme-card-solid: #f8e7da;
+  --theme-text: #412a22;
+  --theme-muted: #76594e;
+  --theme-border: rgba(111, 78, 67, 0.2);
+  --theme-primary: #b66c4a;
+  --theme-primary-strong: #8e4f34;
+  --theme-on-primary: #ffffff;
+}
+
+.theme-shell[data-app-theme="rosa-claro"] {
+  --theme-bg: #f8dbe7;
+  --theme-bg-soft: #ffeaf2;
+  --theme-card: rgba(255, 250, 252, 0.72);
+  --theme-card-solid: #fff0f6;
+  --theme-text: #4a2636;
+  --theme-muted: #805b6b;
+  --theme-border: rgba(190, 80, 128, 0.2);
+  --theme-primary: #ec4899;
+  --theme-primary-strong: #be185d;
+  --theme-on-primary: #ffffff;
+}
+
+.theme-shell[data-app-theme="branco"] {
+  --theme-bg: #f4f6f8;
+  --theme-bg-soft: #ffffff;
+  --theme-card: rgba(255, 255, 255, 0.78);
+  --theme-card-solid: #ffffff;
+  --theme-text: #111827;
+  --theme-muted: #5b6472;
+  --theme-border: rgba(15, 23, 42, 0.13);
+  --theme-primary: #2563eb;
+  --theme-primary-strong: #1d4ed8;
+  --theme-on-primary: #ffffff;
+}
+
+.theme-shell[data-app-theme="verde"] {
+  --theme-bg: #052e25;
+  --theme-bg-soft: #0b4638;
+  --theme-card: rgba(12, 82, 66, 0.65);
+  --theme-card-solid: #0c4f40;
+  --theme-text: #ecfdf5;
+  --theme-muted: #a7d8c7;
+  --theme-border: rgba(110, 231, 183, 0.22);
+  --theme-primary: #10b981;
+  --theme-primary-strong: #059669;
+  --theme-on-primary: #ffffff;
+}
+
+.theme-shell[data-app-theme="vermelho"] {
+  --theme-bg: #3a090d;
+  --theme-bg-soft: #5b1117;
+  --theme-card: rgba(112, 22, 30, 0.64);
+  --theme-card-solid: #64151c;
+  --theme-text: #fff5f5;
+  --theme-muted: #efb8bd;
+  --theme-border: rgba(252, 165, 165, 0.22);
+  --theme-primary: #ef4444;
+  --theme-primary-strong: #dc2626;
+  --theme-on-primary: #ffffff;
+}
+
+.theme-shell[data-app-theme="preto"] {
+  --theme-bg: #050505;
+  --theme-bg-soft: #111111;
+  --theme-card: rgba(29, 29, 29, 0.72);
+  --theme-card-solid: #181818;
+  --theme-text: #fafafa;
+  --theme-muted: #b4b4b4;
+  --theme-border: rgba(255, 255, 255, 0.13);
+  --theme-primary: #e5e7eb;
+  --theme-primary-strong: #ffffff;
+  --theme-on-primary: #090909;
+}
+
+.theme-shell[data-theme-area="admin"],
+.theme-shell[data-theme-area="loja"] {
+  min-height: 100vh;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+}
+
+.theme-shell[data-theme-area="admin"] main,
+.theme-shell[data-theme-area="loja"] main {
+  color: var(--theme-text) !important;
+  background-color: var(--theme-bg) !important;
+}
+
+.theme-shell[data-theme-area="admin"] header,
+.theme-shell[data-theme-area="loja"] header {
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent) !important;
+}
+
+.theme-shell[data-theme-area="admin"] section[class*="bg-white"],
+.theme-shell[data-theme-area="admin"] div[class*="bg-white/"],
+.theme-shell[data-theme-area="loja"] section[class*="bg-white"],
+.theme-shell[data-theme-area="loja"] div[class*="bg-white/"] {
+  color: var(--theme-text);
+  border-color: var(--theme-border) !important;
+  background-color: var(--theme-card) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-shell[data-theme-area="admin"] :is(input, textarea, select),
+.theme-shell[data-theme-area="loja"] :is(input, textarea, select) {
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  background-color: color-mix(in srgb, var(--theme-card-solid) 82%, transparent) !important;
+}
+
+.theme-shell[data-theme-area="admin"] :is(input, textarea)::placeholder,
+.theme-shell[data-theme-area="loja"] :is(input, textarea)::placeholder {
+  color: var(--theme-muted) !important;
+  opacity: 0.72;
+}
+
+.theme-shell[data-theme-area="admin"] :is(.text-zinc-400, .text-zinc-500, .text-zinc-600, .text-slate-400, .text-slate-500),
+.theme-shell[data-theme-area="loja"] :is(.text-zinc-400, .text-zinc-500, .text-zinc-600, .text-slate-400, .text-slate-500) {
+  color: var(--theme-muted) !important;
+}
+
+.theme-shell[data-theme-area="admin"] :is(.text-zinc-950, .text-slate-950, .text-black),
+.theme-shell[data-theme-area="loja"] :is(.text-zinc-950, .text-slate-950, .text-black) {
+  color: var(--theme-text) !important;
+}
+
+.theme-shell[data-theme-area="admin"] :is(.bg-zinc-100, .bg-slate-100, .bg-zinc-50, .bg-slate-50),
+.theme-shell[data-theme-area="loja"] :is(.bg-zinc-100, .bg-slate-100, .bg-zinc-50, .bg-slate-50) {
+  background-color: var(--theme-bg-soft) !important;
+}
+
+.theme-primary-button {
+  color: var(--theme-on-primary) !important;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-strong)) !important;
+}

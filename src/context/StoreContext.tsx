@@ -21,6 +21,15 @@ import {
   supabase,
 } from "@/lib/supabase";
 
+export type TemaLoja =
+  | "azul-escuro"
+  | "nude"
+  | "rosa-claro"
+  | "branco"
+  | "verde"
+  | "vermelho"
+  | "preto";
+
 export type Loja = {
   id: number;
   nome: string;
@@ -67,6 +76,8 @@ export type Loja = {
   entrega_ativa?: boolean;
   tempo_entrega_min?: number;
   tempo_entrega_max?: number;
+  tema_admin: TemaLoja;
+  tema_loja: TemaLoja;
 };
 
 export type Perfil = {
@@ -115,6 +126,25 @@ function converterLoja(
     any
   >
 ): Loja {
+  const temasValidos: TemaLoja[] = [
+    "azul-escuro",
+    "nude",
+    "rosa-claro",
+    "branco",
+    "verde",
+    "vermelho",
+    "preto",
+  ];
+
+  const normalizarTema = (
+    valor: unknown
+  ): TemaLoja =>
+    temasValidos.includes(
+      valor as TemaLoja
+    )
+      ? (valor as TemaLoja)
+      : "azul-escuro";
+
   return {
     id:
       Number(
@@ -274,7 +304,17 @@ function converterLoja(
     tempo_entrega_max:
       Number(
         data.tempo_entrega_max ??
-        50
+          50
+      ),
+
+    tema_admin:
+      normalizarTema(
+        data.tema_admin
+      ),
+
+    tema_loja:
+      normalizarTema(
+        data.tema_loja
       ),
   };
 }
@@ -721,6 +761,7 @@ export function StoreProvider({
       }
 
       const {
+        data,
         error,
       } =
         await supabase
@@ -729,13 +770,17 @@ export function StoreProvider({
           .eq(
             "id",
             loja.id
-          );
+          )
+          .select("*")
+          .single();
 
       if (error) {
         throw error;
       }
 
-      await recarregarLoja();
+      setLoja(
+        converterLoja(data)
+      );
     };
 
   return (
