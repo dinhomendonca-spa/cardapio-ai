@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import {
+  useRouter,
+} from "next/navigation";
 
 import {
   ArrowLeft,
@@ -54,6 +57,8 @@ function imagemEhPadrao(
 }
 
 export default function LojaPage() {
+  const router = useRouter();
+
   const {
     loja,
     carregando,
@@ -562,6 +567,10 @@ export default function LojaPage() {
         setBannerPreview(null);
 
         setSalvo(true);
+
+        router.push(
+          "/admin/entrega"
+        );
       } catch (error) {
         console.error(
           "Erro ao salvar loja:",
