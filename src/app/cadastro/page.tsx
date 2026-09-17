@@ -63,33 +63,29 @@ function Campo({
 }: CampoProps) {
   return (
     <label className="block">
-      <span
-        className="mb-2 block text-xs font-bold text-slate-700"
-        style={{ color: "#334155" }}
-      >
+      <span className="mb-2 block text-xs font-bold text-slate-200">
         {label}
       </span>
 
       <input
         {...props}
-        style={{ color: "#020617", ...props.style }}
         className={`
           h-12
           w-full
           rounded-2xl
           border
-          border-slate-200
-          bg-slate-50
+          border-sky-400/20
+          bg-[#10273d]
           px-4
           text-sm
-          text-slate-950
+          text-white
           outline-none
           transition
           placeholder:text-slate-400
           focus:border-sky-400
-          focus:bg-white
+          focus:bg-[#10273d]
           focus:ring-4
-          focus:ring-sky-100
+          focus:ring-sky-400/20
           disabled:cursor-not-allowed
           disabled:opacity-60
           ${className}
@@ -622,12 +618,24 @@ function CadastroConteudo() {
               onClick={() => setPlano("teste")}
               className={`rounded-2xl border p-4 text-left transition ${
                 plano === "teste"
-                  ? "border-sky-400 bg-sky-400/15 ring-2 ring-sky-400/20"
+                  ? "border-sky-400 bg-sky-950 ring-2 ring-sky-400/30"
                   : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
               }`}
             >
-              <p className="text-sm font-black text-white">Teste grátis</p>
-              <p className="mt-1 text-xs text-slate-300">30 dias sem cartão</p>
+              <p
+                className={`text-sm font-black ${
+                  plano === "teste" ? "!text-white" : "text-white"
+                }`}
+              >
+                Teste grátis
+              </p>
+              <p
+                className={`mt-1 text-xs ${
+                  plano === "teste" ? "!text-sky-100" : "text-slate-300"
+                }`}
+              >
+                30 dias sem cartão
+              </p>
             </button>
 
             <button
@@ -690,7 +698,7 @@ function CadastroConteudo() {
           onSubmit={
             enviarCadastro
           }
-          className="rounded-[32px] bg-white p-5 text-slate-950 shadow-2xl sm:p-7"
+          className="rounded-[32px] border border-sky-400/20 bg-[#0b1b2d] p-5 text-white shadow-2xl sm:p-7"
         >
 
           <section>
@@ -702,14 +710,11 @@ function CadastroConteudo() {
               </div>
 
               <div>
-                <h2
-                  className="font-black text-slate-900"
-                  style={{ color: "#0f172a" }}
-                >
+                <h2 className="font-black">
                   Seus dados
                 </h2>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-300">
                   Dados do responsável
                   pela conta
                 </p>
@@ -791,7 +796,7 @@ function CadastroConteudo() {
             </div>
           </section>
 
-          <div className="my-7 h-px bg-slate-100" />
+          <div className="my-7 h-px bg-white/10" />
 
           <section>
             <div className="mb-4 flex items-center gap-3">
@@ -802,14 +807,11 @@ function CadastroConteudo() {
               </div>
 
               <div>
-                <h2
-                  className="font-black text-slate-900"
-                  style={{ color: "#0f172a" }}
-                >
+                <h2 className="font-black">
                   Endereço
                 </h2>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-300">
                   Utilizado no cadastro
                   da cobrança
                 </p>
@@ -999,7 +1001,7 @@ function CadastroConteudo() {
             </div>
           </section>
 
-          <div className="my-7 h-px bg-slate-100" />
+          <div className="my-7 h-px bg-white/10" />
 
           <section>
             <div className="mb-4 flex items-center gap-3">
@@ -1010,14 +1012,11 @@ function CadastroConteudo() {
               </div>
 
               <div>
-                <h2
-                  className="font-black text-slate-900"
-                  style={{ color: "#0f172a" }}
-                >
+                <h2 className="font-black">
                   Acesso
                 </h2>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-300">
                   E-mail e senha do
                   painel
                 </p>
@@ -1162,10 +1161,7 @@ function CadastroConteudo() {
               }
             />
 
-            <span
-              className="text-xs leading-5 text-slate-600"
-              style={{ color: "#475569" }}
-            >
+            <span className="text-xs leading-5 text-slate-600">
               Li e aceito os{" "}
               <Link
                 href="/termos"
@@ -1218,7 +1214,7 @@ function CadastroConteudo() {
               enviando ||
               reenviando
             }
-            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 text-sm font-black text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {enviando ? (
               <>
@@ -1297,7 +1293,7 @@ function CadastroConteudo() {
           </div>
 
           {mostrarAcoesConta && (
-            <p className="mt-3 text-center text-xs leading-5 text-slate-500">
+            <p className="mt-3 text-center text-xs leading-5 text-slate-300">
               Se você já confirmou seu
               e-mail anteriormente,
               escolha{" "}
@@ -1308,7 +1304,7 @@ function CadastroConteudo() {
             </p>
           )}
 
-          <div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-500">
+          <div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-300">
             <ShieldCheck
               size={16}
               className="text-emerald-500"
@@ -1389,4 +1385,3 @@ export default function CadastroPage() {
     </Suspense>
   );
 }
-
