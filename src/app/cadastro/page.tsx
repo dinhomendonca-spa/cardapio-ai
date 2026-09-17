@@ -1141,7 +1141,7 @@ function CadastroConteudo() {
             </div>
           </section>
 
-          <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl bg-slate-50 p-4">
+          <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-sky-400/20 bg-[#10273d] p-4">
             <input
               type="checkbox"
               checked={
@@ -1161,18 +1161,18 @@ function CadastroConteudo() {
               }
             />
 
-            <span className="text-xs leading-5 text-slate-600">
+            <span className="text-xs leading-5 text-slate-300">
               Li e aceito os{" "}
               <Link
                 href="/termos"
-                className="font-bold text-sky-600 underline"
+                className="font-bold text-sky-300 underline"
               >
                 Termos de Uso
               </Link>{" "}
               e a{" "}
               <Link
                 href="/privacidade"
-                className="font-bold text-sky-600 underline"
+                className="font-bold text-sky-300 underline"
               >
                 Política de Privacidade
               </Link>
@@ -1236,12 +1236,12 @@ function CadastroConteudo() {
             )}
           </button>
 
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-center text-sm font-black text-slate-800">
+          <div className="mt-5 rounded-2xl border border-sky-400/20 bg-[#10273d] p-4">
+            <p className="text-center text-sm font-black text-white">
               Já começou seu cadastro antes?
             </p>
 
-            <p className="mt-1 text-center text-xs leading-5 text-slate-500">
+            <p className="mt-1 text-center text-xs leading-5 text-slate-300">
               Entre na sua conta ou
               peça um novo e-mail de
               confirmação.
@@ -1250,7 +1250,7 @@ function CadastroConteudo() {
             <div className="mt-4 grid gap-3">
               <Link
                 href={linkLogin}
-                className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-800 transition hover:border-sky-300 hover:text-sky-600"
+                className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-sky-400/20 bg-[#0b1b2d] text-sm font-black text-white transition hover:border-sky-300 hover:bg-sky-950"
               >
                 <UserRound
                   size={17}
@@ -1268,7 +1268,7 @@ function CadastroConteudo() {
                   enviando ||
                   reenviando
                 }
-                className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 text-sm font-black text-sky-700 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-[#0b1b2d] text-sm font-black text-sky-300 transition hover:border-sky-300 hover:bg-sky-950 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {reenviando ? (
                   <>
