@@ -618,12 +618,24 @@ function CadastroConteudo() {
               onClick={() => setPlano("teste")}
               className={`rounded-2xl border p-4 text-left transition ${
                 plano === "teste"
-                  ? "border-sky-400 bg-sky-400/15 ring-2 ring-sky-400/20"
+                  ? "border-sky-400 bg-sky-100 ring-2 ring-sky-400/30"
                   : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
               }`}
             >
-              <p className="text-sm font-black text-white">Teste grátis</p>
-              <p className="mt-1 text-xs text-slate-300">30 dias sem cartão</p>
+              <p
+                className={`text-sm font-black ${
+                  plano === "teste" ? "text-slate-950" : "text-white"
+                }`}
+              >
+                Teste grátis
+              </p>
+              <p
+                className={`mt-1 text-xs ${
+                  plano === "teste" ? "text-slate-700" : "text-slate-300"
+                }`}
+              >
+                30 dias sem cartão
+              </p>
             </button>
 
             <button
@@ -1373,4 +1385,3 @@ export default function CadastroPage() {
     </Suspense>
   );
 }
-
