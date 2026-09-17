@@ -4,8 +4,8 @@ import type {
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Lojas AI",
-    short_name: "Lojas AI",
+    name: "LOJAI",
+    short_name: "LOJAI",
 
     description:
       "Loja online, pedidos, produtos e gestão em um só lugar.",

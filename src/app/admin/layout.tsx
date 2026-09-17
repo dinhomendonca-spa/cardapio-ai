@@ -530,9 +530,13 @@ export default function AdminLayout({
         type="button"
         onClick={fazerLogout}
         title="Sair"
-        className="fixed bottom-4 right-4 z-[200] flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-zinc-950 shadow-xl ring-1 ring-zinc-200"
+        className="logout-button fixed bottom-4 right-4 z-[200] flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl"
       >
-        <LogOut size={18} />
+        <LogOut
+          size={20}
+          strokeWidth={2.5}
+          aria-hidden="true"
+        />
       </button>
     </>
   );

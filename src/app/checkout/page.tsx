@@ -271,7 +271,7 @@ export default function CheckoutPage() {
             href="/menu"
             className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 font-bold text-white"
           >
-            Voltar ao cardápio
+            Voltar à loja
           </Link>
         </div>
       </main>

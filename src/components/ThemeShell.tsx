@@ -47,9 +47,20 @@ export default function ThemeShell({
         "azul-escuro"
       : "azul-escuro";
 
+  const temaClaro = [
+    "nude",
+    "rosa-claro",
+    "branco",
+  ].includes(tema);
+
   return (
     <div
       data-app-theme={tema}
+      data-theme-contrast={
+        temaClaro
+          ? "claro"
+          : "escuro"
+      }
       data-theme-area={
         areaAdmin
           ? "admin"

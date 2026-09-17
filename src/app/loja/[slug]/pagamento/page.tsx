@@ -1382,7 +1382,7 @@ ${textoEntrega}
                   </p>
 
                   <p className="mt-1 text-xs leading-5 text-blue-700">
-                    O Lojas AI não recebe nem armazena o número completo do seu cartão.
+                    A LOJAI não recebe nem armazena o número completo do seu cartão.
                   </p>
 
                 </div>

@@ -171,7 +171,7 @@ export default function HorariosPage() {
             </p>
 
             <h1 className="text-lg font-extrabold">
-              Horário do cardápio
+              Horário da loja
             </h1>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function HorariosPage() {
               </h2>
 
               <p className="mt-1 text-xs leading-5 text-zinc-300">
-                Defina quando os clientes poderão acessar o cardápio e fazer pedidos.
+                Defina quando os clientes poderão acessar a loja e fazer pedidos.
               </p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function HorariosPage() {
                 </h2>
 
                 <p className="mt-0.5 text-xs text-zinc-500">
-                  Fecha o cardápio fora do horário
+                  Fecha a loja fora do horário
                 </p>
               </div>
             </div>
@@ -257,7 +257,7 @@ export default function HorariosPage() {
           </h2>
 
           <p className="mt-1 text-xs leading-5 text-zinc-500">
-            O cardápio ficará disponível apenas dentro desse período.
+            A loja ficará disponível apenas dentro desse período.
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -301,7 +301,7 @@ export default function HorariosPage() {
           {usarHorario && (
             <div className="mt-3 rounded-2xl bg-green-50 p-3">
               <p className="text-xs font-bold text-green-800">
-                Cardápio aberto diariamente
+                Loja aberta diariamente
               </p>
 
               <p className="mt-1 text-sm text-green-700">
@@ -364,7 +364,7 @@ export default function HorariosPage() {
               </p>
 
               <p className="text-xs text-green-700">
-                O cardápio já seguirá essa configuração.
+                A loja já seguirá essa configuração.
               </p>
             </div>
           </section>

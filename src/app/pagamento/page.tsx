@@ -246,7 +246,7 @@ export default function AdminPage() {
                       text-sky-300
                     "
                   >
-                    Lojas AI
+                    LOJAI
                   </p>
 
                   <p className="mt-0.5 text-sm font-semibold text-white">
@@ -557,7 +557,7 @@ export default function AdminPage() {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-600">
-              Lojas AI • Sua loja, sem limites
+              LOJAI • Sua loja, sem limites
             </p>
           </div>
         </section>

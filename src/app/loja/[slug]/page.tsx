@@ -45,10 +45,10 @@ export default function LojaPublicaPage() {
   ] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = loja?.nome || "Lojas AI";
+    document.title = loja?.nome || "LOJAI";
 
     return () => {
-      document.title = "Lojas AI";
+      document.title = "LOJAI";
     };
   }, [loja?.nome]);
 

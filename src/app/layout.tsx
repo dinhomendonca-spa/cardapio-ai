@@ -56,10 +56,10 @@ export const metadata: Metadata = {
 
   title: {
     default:
-      "Lojas AI",
+      "LOJAI",
 
     template:
-      "%s | Lojas AI",
+      "%s | LOJAI",
   },
 
   description:
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     "/manifest.webmanifest",
 
   applicationName:
-    "Lojas AI",
+    "LOJAI",
 
   icons: {
     icon:
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
       true,
 
     title:
-      "Lojas AI",
+      "LOJAI",
 
     statusBarStyle:
       "black-translucent",
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
 
   openGraph: {
     title:
-      "Lojas AI",
+      "LOJAI",
 
     description:
       "Sua loja online de forma simples. Produtos, carrinho, Pix e pedidos direto pelo WhatsApp.",
@@ -104,7 +104,7 @@ export const metadata: Metadata = {
       "https://lojas-ai.vercel.app",
 
     siteName:
-      "Lojas AI",
+      "LOJAI",
 
     images: [
       {
@@ -118,7 +118,7 @@ export const metadata: Metadata = {
           1200,
 
         alt:
-          "Lojas AI",
+          "LOJAI",
       },
     ],
 
@@ -134,7 +134,7 @@ export const metadata: Metadata = {
       "summary_large_image",
 
     title:
-      "Lojas AI",
+      "LOJAI",
 
     description:
       "Sua loja online de forma simples.",

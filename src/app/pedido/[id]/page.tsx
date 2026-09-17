@@ -235,7 +235,7 @@ export default function AcompanharPedidoPage() {
             href="/menu"
             className="mt-5 flex h-14 items-center justify-center rounded-2xl bg-zinc-950 font-bold text-white"
           >
-            Voltar ao cardápio
+            Voltar à loja
           </Link>
         </div>
       </main>
@@ -536,7 +536,7 @@ export default function AcompanharPedidoPage() {
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold shadow-sm"
         >
           <Home size={17} />
-          Voltar ao cardápio
+          Voltar à loja
         </Link>
       </section>
     </main>

@@ -423,7 +423,7 @@ export default function ConfiguracoesPage() {
                 </p>
 
                 <p className="mt-1 text-xs text-zinc-500">
-                  Permite que o estabelecimento apareça no cardápio.
+                  Permite que o estabelecimento apareça na loja.
                 </p>
               </div>
 

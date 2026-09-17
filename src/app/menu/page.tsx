@@ -197,7 +197,7 @@ export default function MenuPage() {
       <section className="mx-auto max-w-md px-4 pt-5">
         <div className="mb-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-            Cardápio
+            Loja
           </p>
 
           <h2 className="mt-1 text-xl font-extrabold">

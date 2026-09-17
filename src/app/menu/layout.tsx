@@ -229,7 +229,7 @@ export default function MenuLayout({
 
         /*
          * Se der erro ao consultar,
-         * não bloqueamos o cardápio.
+         * não bloqueamos a loja.
          */
         setEstaAberto(true);
       } finally {
@@ -247,7 +247,7 @@ export default function MenuLayout({
 
     /*
      * Revalida a cada 30 segundos.
-     * Assim o cardápio abre e fecha
+     * Assim a loja abre e fecha
      * sem precisar atualizar a página.
      */
     const intervalo =
@@ -286,7 +286,7 @@ export default function MenuLayout({
           </div>
 
           <p className="mt-5 text-xs font-bold uppercase tracking-wide text-zinc-400">
-            Cardápio fechado
+            Loja fechada
           </p>
 
           <h1 className="mt-1 text-2xl font-extrabold">
@@ -321,7 +321,7 @@ export default function MenuLayout({
           </div>
 
           <p className="mt-5 text-[11px] text-zinc-400">
-            O cardápio será liberado automaticamente no horário de funcionamento.
+            A loja será liberada automaticamente no horário de funcionamento.
           </p>
         </section>
       </main>

@@ -310,3 +310,103 @@ button {
   color: var(--theme-on-primary) !important;
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-strong)) !important;
 }
+
+/* CONTRASTE AUTOMÁTICO PARA TEMAS CLAROS */
+.theme-shell[data-theme-contrast="claro"]
+  :is(
+    .text-white,
+    .text-slate-50,
+    .text-slate-100,
+    .text-slate-200,
+    .text-slate-300,
+    .text-zinc-50,
+    .text-zinc-100,
+    .text-zinc-200,
+    .text-zinc-300
+  ) {
+  color: var(--theme-text) !important;
+}
+
+.theme-shell[data-theme-contrast="claro"]
+  :is(
+    .text-slate-400,
+    .text-slate-500,
+    .text-slate-600,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600
+  ) {
+  color: var(--theme-muted) !important;
+}
+
+/* CONTRASTE AUTOMÁTICO PARA TEMAS ESCUROS */
+.theme-shell[data-theme-contrast="escuro"]
+  :is(
+    .text-black,
+    .text-slate-700,
+    .text-slate-800,
+    .text-slate-900,
+    .text-slate-950,
+    .text-zinc-700,
+    .text-zinc-800,
+    .text-zinc-900,
+    .text-zinc-950
+  ) {
+  color: var(--theme-text) !important;
+}
+
+.theme-shell[data-theme-contrast="escuro"]
+  :is(
+    .text-slate-400,
+    .text-slate-500,
+    .text-slate-600,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600
+  ) {
+  color: var(--theme-muted) !important;
+}
+
+/* MANTÉM O TEXTO LEGÍVEL EM BOTÕES COLORIDOS */
+.theme-shell
+  :is(button, a).text-white,
+.theme-shell
+  :is(button, a)
+  .text-white {
+  color: var(--theme-on-primary) !important;
+}
+
+.theme-shell
+  :is(button, a)[class*="bg-gradient"] {
+  color: var(--theme-on-primary) !important;
+}
+
+/* BOTÃO GLOBAL DE SAIR */
+.logout-button {
+  color: var(--theme-text) !important;
+  border: 1px solid var(--theme-border) !important;
+  background: var(--theme-card-solid) !important;
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.logout-button svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.logout-button:hover {
+  color: var(--theme-on-primary) !important;
+  border-color: var(--theme-primary) !important;
+  background: var(--theme-primary) !important;
+}
+
+.logout-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--theme-primary) 40%, transparent);
+  outline-offset: 3px;
+}
