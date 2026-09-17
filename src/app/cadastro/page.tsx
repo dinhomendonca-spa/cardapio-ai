@@ -63,12 +63,16 @@ function Campo({
 }: CampoProps) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-bold text-slate-700">
+      <span
+        className="mb-2 block text-xs font-bold text-slate-700"
+        style={{ color: "#334155" }}
+      >
         {label}
       </span>
 
       <input
         {...props}
+        style={{ color: "#020617", ...props.style }}
         className={`
           h-12
           w-full
@@ -618,24 +622,12 @@ function CadastroConteudo() {
               onClick={() => setPlano("teste")}
               className={`rounded-2xl border p-4 text-left transition ${
                 plano === "teste"
-                  ? "border-sky-400 bg-sky-950 ring-2 ring-sky-400/30"
+                  ? "border-sky-400 bg-sky-400/15 ring-2 ring-sky-400/20"
                   : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
               }`}
             >
-              <p
-                className={`text-sm font-black ${
-                  plano === "teste" ? "!text-white" : "text-white"
-                }`}
-              >
-                Teste grátis
-              </p>
-              <p
-                className={`mt-1 text-xs ${
-                  plano === "teste" ? "!text-sky-100" : "text-slate-300"
-                }`}
-              >
-                30 dias sem cartão
-              </p>
+              <p className="text-sm font-black text-white">Teste grátis</p>
+              <p className="mt-1 text-xs text-slate-300">30 dias sem cartão</p>
             </button>
 
             <button
@@ -710,7 +702,10 @@ function CadastroConteudo() {
               </div>
 
               <div>
-                <h2 className="font-black">
+                <h2
+                  className="font-black text-slate-900"
+                  style={{ color: "#0f172a" }}
+                >
                   Seus dados
                 </h2>
 
@@ -807,7 +802,10 @@ function CadastroConteudo() {
               </div>
 
               <div>
-                <h2 className="font-black">
+                <h2
+                  className="font-black text-slate-900"
+                  style={{ color: "#0f172a" }}
+                >
                   Endereço
                 </h2>
 
@@ -1012,7 +1010,10 @@ function CadastroConteudo() {
               </div>
 
               <div>
-                <h2 className="font-black">
+                <h2
+                  className="font-black text-slate-900"
+                  style={{ color: "#0f172a" }}
+                >
                   Acesso
                 </h2>
 
@@ -1161,7 +1162,10 @@ function CadastroConteudo() {
               }
             />
 
-            <span className="text-xs leading-5 text-slate-600">
+            <span
+              className="text-xs leading-5 text-slate-600"
+              style={{ color: "#475569" }}
+            >
               Li e aceito os{" "}
               <Link
                 href="/termos"
@@ -1385,3 +1389,4 @@ export default function CadastroPage() {
     </Suspense>
   );
 }
+
