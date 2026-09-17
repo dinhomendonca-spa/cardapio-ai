@@ -618,20 +618,20 @@ function CadastroConteudo() {
               onClick={() => setPlano("teste")}
               className={`rounded-2xl border p-4 text-left transition ${
                 plano === "teste"
-                  ? "border-sky-400 bg-sky-100 ring-2 ring-sky-400/30"
+                  ? "border-sky-400 bg-sky-950 ring-2 ring-sky-400/30"
                   : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
               }`}
             >
               <p
                 className={`text-sm font-black ${
-                  plano === "teste" ? "text-slate-950" : "text-white"
+                  plano === "teste" ? "!text-white" : "text-white"
                 }`}
               >
                 Teste grátis
               </p>
               <p
                 className={`mt-1 text-xs ${
-                  plano === "teste" ? "text-slate-700" : "text-slate-300"
+                  plano === "teste" ? "!text-sky-100" : "text-slate-300"
                 }`}
               >
                 30 dias sem cartão
