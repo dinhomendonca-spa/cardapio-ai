@@ -291,28 +291,75 @@ button {
   opacity: 0.72;
 }
 
-.theme-shell[data-theme-area="admin"] :is(.text-zinc-400, .text-zinc-500, .text-zinc-600, .text-slate-400, .text-slate-500),
-.theme-shell[data-theme-area="loja"] :is(.text-zinc-400, .text-zinc-500, .text-zinc-600, .text-slate-400, .text-slate-500) {
+.theme-shell[data-theme-area="admin"] :is(
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600,
+    .text-slate-400,
+    .text-slate-500
+  ),
+.theme-shell[data-theme-area="loja"] :is(
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600,
+    .text-slate-400,
+    .text-slate-500
+  ) {
   color: var(--theme-muted) !important;
 }
 
-.theme-shell[data-theme-area="admin"] :is(.text-zinc-950, .text-slate-950, .text-black),
-.theme-shell[data-theme-area="loja"] :is(.text-zinc-950, .text-slate-950, .text-black) {
+.theme-shell[data-theme-area="admin"] :is(
+    .text-zinc-950,
+    .text-slate-950,
+    .text-black
+  ),
+.theme-shell[data-theme-area="loja"] :is(
+    .text-zinc-950,
+    .text-slate-950,
+    .text-black
+  ) {
   color: var(--theme-text) !important;
 }
 
-.theme-shell[data-theme-area="admin"] :is(.bg-zinc-100, .bg-slate-100, .bg-zinc-50, .bg-slate-50),
-.theme-shell[data-theme-area="loja"] :is(.bg-zinc-100, .bg-slate-100, .bg-zinc-50, .bg-slate-50) {
+.theme-shell[data-theme-area="admin"] :is(
+    .bg-zinc-100,
+    .bg-slate-100,
+    .bg-zinc-50,
+    .bg-slate-50
+  ),
+.theme-shell[data-theme-area="loja"] :is(
+    .bg-zinc-100,
+    .bg-slate-100,
+    .bg-zinc-50,
+    .bg-slate-50
+  ) {
   background-color: var(--theme-bg-soft) !important;
 }
 
 .theme-primary-button {
   color: var(--theme-on-primary) !important;
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-strong)) !important;
+  background:
+    linear-gradient(
+      135deg,
+      var(--theme-primary),
+      var(--theme-primary-strong)
+    ) !important;
 }
 
 /* CONTRASTE AUTOMÁTICO PARA TEMAS CLAROS */
-.theme-shell[data-theme-contrast="claro"]
+.theme-shell[data-theme-area="admin"][data-theme-contrast="claro"]
+  :is(
+    .text-white,
+    .text-slate-50,
+    .text-slate-100,
+    .text-slate-200,
+    .text-slate-300,
+    .text-zinc-50,
+    .text-zinc-100,
+    .text-zinc-200,
+    .text-zinc-300
+  ),
+.theme-shell[data-theme-area="loja"][data-theme-contrast="claro"]
   :is(
     .text-white,
     .text-slate-50,
@@ -327,7 +374,16 @@ button {
   color: var(--theme-text) !important;
 }
 
-.theme-shell[data-theme-contrast="claro"]
+.theme-shell[data-theme-area="admin"][data-theme-contrast="claro"]
+  :is(
+    .text-slate-400,
+    .text-slate-500,
+    .text-slate-600,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600
+  ),
+.theme-shell[data-theme-area="loja"][data-theme-contrast="claro"]
   :is(
     .text-slate-400,
     .text-slate-500,
@@ -340,7 +396,19 @@ button {
 }
 
 /* CONTRASTE AUTOMÁTICO PARA TEMAS ESCUROS */
-.theme-shell[data-theme-contrast="escuro"]
+.theme-shell[data-theme-area="admin"][data-theme-contrast="escuro"]
+  :is(
+    .text-black,
+    .text-slate-700,
+    .text-slate-800,
+    .text-slate-900,
+    .text-slate-950,
+    .text-zinc-700,
+    .text-zinc-800,
+    .text-zinc-900,
+    .text-zinc-950
+  ),
+.theme-shell[data-theme-area="loja"][data-theme-contrast="escuro"]
   :is(
     .text-black,
     .text-slate-700,
@@ -355,7 +423,16 @@ button {
   color: var(--theme-text) !important;
 }
 
-.theme-shell[data-theme-contrast="escuro"]
+.theme-shell[data-theme-area="admin"][data-theme-contrast="escuro"]
+  :is(
+    .text-slate-400,
+    .text-slate-500,
+    .text-slate-600,
+    .text-zinc-400,
+    .text-zinc-500,
+    .text-zinc-600
+  ),
+.theme-shell[data-theme-area="loja"][data-theme-contrast="escuro"]
   :is(
     .text-slate-400,
     .text-slate-500,
@@ -368,16 +445,12 @@ button {
 }
 
 /* MANTÉM O TEXTO LEGÍVEL EM BOTÕES COLORIDOS */
-.theme-shell
-  :is(button, a).text-white,
-.theme-shell
-  :is(button, a)
-  .text-white {
+.theme-shell :is(button, a).text-white,
+.theme-shell :is(button, a) .text-white {
   color: var(--theme-on-primary) !important;
 }
 
-.theme-shell
-  :is(button, a)[class*="bg-gradient"] {
+.theme-shell :is(button, a)[class*="bg-gradient"] {
   color: var(--theme-on-primary) !important;
 }
 
@@ -407,6 +480,11 @@ button {
 }
 
 .logout-button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--theme-primary) 40%, transparent);
+  outline: 3px solid
+    color-mix(
+      in srgb,
+      var(--theme-primary) 40%,
+      transparent
+    );
   outline-offset: 3px;
 }
