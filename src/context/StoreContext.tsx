@@ -23,8 +23,16 @@ import {
 
 export type TemaLoja =
   | "azul-escuro"
+  | "verde-jade"
+  | "roxo-magico"
+  | "vermelho-rubi"
+  | "azul-ceu"
   | "nude"
   | "rosa-claro"
+  | "amarelo-claro"
+  | "lilas"
+  | "verde-claro"
+  | "vermelho-claro"
   | "branco"
   | "verde"
   | "vermelho"
@@ -126,24 +134,66 @@ function converterLoja(
     any
   >
 ): Loja {
-  const temasValidos: TemaLoja[] = [
+  const temasAdminValidos: TemaLoja[] = [
     "azul-escuro",
-    "nude",
-    "rosa-claro",
-    "branco",
-    "verde",
-    "vermelho",
-    "preto",
+    "verde-jade",
+    "roxo-magico",
+    "vermelho-rubi",
   ];
 
-  const normalizarTema = (
+  const temasLojaValidos: TemaLoja[] = [
+    "azul-ceu",
+    "nude",
+    "rosa-claro",
+    "amarelo-claro",
+    "lilas",
+    "verde-claro",
+    "vermelho-claro",
+  ];
+
+  const normalizarTemaAdmin = (
     valor: unknown
-  ): TemaLoja =>
-    temasValidos.includes(
-      valor as TemaLoja
-    )
-      ? (valor as TemaLoja)
-      : "azul-escuro";
+  ): TemaLoja => {
+    if (
+      temasAdminValidos.includes(
+        valor as TemaLoja
+      )
+    ) {
+      return valor as TemaLoja;
+    }
+
+    if (valor === "verde") {
+      return "verde-jade";
+    }
+
+    if (valor === "vermelho") {
+      return "vermelho-rubi";
+    }
+
+    return "azul-escuro";
+  };
+
+  const normalizarTemaLoja = (
+    valor: unknown
+  ): TemaLoja => {
+    if (
+      temasLojaValidos.includes(
+        valor as TemaLoja
+      )
+    ) {
+      return valor as TemaLoja;
+    }
+
+    if (valor === "verde") {
+      return "verde-claro";
+    }
+
+    if (valor === "vermelho") {
+      return "vermelho-claro";
+    }
+
+    return "azul-ceu";
+  };
 
   return {
     id:
@@ -308,12 +358,12 @@ function converterLoja(
       ),
 
     tema_admin:
-      normalizarTema(
+      normalizarTemaAdmin(
         data.tema_admin
       ),
 
     tema_loja:
-      normalizarTema(
+      normalizarTemaLoja(
         data.tema_loja
       ),
   };
