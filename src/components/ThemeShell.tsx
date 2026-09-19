@@ -47,11 +47,17 @@ export default function ThemeShell({
         "azul-escuro"
       : "azul-escuro";
 
-  const temaClaro = [
-    "nude",
-    "rosa-claro",
-    "branco",
-  ].includes(tema);
+  const temaClaro =
+    [
+      "nude",
+      "rosa-claro",
+      "branco",
+    ].includes(tema) ||
+    (
+      areaDaLoja &&
+      tema ===
+        "azul-escuro"
+    );
 
   return (
     <div

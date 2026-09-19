@@ -247,6 +247,20 @@ button {
   --theme-on-primary: #090909;
 }
 
+/* TEMA AZUL CLARO SOMENTE NA LOJA VISTA PELOS CLIENTES */
+.theme-shell[data-theme-area="loja"][data-app-theme="azul-escuro"] {
+  --theme-bg: #eff6ff;
+  --theme-bg-soft: #dbeafe;
+  --theme-card: rgba(255, 255, 255, 0.94);
+  --theme-card-solid: #ffffff;
+  --theme-text: #0f172a;
+  --theme-muted: #64748b;
+  --theme-border: rgba(37, 99, 235, 0.18);
+  --theme-primary: #2563eb;
+  --theme-primary-strong: #0ea5e9;
+  --theme-on-primary: #ffffff;
+}
+
 .theme-shell[data-theme-area="admin"],
 .theme-shell[data-theme-area="loja"] {
   min-height: 100vh;
@@ -264,7 +278,12 @@ button {
 .theme-shell[data-theme-area="loja"] header {
   color: var(--theme-text) !important;
   border-color: var(--theme-border) !important;
-  background-color: color-mix(in srgb, var(--theme-bg) 90%, transparent) !important;
+  background-color:
+    color-mix(
+      in srgb,
+      var(--theme-bg) 90%,
+      transparent
+    ) !important;
 }
 
 .theme-shell[data-theme-area="admin"] section[class*="bg-white"],
@@ -278,27 +297,38 @@ button {
   -webkit-backdrop-filter: blur(20px);
 }
 
-.theme-shell[data-theme-area="admin"] :is(input, textarea, select),
-.theme-shell[data-theme-area="loja"] :is(input, textarea, select) {
+.theme-shell[data-theme-area="admin"]
+  :is(input, textarea, select),
+.theme-shell[data-theme-area="loja"]
+  :is(input, textarea, select) {
   color: var(--theme-text) !important;
   border-color: var(--theme-border) !important;
-  background-color: color-mix(in srgb, var(--theme-card-solid) 82%, transparent) !important;
+  background-color:
+    color-mix(
+      in srgb,
+      var(--theme-card-solid) 82%,
+      transparent
+    ) !important;
 }
 
-.theme-shell[data-theme-area="admin"] :is(input, textarea)::placeholder,
-.theme-shell[data-theme-area="loja"] :is(input, textarea)::placeholder {
+.theme-shell[data-theme-area="admin"]
+  :is(input, textarea)::placeholder,
+.theme-shell[data-theme-area="loja"]
+  :is(input, textarea)::placeholder {
   color: var(--theme-muted) !important;
   opacity: 0.72;
 }
 
-.theme-shell[data-theme-area="admin"] :is(
+.theme-shell[data-theme-area="admin"]
+  :is(
     .text-zinc-400,
     .text-zinc-500,
     .text-zinc-600,
     .text-slate-400,
     .text-slate-500
   ),
-.theme-shell[data-theme-area="loja"] :is(
+.theme-shell[data-theme-area="loja"]
+  :is(
     .text-zinc-400,
     .text-zinc-500,
     .text-zinc-600,
@@ -308,12 +338,14 @@ button {
   color: var(--theme-muted) !important;
 }
 
-.theme-shell[data-theme-area="admin"] :is(
+.theme-shell[data-theme-area="admin"]
+  :is(
     .text-zinc-950,
     .text-slate-950,
     .text-black
   ),
-.theme-shell[data-theme-area="loja"] :is(
+.theme-shell[data-theme-area="loja"]
+  :is(
     .text-zinc-950,
     .text-slate-950,
     .text-black
@@ -321,13 +353,15 @@ button {
   color: var(--theme-text) !important;
 }
 
-.theme-shell[data-theme-area="admin"] :is(
+.theme-shell[data-theme-area="admin"]
+  :is(
     .bg-zinc-100,
     .bg-slate-100,
     .bg-zinc-50,
     .bg-slate-50
   ),
-.theme-shell[data-theme-area="loja"] :is(
+.theme-shell[data-theme-area="loja"]
+  :is(
     .bg-zinc-100,
     .bg-slate-100,
     .bg-zinc-50,
