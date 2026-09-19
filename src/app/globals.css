@@ -158,132 +158,409 @@ button {
 /* TEMAS ESCOLHIDOS PELO LOJISTA */
 .theme-shell {
   --theme-bg: #020b18;
-  --theme-bg-soft: #07182c;
-  --theme-card: rgba(15, 40, 70, 0.66);
-  --theme-card-solid: #0d2037;
+  --theme-bg-soft: rgba(7, 24, 44, 0.78);
+  --theme-card: rgba(15, 40, 70, 0.68);
+  --theme-card-solid: rgba(13, 32, 55, 0.94);
   --theme-text: #f8fafc;
   --theme-muted: #a8b7ca;
   --theme-border: rgba(125, 211, 252, 0.2);
   --theme-primary: #0ea5e9;
   --theme-primary-strong: #2563eb;
   --theme-on-primary: #ffffff;
+  --theme-header: rgba(2, 11, 24, 0.82);
+  --theme-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(14, 165, 233, 0.3),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(37, 99, 235, 0.2),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #020617 0%,
+      #06111f 50%,
+      #08203a 100%
+    );
 }
 
-.theme-shell[data-app-theme="nude"] {
-  --theme-bg: #e8c6ae;
-  --theme-bg-soft: #f2d8c5;
-  --theme-card: rgba(255, 247, 240, 0.7);
-  --theme-card-solid: #f8e7da;
-  --theme-text: #412a22;
-  --theme-muted: #76594e;
-  --theme-border: rgba(111, 78, 67, 0.2);
-  --theme-primary: #b66c4a;
-  --theme-primary-strong: #8e4f34;
+/* PAINEL: AZUL-ESCURO */
+.theme-shell[data-theme-area="admin"][data-app-theme="azul-escuro"] {
+  --theme-bg: #020b18;
+  --theme-bg-soft: rgba(7, 24, 44, 0.78);
+  --theme-card: rgba(15, 40, 70, 0.68);
+  --theme-card-solid: rgba(13, 32, 55, 0.94);
+  --theme-text: #f8fafc;
+  --theme-muted: #a8b7ca;
+  --theme-border: rgba(125, 211, 252, 0.2);
+  --theme-primary: #0ea5e9;
+  --theme-primary-strong: #2563eb;
   --theme-on-primary: #ffffff;
+  --theme-header: rgba(2, 11, 24, 0.82);
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(14, 165, 233, 0.3),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(37, 99, 235, 0.2),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #020617 0%,
+      #06111f 50%,
+      #08203a 100%
+    );
 }
 
-.theme-shell[data-app-theme="rosa-claro"] {
-  --theme-bg: #f8dbe7;
-  --theme-bg-soft: #ffeaf2;
-  --theme-card: rgba(255, 250, 252, 0.72);
-  --theme-card-solid: #fff0f6;
-  --theme-text: #4a2636;
-  --theme-muted: #805b6b;
-  --theme-border: rgba(190, 80, 128, 0.2);
-  --theme-primary: #ec4899;
-  --theme-primary-strong: #be185d;
-  --theme-on-primary: #ffffff;
-}
-
-.theme-shell[data-app-theme="branco"] {
-  --theme-bg: #f4f6f8;
-  --theme-bg-soft: #ffffff;
-  --theme-card: rgba(255, 255, 255, 0.78);
-  --theme-card-solid: #ffffff;
-  --theme-text: #111827;
-  --theme-muted: #5b6472;
-  --theme-border: rgba(15, 23, 42, 0.13);
-  --theme-primary: #2563eb;
-  --theme-primary-strong: #1d4ed8;
-  --theme-on-primary: #ffffff;
-}
-
-.theme-shell[data-app-theme="verde"] {
-  --theme-bg: #052e25;
-  --theme-bg-soft: #0b4638;
-  --theme-card: rgba(12, 82, 66, 0.65);
-  --theme-card-solid: #0c4f40;
+/* PAINEL: VERDE-JADE */
+.theme-shell[data-theme-area="admin"][data-app-theme="verde-jade"] {
+  --theme-bg: #03251f;
+  --theme-bg-soft: rgba(6, 78, 59, 0.72);
+  --theme-card: rgba(6, 95, 70, 0.58);
+  --theme-card-solid: rgba(5, 72, 57, 0.94);
   --theme-text: #ecfdf5;
   --theme-muted: #a7d8c7;
   --theme-border: rgba(110, 231, 183, 0.22);
   --theme-primary: #10b981;
-  --theme-primary-strong: #059669;
+  --theme-primary-strong: #0d9488;
   --theme-on-primary: #ffffff;
+  --theme-header: rgba(3, 37, 31, 0.84);
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(16, 185, 129, 0.3),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(13, 148, 136, 0.22),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #021713 0%,
+      #03251f 50%,
+      #064e3b 100%
+    );
 }
 
-.theme-shell[data-app-theme="vermelho"] {
-  --theme-bg: #3a090d;
-  --theme-bg-soft: #5b1117;
-  --theme-card: rgba(112, 22, 30, 0.64);
-  --theme-card-solid: #64151c;
-  --theme-text: #fff5f5;
-  --theme-muted: #efb8bd;
-  --theme-border: rgba(252, 165, 165, 0.22);
-  --theme-primary: #ef4444;
-  --theme-primary-strong: #dc2626;
+/* PAINEL: ROXO-MÁGICO */
+.theme-shell[data-theme-area="admin"][data-app-theme="roxo-magico"] {
+  --theme-bg: #1f0b35;
+  --theme-bg-soft: rgba(76, 29, 149, 0.68);
+  --theme-card: rgba(88, 28, 135, 0.56);
+  --theme-card-solid: rgba(59, 18, 93, 0.94);
+  --theme-text: #faf5ff;
+  --theme-muted: #d8b4fe;
+  --theme-border: rgba(216, 180, 254, 0.22);
+  --theme-primary: #a855f7;
+  --theme-primary-strong: #7c3aed;
   --theme-on-primary: #ffffff;
+  --theme-header: rgba(31, 11, 53, 0.84);
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(168, 85, 247, 0.34),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(124, 58, 237, 0.24),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #13051f 0%,
+      #1f0b35 50%,
+      #3b125d 100%
+    );
 }
 
-.theme-shell[data-app-theme="preto"] {
-  --theme-bg: #050505;
-  --theme-bg-soft: #111111;
-  --theme-card: rgba(29, 29, 29, 0.72);
-  --theme-card-solid: #181818;
-  --theme-text: #fafafa;
-  --theme-muted: #b4b4b4;
-  --theme-border: rgba(255, 255, 255, 0.13);
-  --theme-primary: #e5e7eb;
-  --theme-primary-strong: #ffffff;
-  --theme-on-primary: #090909;
+/* PAINEL: VERMELHO-RUBI */
+.theme-shell[data-theme-area="admin"][data-app-theme="vermelho-rubi"] {
+  --theme-bg: #31070e;
+  --theme-bg-soft: rgba(127, 29, 29, 0.72);
+  --theme-card: rgba(136, 19, 55, 0.56);
+  --theme-card-solid: rgba(88, 12, 30, 0.94);
+  --theme-text: #fff1f2;
+  --theme-muted: #fda4af;
+  --theme-border: rgba(253, 164, 175, 0.22);
+  --theme-primary: #f43f5e;
+  --theme-primary-strong: #b91c1c;
+  --theme-on-primary: #ffffff;
+  --theme-header: rgba(49, 7, 14, 0.84);
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(244, 63, 94, 0.32),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(185, 28, 28, 0.24),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #1f0308 0%,
+      #31070e 50%,
+      #5b1117 100%
+    );
 }
 
-/* TEMA AZUL CLARO SOMENTE NA LOJA VISTA PELOS CLIENTES */
-.theme-shell[data-theme-area="loja"][data-app-theme="azul-escuro"] {
-  --theme-bg: #eff6ff;
-  --theme-bg-soft: #dbeafe;
-  --theme-card: rgba(255, 255, 255, 0.94);
-  --theme-card-solid: #ffffff;
+/* BASE DE VIDRO PARA TODAS AS LOJAS CLARAS */
+.theme-shell[data-theme-area="loja"] {
+  --theme-bg: #eaf5ff;
+  --theme-bg-soft: rgba(219, 234, 254, 0.56);
+  --theme-card: rgba(255, 255, 255, 0.58);
+  --theme-card-solid: rgba(255, 255, 255, 0.82);
   --theme-text: #0f172a;
   --theme-muted: #64748b;
-  --theme-border: rgba(37, 99, 235, 0.18);
-  --theme-primary: #2563eb;
-  --theme-primary-strong: #0ea5e9;
+  --theme-border: rgba(255, 255, 255, 0.74);
+  --theme-primary: #0284c7;
+  --theme-primary-strong: #2563eb;
   --theme-on-primary: #ffffff;
+  --theme-header: rgba(255, 255, 255, 0.56);
+  --theme-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(56, 189, 248, 0.25),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #f8fcff 0%,
+      #eaf5ff 50%,
+      #dbeafe 100%
+    );
+}
+
+/* LOJA: AZUL-CÉU */
+.theme-shell[data-theme-area="loja"][data-app-theme="azul-ceu"] {
+  --theme-bg: #eaf5ff;
+  --theme-bg-soft: rgba(219, 234, 254, 0.56);
+  --theme-primary: #0284c7;
+  --theme-primary-strong: #2563eb;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(56, 189, 248, 0.25),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #f8fcff 0%,
+      #eaf5ff 50%,
+      #dbeafe 100%
+    );
+}
+
+/* LOJA: NUDE */
+.theme-shell[data-theme-area="loja"][data-app-theme="nude"] {
+  --theme-bg: #f6ebe3;
+  --theme-bg-soft: rgba(245, 230, 216, 0.62);
+  --theme-text: #3f2b24;
+  --theme-muted: #7c6258;
+  --theme-primary: #b66c4a;
+  --theme-primary-strong: #8e4f34;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.94),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(232, 198, 174, 0.48),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #fffaf6 0%,
+      #f6ebe3 50%,
+      #edd6c7 100%
+    );
+}
+
+/* LOJA: ROSA-CLARO */
+.theme-shell[data-theme-area="loja"][data-app-theme="rosa-claro"] {
+  --theme-bg: #fff0f6;
+  --theme-bg-soft: rgba(252, 231, 243, 0.62);
+  --theme-text: #4a2636;
+  --theme-muted: #805b6b;
+  --theme-primary: #ec4899;
+  --theme-primary-strong: #be185d;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(244, 114, 182, 0.28),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #fffafd 0%,
+      #fff0f6 50%,
+      #fce7f3 100%
+    );
+}
+
+/* LOJA: AMARELO-CLARO */
+.theme-shell[data-theme-area="loja"][data-app-theme="amarelo-claro"] {
+  --theme-bg: #fff9db;
+  --theme-bg-soft: rgba(254, 243, 199, 0.64);
+  --theme-text: #422f0a;
+  --theme-muted: #806b3a;
+  --theme-primary: #d97706;
+  --theme-primary-strong: #b45309;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(250, 204, 21, 0.3),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #fffef5 0%,
+      #fff9db 50%,
+      #fef3c7 100%
+    );
+}
+
+/* LOJA: LILÁS */
+.theme-shell[data-theme-area="loja"][data-app-theme="lilas"] {
+  --theme-bg: #f5f0ff;
+  --theme-bg-soft: rgba(237, 233, 254, 0.64);
+  --theme-text: #352457;
+  --theme-muted: #70618e;
+  --theme-primary: #8b5cf6;
+  --theme-primary-strong: #7c3aed;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(167, 139, 250, 0.3),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #fdfbff 0%,
+      #f5f0ff 50%,
+      #ede9fe 100%
+    );
+}
+
+/* LOJA: VERDE-CLARO */
+.theme-shell[data-theme-area="loja"][data-app-theme="verde-claro"] {
+  --theme-bg: #effcf3;
+  --theme-bg-soft: rgba(220, 252, 231, 0.62);
+  --theme-text: #173b29;
+  --theme-muted: #567363;
+  --theme-primary: #16a34a;
+  --theme-primary-strong: #059669;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(74, 222, 128, 0.28),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #f9fffb 0%,
+      #effcf3 50%,
+      #dcfce7 100%
+    );
+}
+
+/* LOJA: VERMELHO-CLARO */
+.theme-shell[data-theme-area="loja"][data-app-theme="vermelho-claro"] {
+  --theme-bg: #fff1f1;
+  --theme-bg-soft: rgba(254, 226, 226, 0.62);
+  --theme-text: #4a2023;
+  --theme-muted: #815b5e;
+  --theme-primary: #ef4444;
+  --theme-primary-strong: #dc2626;
+  --theme-page-background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(255, 255, 255, 0.96),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 88% 100%,
+      rgba(248, 113, 113, 0.28),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #fffafa 0%,
+      #fff1f1 50%,
+      #fee2e2 100%
+    );
 }
 
 .theme-shell[data-theme-area="admin"],
 .theme-shell[data-theme-area="loja"] {
   min-height: 100vh;
   color: var(--theme-text);
-  background: var(--theme-bg);
+  background: var(--theme-page-background);
 }
 
 .theme-shell[data-theme-area="admin"] main,
 .theme-shell[data-theme-area="loja"] main {
   color: var(--theme-text) !important;
-  background-color: var(--theme-bg) !important;
+  background: var(--theme-page-background) !important;
 }
 
 .theme-shell[data-theme-area="admin"] header,
 .theme-shell[data-theme-area="loja"] header {
   color: var(--theme-text) !important;
   border-color: var(--theme-border) !important;
-  background-color:
-    color-mix(
-      in srgb,
-      var(--theme-bg) 90%,
-      transparent
-    ) !important;
+  background-color: var(--theme-header) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
 }
 
 .theme-shell[data-theme-area="admin"] section[class*="bg-white"],
@@ -293,8 +570,9 @@ button {
   color: var(--theme-text);
   border-color: var(--theme-border) !important;
   background-color: var(--theme-card) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--theme-shadow);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
 }
 
 .theme-shell[data-theme-area="admin"]

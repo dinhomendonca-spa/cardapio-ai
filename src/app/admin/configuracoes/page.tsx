@@ -23,45 +23,72 @@ import {
   useStore,
 } from "@/context/StoreContext";
 
-const TEMAS: Array<{
+const TEMAS_ADMIN: Array<{
   id: TemaLoja;
   nome: string;
   cor: string;
 }> = [
   {
     id: "azul-escuro",
-    nome: "Azul",
+    nome: "Azul-escuro",
+    cor: "#06111f",
+  },
+  {
+    id: "verde-jade",
+    nome: "Verde-jade",
+    cor: "#065f46",
+  },
+  {
+    id: "roxo-magico",
+    nome: "Roxo-mágico",
+    cor: "#581c87",
+  },
+  {
+    id: "vermelho-rubi",
+    nome: "Vermelho-rubi",
+    cor: "#7f1d1d",
+  },
+];
+
+const TEMAS_LOJA: Array<{
+  id: TemaLoja;
+  nome: string;
+  cor: string;
+}> = [
+  {
+    id: "azul-ceu",
+    nome: "Azul-céu",
     cor: "#dbeafe",
   },
   {
     id: "nude",
     nome: "Nude",
-    cor: "#e8c6ae",
+    cor: "#f5e6d8",
   },
   {
     id: "rosa-claro",
     nome: "Rosa-claro",
-    cor: "#f8dbe7",
+    cor: "#fce7f3",
   },
   {
-    id: "branco",
-    nome: "Branco",
-    cor: "#ffffff",
+    id: "amarelo-claro",
+    nome: "Amarelo-claro",
+    cor: "#fef3c7",
   },
   {
-    id: "verde",
-    nome: "Verde",
-    cor: "#0b4638",
+    id: "lilas",
+    nome: "Lilás",
+    cor: "#ede9fe",
   },
   {
-    id: "vermelho",
-    nome: "Vermelho",
-    cor: "#7f1d1d",
+    id: "verde-claro",
+    nome: "Verde-claro",
+    cor: "#dcfce7",
   },
   {
-    id: "preto",
-    nome: "Preto",
-    cor: "#090909",
+    id: "vermelho-claro",
+    nome: "Vermelho-claro",
+    cor: "#fee2e2",
   },
 ];
 
@@ -101,7 +128,7 @@ export default function ConfiguracoesPage() {
     useState<TemaLoja>("azul-escuro");
 
   const [temaLoja, setTemaLoja] =
-    useState<TemaLoja>("azul-escuro");
+    useState<TemaLoja>("azul-ceu");
 
   useEffect(() => {
     if (!loja) {
@@ -128,7 +155,7 @@ export default function ConfiguracoesPage() {
 
     setTemaLoja(
       loja.tema_loja ??
-        "azul-escuro"
+        "azul-ceu"
     );
   }, [
     loja,
@@ -377,7 +404,7 @@ export default function ConfiguracoesPage() {
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {TEMAS.map((tema) => (
+              {TEMAS_ADMIN.map((tema) => (
                 <button
                   key={`admin-${tema.id}`}
                   type="button"
@@ -413,7 +440,7 @@ export default function ConfiguracoesPage() {
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {TEMAS.map((tema) => (
+              {TEMAS_LOJA.map((tema) => (
                 <button
                   key={`loja-${tema.id}`}
                   type="button"
