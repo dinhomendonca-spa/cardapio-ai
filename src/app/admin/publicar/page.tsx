@@ -3,10 +3,6 @@
 import Link from "next/link";
 
 import {
-  useRouter,
-} from "next/navigation";
-
-import {
   ArrowLeft,
   Check,
   ChevronRight,
@@ -60,9 +56,6 @@ function imagemEhPadrao(
 }
 
 export default function PublicarLojaPage() {
-  const router =
-    useRouter();
-
   const {
     loja,
     carregando,
@@ -412,21 +405,24 @@ export default function PublicarLojaPage() {
         setEntrandoPainel(true);
 
         /*
-         * Encerra somente o tutorial.
-         * A loja continua com o estado
-         * atual e poderá ser concluída
-         * e publicada pelo painel.
+         * Finaliza o tutorial mesmo que
+         * o lojista queira cadastrar os
+         * demais produtos posteriormente.
          */
         await salvarLoja({
           configuracao_concluida:
             true,
         });
 
-        router.replace(
+        /*
+         * Faz uma nova leitura dos dados
+         * da loja antes de abrir o painel.
+         * Isso evita o redirecionamento
+         * novamente para os produtos.
+         */
+        window.location.replace(
           "/admin"
         );
-
-        router.refresh();
       } catch (error) {
         console.error(
           "Erro ao abrir painel:",
@@ -580,7 +576,7 @@ export default function PublicarLojaPage() {
               onClick={
                 copiarLink
               }
-              className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white font-bold text-slate-950"
+              className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/25 bg-[#10273d] font-bold text-sky-100 transition hover:bg-[#16344f]"
             >
               <Copy
                 size={18}
@@ -612,7 +608,7 @@ export default function PublicarLojaPage() {
               disabled={
                 entrandoPainel
               }
-              className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] font-bold disabled:opacity-60"
+              className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/25 bg-[#10273d] font-bold text-sky-100 transition hover:bg-[#16344f] disabled:opacity-60"
             >
               {entrandoPainel ? (
                 <>
@@ -629,7 +625,7 @@ export default function PublicarLojaPage() {
                     size={18}
                   />
 
-                  Ir para o painel
+                  Iniciar gerenciamento
                 </>
               )}
             </button>
@@ -808,7 +804,7 @@ export default function PublicarLojaPage() {
                 entrandoPainel ||
                 publicando
               }
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 text-sm font-bold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-sky-400/25 bg-[#10273d] px-5 text-sm font-bold text-sky-100 transition hover:bg-[#16344f] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {entrandoPainel ? (
                 <>
@@ -825,8 +821,7 @@ export default function PublicarLojaPage() {
                     size={18}
                   />
 
-                  Ir para o painel e
-                  concluir depois
+                  Iniciar gerenciamento
                 </>
               )}
             </button>
