@@ -324,9 +324,7 @@ export default function CheckoutPage() {
   if (itens.length === 0) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-100 px-4">
-
         <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
-
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
             <ShoppingBag
               size={28}
@@ -344,25 +342,20 @@ export default function CheckoutPage() {
 
           <Link
             href={`/loja/${loja?.slug}`}
-            className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 font-bold text-white"
+            className="mt-5 flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#10273d] px-5 font-bold !text-white"
           >
             Voltar para a loja
           </Link>
-
         </div>
-
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-zinc-100 pb-36 text-zinc-950">
-
       {/* HEADER */}
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
-
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
-
           <Link
             href={`/loja/${loja?.slug}`}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100 active:scale-95"
@@ -373,7 +366,6 @@ export default function CheckoutPage() {
           </Link>
 
           <div className="min-w-0">
-
             <p className="truncate text-[11px] font-medium text-zinc-500">
               {loja?.nome ||
                 "Sua loja"}
@@ -382,22 +374,15 @@ export default function CheckoutPage() {
             <h1 className="text-lg font-extrabold">
               Seu pedido
             </h1>
-
           </div>
-
         </div>
-
       </header>
 
       <section className="mx-auto max-w-md space-y-3 px-3 py-3">
-
         {/* CARRINHO */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
-
           <div className="mb-3 flex items-center justify-between">
-
             <div>
-
               <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
                 Carrinho
               </p>
@@ -408,7 +393,6 @@ export default function CheckoutPage() {
                   ? "item"
                   : "itens"}
               </h2>
-
             </div>
 
             <span className="text-lg font-extrabold">
@@ -416,20 +400,16 @@ export default function CheckoutPage() {
                 valorTotal
               )}
             </span>
-
           </div>
 
           <div className="space-y-2">
-
             {itens.map(
               (item) => (
                 <div
                   key={item.id}
                   className="flex items-center gap-3 rounded-2xl bg-zinc-50 p-2.5"
                 >
-
                   <div className="min-w-0 flex-1">
-
                     <p className="text-sm font-bold leading-5">
                       {item.nome}
                     </p>
@@ -440,11 +420,9 @@ export default function CheckoutPage() {
                       )}{" "}
                       cada
                     </p>
-
                   </div>
 
                   <div className="flex shrink-0 items-center rounded-xl bg-white p-1 shadow-sm">
-
                     <button
                       type="button"
                       onClick={() =>
@@ -480,28 +458,22 @@ export default function CheckoutPage() {
                             item.imagem,
                         })
                       }
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-white"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#10273d] !text-white"
                     >
                       <Plus
                         size={14}
                       />
                     </button>
-
                   </div>
-
                 </div>
               )
             )}
-
           </div>
-
         </section>
 
         {/* DADOS CLIENTE */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
-
           <div className="flex items-start gap-3">
-
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
               <User
                 size={18}
@@ -509,7 +481,6 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-
               <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
                 Identificação
               </p>
@@ -521,15 +492,11 @@ export default function CheckoutPage() {
               <p className="mt-0.5 text-xs leading-5 text-zinc-500">
                 Precisamos desses dados para identificar seu pedido.
               </p>
-
             </div>
-
           </div>
 
           <div className="mt-4 space-y-3">
-
             <div>
-
               <label
                 htmlFor="clienteNome"
                 className="mb-1.5 block text-xs font-bold text-zinc-700"
@@ -538,7 +505,6 @@ export default function CheckoutPage() {
               </label>
 
               <div className="relative">
-
                 <User
                   size={17}
                   className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
@@ -576,7 +542,6 @@ export default function CheckoutPage() {
                       : "border-transparent bg-zinc-100 focus:border-zinc-300 focus:bg-white"
                   }`}
                 />
-
               </div>
 
               {erroNome && (
@@ -584,11 +549,9 @@ export default function CheckoutPage() {
                   Informe seu nome.
                 </p>
               )}
-
             </div>
 
             <div>
-
               <label
                 htmlFor="clienteTelefone"
                 className="mb-1.5 block text-xs font-bold text-zinc-700"
@@ -597,7 +560,6 @@ export default function CheckoutPage() {
               </label>
 
               <div className="relative">
-
                 <Phone
                   size={17}
                   className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
@@ -645,7 +607,6 @@ export default function CheckoutPage() {
                       : "border-transparent bg-zinc-100 focus:border-zinc-300 focus:bg-white"
                   }`}
                 />
-
               </div>
 
               {erroTelefone && (
@@ -653,16 +614,12 @@ export default function CheckoutPage() {
                   Informe um WhatsApp válido com DDD.
                 </p>
               )}
-
             </div>
-
           </div>
-
         </section>
 
         {/* RECEBIMENTO */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
-
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
             Recebimento
           </p>
@@ -678,7 +635,6 @@ export default function CheckoutPage() {
                 : "grid-cols-1"
             }`}
           >
-
             <button
               type="button"
               onClick={() =>
@@ -689,14 +645,13 @@ export default function CheckoutPage() {
               className={`relative min-h-[104px] rounded-2xl border-2 p-3 text-left ${
                 tipoEntrega ===
                 "entrega"
-                  ? "border-zinc-950 bg-zinc-950 text-white"
+                  ? "border-[#10273d] bg-[#10273d] !text-white"
                   : "border-zinc-200 bg-white"
               }`}
             >
-
               {tipoEntrega ===
                 "entrega" && (
-                <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-zinc-950">
+                <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white !text-[#10273d]">
                   <Check
                     size={12}
                   />
@@ -705,14 +660,33 @@ export default function CheckoutPage() {
 
               <Truck
                 size={20}
+                className={
+                  tipoEntrega ===
+                  "entrega"
+                    ? "!text-white"
+                    : "text-zinc-700"
+                }
               />
 
-              <p className="mt-4 text-sm font-bold">
+              <p
+                className={`mt-4 text-sm font-bold ${
+                  tipoEntrega ===
+                  "entrega"
+                    ? "!text-white"
+                    : "text-zinc-950"
+                }`}
+              >
                 Entrega
               </p>
 
-              <p className="mt-0.5 text-[11px] opacity-70">
-
+              <p
+                className={`mt-0.5 text-[11px] ${
+                  tipoEntrega ===
+                  "entrega"
+                    ? "!text-sky-100"
+                    : "text-zinc-500"
+                }`}
+              >
                 {taxaACombinar
                   ? "Taxa a combinar"
                   : taxaEntrega === 0
@@ -720,9 +694,7 @@ export default function CheckoutPage() {
                     : `+ ${formatarPreco(
                         taxaEntrega
                       )}`}
-
               </p>
-
             </button>
 
             {retiradaPermitida && (
@@ -740,14 +712,13 @@ export default function CheckoutPage() {
                 className={`relative min-h-[104px] rounded-2xl border-2 p-3 text-left ${
                   tipoEntrega ===
                   "retirada"
-                    ? "border-zinc-950 bg-zinc-950 text-white"
+                    ? "border-[#10273d] bg-[#10273d] !text-white"
                     : "border-zinc-200 bg-white"
                 }`}
               >
-
                 {tipoEntrega ===
                   "retirada" && (
-                  <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-zinc-950">
+                  <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-white !text-[#10273d]">
                     <Check
                       size={12}
                     />
@@ -756,30 +727,45 @@ export default function CheckoutPage() {
 
                 <ShoppingBag
                   size={20}
+                  className={
+                    tipoEntrega ===
+                    "retirada"
+                      ? "!text-white"
+                      : "text-zinc-700"
+                  }
                 />
 
-                <p className="mt-4 text-sm font-bold">
+                <p
+                  className={`mt-4 text-sm font-bold ${
+                    tipoEntrega ===
+                    "retirada"
+                      ? "!text-white"
+                      : "text-zinc-950"
+                  }`}
+                >
                   Retirada
                 </p>
 
-                <p className="mt-0.5 text-[11px] opacity-70">
+                <p
+                  className={`mt-0.5 text-[11px] ${
+                    tipoEntrega ===
+                    "retirada"
+                      ? "!text-sky-100"
+                      : "text-zinc-500"
+                  }`}
+                >
                   Sem taxa
                 </p>
-
               </button>
             )}
-
           </div>
-
         </section>
 
         {/* ENDEREÇO */}
         {tipoEntrega ===
         "entrega" ? (
           <section className="rounded-3xl bg-white p-4 shadow-sm">
-
             <div className="flex items-start gap-3">
-
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
                 <MapPin
                   size={18}
@@ -787,7 +773,6 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-
                 <h2 className="font-extrabold">
                   Endereço da entrega
                 </h2>
@@ -795,15 +780,11 @@ export default function CheckoutPage() {
                 <p className="mt-0.5 text-xs leading-5 text-zinc-500">
                   Rua, número e bairro são obrigatórios.
                 </p>
-
               </div>
-
             </div>
 
             <div className="mt-4 space-y-3">
-
               <div>
-
                 <label
                   htmlFor="rua"
                   className="mb-1.5 block text-xs font-bold text-zinc-700"
@@ -847,13 +828,10 @@ export default function CheckoutPage() {
                     Informe a rua.
                   </p>
                 )}
-
               </div>
 
               <div className="grid grid-cols-[105px_minmax(0,1fr)] gap-2">
-
                 <div>
-
                   <label
                     htmlFor="numero"
                     className="mb-1.5 block text-xs font-bold text-zinc-700"
@@ -892,11 +870,9 @@ export default function CheckoutPage() {
                         : "border-transparent bg-zinc-100 focus:border-zinc-300 focus:bg-white"
                     }`}
                   />
-
                 </div>
 
                 <div>
-
                   <label
                     htmlFor="bairro"
                     className="mb-1.5 block text-xs font-bold text-zinc-700"
@@ -934,9 +910,7 @@ export default function CheckoutPage() {
                         : "border-transparent bg-zinc-100 focus:border-zinc-300 focus:bg-white"
                     }`}
                   />
-
                 </div>
-
               </div>
 
               {(erroNumero ||
@@ -947,7 +921,6 @@ export default function CheckoutPage() {
               )}
 
               <div>
-
                 <label
                   htmlFor="complemento"
                   className="mb-1.5 block text-xs font-bold text-zinc-700"
@@ -957,7 +930,6 @@ export default function CheckoutPage() {
                   <span className="ml-1 font-normal text-zinc-400">
                     opcional
                   </span>
-
                 </label>
 
                 <input
@@ -978,9 +950,7 @@ export default function CheckoutPage() {
                   autoComplete="off"
                   className="h-14 w-full appearance-none rounded-2xl border border-transparent bg-zinc-100 px-4 text-base outline-none focus:border-zinc-300 focus:bg-white"
                 />
-
               </div>
-
             </div>
 
             <button
@@ -990,9 +960,7 @@ export default function CheckoutPage() {
               }
               className="mt-4 flex min-h-14 w-full items-center justify-between rounded-2xl border border-zinc-200 bg-white px-3 text-left"
             >
-
               <div className="flex items-center gap-3">
-
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
                   <Navigation
                     size={17}
@@ -1000,7 +968,6 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-
                   <p className="text-sm font-bold">
                     Conferir no Google Maps
                   </p>
@@ -1008,24 +975,18 @@ export default function CheckoutPage() {
                   <p className="text-[11px] text-zinc-500">
                     Verifique o endereço da entrega
                   </p>
-
                 </div>
-
               </div>
 
               <ChevronRight
                 size={18}
                 className="text-zinc-400"
               />
-
             </button>
-
           </section>
         ) : (
           <section className="rounded-3xl bg-white p-4 shadow-sm">
-
             <div className="flex gap-3">
-
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
                 <MapPin
                   size={18}
@@ -1033,7 +994,6 @@ export default function CheckoutPage() {
               </div>
 
               <div className="min-w-0 flex-1">
-
                 <h2 className="font-extrabold">
                   Retirada na loja
                 </h2>
@@ -1066,21 +1026,15 @@ export default function CheckoutPage() {
                     Abrir no Google Maps
                   </a>
                 )}
-
               </div>
-
             </div>
-
           </section>
         )}
 
         {/* PAGAMENTO */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
-
           <div className="flex items-center justify-between">
-
             <div className="flex items-center gap-3">
-
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
                 <CreditCard
                   size={18}
@@ -1088,7 +1042,6 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-
                 <h2 className="text-sm font-extrabold">
                   Pagamento
                 </h2>
@@ -1096,26 +1049,20 @@ export default function CheckoutPage() {
                 <p className="text-xs text-zinc-500">
                   Pix
                 </p>
-
               </div>
-
             </div>
 
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#10273d] !text-white">
               <Check
                 size={14}
               />
             </div>
-
           </div>
-
         </section>
 
         {/* RESUMO */}
         <section className="rounded-3xl bg-white p-4 shadow-sm">
-
           <div className="flex items-center justify-between">
-
             <h2 className="font-extrabold">
               Resumo
             </h2>
@@ -1126,13 +1073,10 @@ export default function CheckoutPage() {
                 ? "item"
                 : "itens"}
             </span>
-
           </div>
 
           <div className="mt-3 space-y-2 text-sm">
-
             <div className="flex justify-between text-zinc-500">
-
               <span>
                 Produtos
               </span>
@@ -1142,11 +1086,9 @@ export default function CheckoutPage() {
                   valorTotal
                 )}
               </span>
-
             </div>
 
             <div className="flex justify-between text-zinc-500">
-
               <span>
                 {tipoEntrega ===
                 "entrega"
@@ -1155,7 +1097,6 @@ export default function CheckoutPage() {
               </span>
 
               <span>
-
                 {tipoEntrega ===
                 "retirada"
                   ? "Grátis"
@@ -1166,13 +1107,10 @@ export default function CheckoutPage() {
                       : formatarPreco(
                           taxaEntrega
                         )}
-
               </span>
-
             </div>
 
             <div className="mt-3 flex items-end justify-between border-t border-zinc-100 pt-3">
-
               <span className="font-bold">
                 Total
               </span>
@@ -1182,7 +1120,6 @@ export default function CheckoutPage() {
                   total
                 )}
               </span>
-
             </div>
 
             {taxaACombinar &&
@@ -1192,54 +1129,43 @@ export default function CheckoutPage() {
                   A taxa de entrega será combinada diretamente com a loja e não está incluída no total acima.
                 </div>
               )}
-
           </div>
-
         </section>
-
       </section>
 
       {/* CONTINUAR */}
       <div className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 px-3 pt-2 pb-[max(10px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.10)] backdrop-blur">
-
         <Link
           href={`/loja/${loja?.slug}/pagamento`}
           onClick={
             salvarCheckout
           }
-          className="mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl bg-zinc-950 px-5 text-white shadow-xl active:scale-[0.99]"
+          className="mx-auto flex h-16 w-full max-w-md items-center justify-between rounded-2xl border border-sky-400/20 bg-[#10273d] px-5 !text-white shadow-xl active:scale-[0.99]"
         >
-
           <div>
-
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-[11px] !text-sky-200">
               Total do pedido
             </p>
 
-            <p className="text-lg font-extrabold">
+            <p className="text-lg font-extrabold !text-white">
               {formatarPreco(
                 total
               )}
             </p>
-
           </div>
 
-          <div className="flex items-center gap-2">
-
-            <span className="text-sm font-bold">
+          <div className="flex items-center gap-2 !text-white">
+            <span className="text-sm font-bold !text-white">
               Continuar
             </span>
 
             <ChevronRight
               size={18}
+              className="!text-white"
             />
-
           </div>
-
         </Link>
-
       </div>
-
     </main>
   );
 }
