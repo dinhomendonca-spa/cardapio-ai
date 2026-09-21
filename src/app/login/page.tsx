@@ -76,10 +76,16 @@ function LoginConteudo() {
       searchParams.get("plano")
     );
 
-  const emailConfirmado =
+  const retornoConfirmacao =
     searchParams.get(
       "confirmado"
     ) === "1";
+
+  const emailConfirmado =
+    retornoConfirmacao &&
+    Boolean(
+      user?.email_confirmed_at
+    );
 
   const senhaAlterada =
     searchParams.get(
@@ -127,7 +133,7 @@ function LoginConteudo() {
   );
 
   useEffect(() => {
-    if (emailConfirmado) {
+    if (retornoConfirmacao) {
       verificacaoIniciada.current =
         false;
 
@@ -135,11 +141,11 @@ function LoginConteudo() {
       setEntrando(false);
       setErro(null);
     }
-  }, [emailConfirmado]);
+  }, [retornoConfirmacao]);
 
   useEffect(() => {
     if (
-      emailConfirmado &&
+      retornoConfirmacao &&
       !loginRealizado
     ) {
       return;
@@ -243,7 +249,7 @@ function LoginConteudo() {
     carregandoAuth,
     router,
     plano,
-    emailConfirmado,
+    retornoConfirmacao,
     loginRealizado,
   ]);
 
