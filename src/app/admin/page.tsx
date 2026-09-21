@@ -52,6 +52,11 @@ type RespostaStatus = {
   testeFim?: string | null;
   diasRestantesTeste?: number;
 
+  fimPeriodo?: string | null;
+  fim_periodo?: string | null;
+  diasRestantes?: number;
+  diasRestantesAssinatura?: number;
+
   erro?: string;
 };
 
@@ -347,6 +352,55 @@ export default function AdminPage() {
       ?.diasRestantesTeste ??
     0;
 
+  const fimPeriodoAssinatura =
+    statusAcesso?.fimPeriodo ??
+    statusAcesso?.fim_periodo ??
+    null;
+
+  const diasCalculadosAssinatura =
+    fimPeriodoAssinatura
+      ? Math.max(
+          0,
+          Math.ceil(
+            (new Date(
+              fimPeriodoAssinatura
+            ).getTime() -
+              Date.now()) /
+              (24 *
+                60 *
+                60 *
+                1000)
+          )
+        )
+      : null;
+
+  const diasRestantesAssinatura =
+    statusAcesso
+      ?.diasRestantesAssinatura ??
+    statusAcesso
+      ?.diasRestantes ??
+    diasCalculadosAssinatura;
+
+  const estaEmAssinatura =
+    statusAcesso
+      ?.tipoAcesso ===
+    "ASSINATURA";
+
+  const podeRenovar =
+    estaEmAssinatura &&
+    diasRestantesAssinatura !==
+      null &&
+    diasRestantesAssinatura >=
+      0 &&
+    diasRestantesAssinatura <=
+      7;
+
+  const acessoExpirado =
+    statusAcesso !== null &&
+    !statusAcesso.ativo &&
+    statusAcesso.tipoAcesso !==
+      "VITALICIO";
+
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#020b18] text-white">
@@ -471,6 +525,32 @@ export default function AdminPage() {
                     </div>
                   )}
 
+                  {estaEmAssinatura &&
+                    diasRestantesAssinatura !==
+                      null && (
+                      <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sky-300/20 bg-sky-400/10 px-3 py-2">
+                        <Hourglass
+                          size={15}
+                          className="text-sky-300"
+                        />
+
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm font-black text-sky-200">
+                            {
+                              diasRestantesAssinatura
+                            }
+                          </span>
+
+                          <span className="text-[11px] font-semibold text-sky-100/80">
+                            {diasRestantesAssinatura ===
+                            1
+                              ? "dia restante"
+                              : "dias restantes"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                   {carregandoStatus && (
                     <p className="mt-3 text-[11px] text-slate-500">
                       Verificando
@@ -487,6 +567,39 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+
+            {(podeRenovar ||
+              acessoExpirado ||
+              (estaEmTeste &&
+                diasRestantes <=
+                  7)) && (
+              <div className="mt-3 rounded-[24px] border border-amber-300/25 bg-amber-400/10 p-4 shadow-[0_12px_40px_rgba(251,191,36,0.10)] backdrop-blur-xl">
+                <p className="text-sm font-bold text-amber-100">
+                  {acessoExpirado
+                    ? "Seu acesso expirou. Faça a renovação para reativar sua loja."
+                    : podeRenovar
+                      ? diasRestantesAssinatura ===
+                        1
+                        ? "Seu acesso expira amanhã. Renove agora sem perder o dia restante."
+                        : `Faltam ${diasRestantesAssinatura} dias para o vencimento. Renove agora sem perder os dias restantes.`
+                      : "Seu período de teste está terminando. Escolha um plano para continuar."}
+                </p>
+
+                <Link
+                  href="/assinar"
+                  className="mt-3 flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 text-sm font-black text-slate-950 shadow-lg transition hover:brightness-110 active:scale-[0.98]"
+                >
+                  <CreditCard
+                    size={17}
+                  />
+
+                  {estaEmTeste &&
+                  !acessoExpirado
+                    ? "Ver planos"
+                    : "Renovar agora"}
+                </Link>
+              </div>
+            )}
 
             {/* Acesso à loja */}
 

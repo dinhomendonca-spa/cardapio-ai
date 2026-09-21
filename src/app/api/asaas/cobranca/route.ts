@@ -100,6 +100,10 @@ type PagamentoPendente = {
   valor_contratado: number;
 };
 
+type PreparacaoAssinatura = {
+  renovacaoAntecipada: boolean;
+};
+
 const PLANOS: Record<
   PlanoId,
   PlanoConfiguracao
@@ -573,7 +577,7 @@ async function obterOuCriarCliente(
 async function prepararAssinatura(
   lojaId: number,
   plano: PlanoConfiguracao
-) {
+): Promise<PreparacaoAssinatura> {
   const supabase =
     getSupabaseAdmin();
 
@@ -629,7 +633,10 @@ async function prepararAssinatura(
       );
     }
 
-    return;
+    return {
+      renovacaoAntecipada:
+        false,
+    };
   }
 
   const fimPeriodo =
@@ -654,9 +661,29 @@ async function prepararAssinatura(
       Date.now();
 
   if (assinaturaAtiva) {
-    throw new Error(
-      "Sua assinatura já está ativa."
-    );
+    const milissegundosPorDia =
+      24 * 60 * 60 * 1000;
+
+    const diasRestantes =
+      Math.max(
+        1,
+        Math.ceil(
+          (fimPeriodo!.getTime() -
+            Date.now()) /
+            milissegundosPorDia
+        )
+      );
+
+    if (diasRestantes > 7) {
+      throw new Error(
+        `A renovação estará disponível quando faltarem 7 dias para o vencimento. Ainda restam ${diasRestantes} dias.`
+      );
+    }
+
+    return {
+      renovacaoAntecipada:
+        true,
+    };
   }
 
   const {
@@ -687,6 +714,11 @@ async function prepararAssinatura(
       "Não foi possível atualizar a assinatura."
     );
   }
+
+  return {
+    renovacaoAntecipada:
+      false,
+  };
 }
 
 async function buscarCobrancaPendente(
@@ -996,10 +1028,13 @@ export async function POST(
         perfil
       );
 
-    await prepararAssinatura(
-      lojaId,
-      plano
-    );
+    const {
+      renovacaoAntecipada,
+    } =
+      await prepararAssinatura(
+        lojaId,
+        plano
+      );
 
     const clienteId =
       await obterOuCriarCliente(
@@ -1252,40 +1287,42 @@ export async function POST(
         parcelas[0] ??
         primeiraParcela;
 
-      const {
-        error:
-          erroAssinatura,
-      } = await supabase
-        .from("assinaturas")
-        .update({
-          plano:
-            plano.nome,
+      if (!renovacaoAntecipada) {
+        const {
+          error:
+            erroAssinatura,
+        } = await supabase
+          .from("assinaturas")
+          .update({
+            plano:
+              plano.nome,
 
-          valor_mensal:
-            plano.valorMensal,
+            valor_mensal:
+              plano.valorMensal,
 
-          asaas_ultima_cobranca_id:
-            pagamentoInicial.id,
+            asaas_ultima_cobranca_id:
+              pagamentoInicial.id,
 
-          proxima_cobranca:
-            pagamentoInicial
-              .dueDate,
+            proxima_cobranca:
+              pagamentoInicial
+                .dueDate,
 
-          atualizado_em:
-            new Date()
-              .toISOString(),
-        })
-        .eq(
-          "loja_id",
-          lojaId
-        );
+            atualizado_em:
+              new Date()
+                .toISOString(),
+          })
+          .eq(
+            "loja_id",
+            lojaId
+          );
 
-      if (
-        erroAssinatura
-      ) {
-        throw new Error(
-          "Não foi possível vincular o parcelamento à assinatura."
-        );
+        if (
+          erroAssinatura
+        ) {
+          throw new Error(
+            "Não foi possível vincular o parcelamento à assinatura."
+          );
+        }
       }
 
       return NextResponse.json({
@@ -1487,39 +1524,41 @@ export async function POST(
       );
     }
 
-    const {
-      error:
-        erroAssinatura,
-    } = await supabase
-      .from("assinaturas")
-      .update({
-        plano:
-          plano.nome,
+    if (!renovacaoAntecipada) {
+      const {
+        error:
+          erroAssinatura,
+      } = await supabase
+        .from("assinaturas")
+        .update({
+          plano:
+            plano.nome,
 
-        valor_mensal:
-          plano.valorMensal,
+          valor_mensal:
+            plano.valorMensal,
 
-        asaas_ultima_cobranca_id:
-          cobranca.id,
+          asaas_ultima_cobranca_id:
+            cobranca.id,
 
-        proxima_cobranca:
-          cobranca.dueDate,
+          proxima_cobranca:
+            cobranca.dueDate,
 
-        atualizado_em:
-          new Date()
-            .toISOString(),
-      })
-      .eq(
-        "loja_id",
-        lojaId
-      );
+          atualizado_em:
+            new Date()
+              .toISOString(),
+        })
+        .eq(
+          "loja_id",
+          lojaId
+        );
 
-    if (
-      erroAssinatura
-    ) {
-      throw new Error(
-        "Não foi possível vincular a cobrança à assinatura."
-      );
+      if (
+        erroAssinatura
+      ) {
+        throw new Error(
+          "Não foi possível vincular a cobrança à assinatura."
+        );
+      }
     }
 
     return NextResponse.json({
@@ -1597,7 +1636,11 @@ export async function POST(
         "Sessão"
       )
         ? 401
-        : 500;
+        : mensagem.includes(
+              "renovação estará disponível"
+            )
+          ? 409
+          : 500;
 
     return responderErro(
       mensagem,
