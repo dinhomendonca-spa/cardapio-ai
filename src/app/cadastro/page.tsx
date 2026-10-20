@@ -577,11 +577,10 @@ function CadastroConteudo() {
           </h1>
 
           <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400">
-            Cadastre-se, confirme seu
-            e-mail e faça o primeiro
-            pagamento para liberar o
-            painel.
-          </p>
+  {plano === "teste"
+    ? "Cadastre-se e confirme seu e-mail para continuar com seu teste gratuito de 30 dias, sem cartão."
+    : "Cadastre-se e confirme seu e-mail para continuar com a contratação do plano escolhido."}
+</p>
         </header>
 
         <div className="mb-5 grid grid-cols-3 gap-2">
