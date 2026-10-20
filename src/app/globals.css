@@ -800,3 +800,22 @@ button {
     );
   outline-offset: 3px;
 }
+/* Contraste dos botões preenchidos e da barra do carrinho. */
+.theme-shell[data-theme-area="loja"]
+  :is(a, button):is(.bg-slate-950, .bg-blue-600) {
+  --theme-text: #ffffff;
+  --theme-muted: #cbd5e1;
+  --theme-on-primary: #ffffff;
+  --theme-card: rgba(255, 255, 255, 0.12);
+  --theme-border: rgba(255, 255, 255, 0.2);
+  --theme-shadow: none;
+
+  color: #ffffff !important;
+}
+
+/* Texto secundário da barra do carrinho. */
+.theme-shell[data-theme-area="loja"]
+  a.bg-slate-950[href$="/checkout"]
+  p.text-slate-300 {
+  color: #cbd5e1 !important;
+}
