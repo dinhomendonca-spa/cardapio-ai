@@ -8,7 +8,9 @@ O projeto reúne interfaces em React, rotas de API do Next.js e integração com
 
 - [Abrir loja de demonstração](https://visiteminhaloja.online/loja/loja-ai-demonstracao)
 - [Conhecer a página comercial](https://visiteminhaloja.online/)
-- [Acessar o login do painel](https://visiteminhaloja.online/login) teste@teste.com  teste@teste
+- [Acessar o login do painel](https://visiteminhaloja.online/login)
+- Loguin : teste@teste.com
+- Senha: teste@teste
 
 A loja de demonstração utiliza produtos e valores fictícios. Nenhuma compra real deve ser realizada.
 
